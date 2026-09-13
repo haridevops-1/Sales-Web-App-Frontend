@@ -1,0 +1,98 @@
+.spikra-brand-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  user-select: none;
+  transition: opacity 200ms ease;
+}
+
+.spikra-brand-logo.clickable {
+  cursor: pointer;
+}
+
+.spikra-brand-logo.clickable:hover {
+  opacity: 0.92;
+}
+
+.spikra-brand-logo.clickable:hover .logo-name {
+  color: #FF7A00;
+}
+
+.spikra-brand-logo.clickable:hover .logo-image-container {
+  transform: scale(1.06);
+  filter: drop-shadow(0 2px 6px rgba(255, 107, 0, 0.35));
+}
+
+.spikra-brand-logo.clickable:active .logo-image-container {
+  transform: scale(0.97);
+}
+
+.logo-image-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-left: 6px;
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1), filter 220ms ease;
+}
+
+.spikra-logo-img {
+  height: 38px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+
+.logo-text-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.logo-wordmark-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* Crisp White Text for Navy Theme */
+.logo-name {
+  font-family: var(--font-family-display);
+  font-weight: 800;
+  font-size: 1.35rem;
+  letter-spacing: -0.03em;
+  color: #FFFFFF;
+  line-height: 1;
+  transition: color 150ms ease;
+}
+
+.logo-partner-pill {
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.18rem 0.5rem;
+  border-radius: var(--radius-xs);
+  background-color: rgba(255, 107, 0, 0.18);
+  color: #FF8200;
+  border: 1px solid rgba(255, 107, 0, 0.4);
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.logo-subtitle {
+  font-size: 0.725rem;
+  color: #94A3B8;
+  font-weight: 500;
+  margin-top: 3px;
+  line-height: 1;
+}
+
+@media (max-width: 640px) {
+  .logo-subtitle {
+    display: none;
+  }
+  .spikra-logo-img {
+    height: 32px;
+  }
+}

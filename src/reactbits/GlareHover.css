@@ -1,0 +1,19 @@
+.glare-hover-wrap {
+  position: relative;
+  isolation: isolate;
+}
+
+.glare-hover-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  background-repeat: no-repeat;
+  background-position: -100% -100%;
+  pointer-events: none;
+}
+
+.glare-hover-wrap > *:not(.glare-hover-overlay) {
+  position: relative;
+  z-index: 1;
+}

@@ -1,0 +1,122 @@
+.toast-container {
+  position: fixed;
+  top: 1.5rem;
+  right: 1.5rem;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.95rem 1.25rem;
+  border-radius: 12px;
+  box-shadow: 0 12px 28px -4px rgba(15, 23, 42, 0.25);
+  font-size: 0.875rem;
+  font-weight: 600;
+  max-width: 440px;
+  overflow: hidden;
+  position: fixed;
+}
+
+.toast-container.success {
+  background: linear-gradient(135deg, #047857 0%, #059669 50%, #10b981 100%);
+  color: #ffffff;
+  border: 1px solid #34d399;
+  box-shadow: 0 12px 28px -4px rgba(16, 185, 129, 0.35);
+}
+
+.toast-container.error {
+  background: linear-gradient(135deg, #991b1b 0%, #dc2626 100%);
+  color: #ffffff;
+  border: 1px solid #fca5a5;
+  box-shadow: 0 12px 28px -4px rgba(220, 38, 38, 0.35);
+}
+
+.toast-container.info {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  color: #ffffff;
+  border: 1px solid #475569;
+  box-shadow: 0 12px 28px -4px rgba(15, 23, 42, 0.35);
+}
+
+.toast-icon-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  backdrop-filter: blur(4px);
+}
+
+.toast-content {
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.toast-message-text {
+  font-size: 0.875rem;
+  line-height: 1.35;
+  color: #ffffff;
+}
+
+.toast-close-btn {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  border: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.toast-close-btn:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+/* 7-Second Visual Timer Progress Line */
+.toast-timer-progress-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3.5px;
+  background: #ffffff;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.85);
+  animation: shrinkToast7s 7s linear forwards;
+}
+
+@keyframes shrinkToast7s {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
+@keyframes slideInRightTop {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) translateX(0);
+  }
+}
+
+.animate-toast-slide {
+  animation: slideInRightTop 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@media (max-width: 640px) {
+  .toast-container {
+    left: 1rem;
+    right: 1rem;
+    top: 1rem;
+    max-width: none;
+  }
+}
