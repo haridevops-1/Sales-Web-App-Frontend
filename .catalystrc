@@ -1,0 +1,30 @@
+{
+  "defaults": {
+    "project": 1,
+    "env": 1
+  },
+  "actives": {
+    "project": 1,
+    "env": 1
+  },
+  "projects": [
+    {
+      "idx": 1,
+      "id": "822000000782003",
+      "name": "Internal-Sales-App",
+      "domain": {
+        "id": "10134025182",
+        "name": "internal-sales-app-698386704.development"
+      },
+      "timezone": "Asia/Kolkata",
+      "env": [
+        {
+          "idx": 1,
+          "id": "698386704",
+          "name": "Development",
+          "type": 3
+        }
+      ]
+    }
+  ]
+}
