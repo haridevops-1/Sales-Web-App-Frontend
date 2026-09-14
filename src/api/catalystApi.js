@@ -1234,6 +1234,7 @@ export async function getProcessStatus({
 
     if (!response.ok) {
       const errorMsg =
+        responseData?.data?.message ||
         responseData?.error_message ||
         responseData?.message ||
         responseData?.error ||
@@ -1293,67 +1294,120 @@ export async function getProcessStatus({
 export async function getCustomerExperiences(filters = {}, timeoutMs = 30000) {
   const listApiUrl = getCatalystExperienceListApiUrl();
   const configuredDirectUrl = import.meta.env.VITE_CATALYST_EXPERIENCE_LIST_API_URL;
-  const primaryUrl = listApiUrl || configuredDirectUrl || 'https://spikra-ai-proposal-698386704.development.catalystserverless.com/spikra/experience/list';
+  const catalystBackendDirect = 'https://spikra-ai-proposal-698386704.development.catalystserverless.com/spikra/experience/list';
+  const primaryUrl = listApiUrl || configuredDirectUrl || catalystBackendDirect;
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   // Clean filters payload
   const requestPayload = {};
+  const queryParams = new URLSearchParams();
   if (filters && typeof filters === 'object') {
     if (filters.project_id && typeof filters.project_id === 'string' && filters.project_id.trim()) {
       requestPayload.project_id = filters.project_id.trim();
+      queryParams.set('project_id', requestPayload.project_id);
     }
     if (filters.business_name && typeof filters.business_name === 'string' && filters.business_name.trim()) {
       requestPayload.business_name = filters.business_name.trim();
+      queryParams.set('business_name', requestPayload.business_name);
     }
     if (filters.status && typeof filters.status === 'string' && filters.status.trim()) {
       requestPayload.status = filters.status.trim();
+      queryParams.set('status', requestPayload.status);
     }
   }
 
+  // Cache-busting timestamp parameter ensures live updates without requiring
+  // custom non-safelisted headers (Cache-Control, Pragma, Expires) that cause browser CORS OPTIONS preflight failures
+  queryParams.set('_ts', String(Date.now()));
+  const queryString = queryParams.toString();
+  const toGetUrl = (base) => (base.includes('?') ? `${base}&${queryString}` : `${base}?${queryString}`);
+
   try {
-    console.info(`[Catalyst API Function 7] POST ${primaryUrl}`, requestPayload);
+    console.info(`[Catalyst API Function 7] Fetching experiences from ${primaryUrl}`);
 
-    const noCacheHeaders = {
-      'Content-Type': 'application/json',
-      'Cache-Control': 'no-cache, no-store, must-revalidate',
-      'Pragma': 'no-cache',
-      'Expires': '0'
-    };
+    let response = null;
+    let lastError = null;
 
-    let response;
+    // ATTEMPT 1: Clean GET request (safelisted Accept header only, no CORS OPTIONS preflight)
     try {
-      response = await fetch(primaryUrl, {
-        method: 'POST',
-        headers: noCacheHeaders,
-        cache: 'no-store',
-        body: JSON.stringify(requestPayload),
+      response = await fetch(toGetUrl(primaryUrl), {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json'
+        },
         signal: controller.signal
       });
-    } catch (fetchErr) {
-      // If direct or proxy fetch failed, try alternative
-      if (primaryUrl !== '/spikra/experience/list') {
-        console.warn('[Catalyst API Function 7] Direct fetch failed. Retrying via proxy /spikra/experience/list');
-        response = await fetch('/spikra/experience/list', {
-          method: 'POST',
-          headers: noCacheHeaders,
-          cache: 'no-store',
-          body: JSON.stringify(requestPayload),
-          signal: controller.signal
-        });
-      } else if (configuredDirectUrl) {
-        console.warn(`[Catalyst API Function 7] Proxy fetch failed. Retrying direct: ${configuredDirectUrl}`);
-        response = await fetch(configuredDirectUrl, {
-          method: 'POST',
-          headers: noCacheHeaders,
-          cache: 'no-store',
-          body: JSON.stringify(requestPayload),
-          signal: controller.signal
-        });
-      } else {
-        throw fetchErr;
+      // If server explicitly returned 405 Method Not Allowed, mark for fallback
+      if (response && response.status === 405) {
+        console.warn(`[Catalyst API Function 7] GET ${primaryUrl} returned HTTP 405, attempting alternative method`);
+        response = null;
       }
+    } catch (getErr) {
+      console.warn(`[Catalyst API Function 7] Primary GET to ${primaryUrl} failed:`, getErr.message);
+      lastError = getErr;
+    }
+
+    // ATTEMPT 2: If primary was relative (like in dev) and failed, try direct Catalyst backend GET
+    if (!response && primaryUrl !== catalystBackendDirect) {
+      try {
+        console.info(`[Catalyst API Function 7] Retrying with direct backend GET: ${catalystBackendDirect}`);
+        response = await fetch(toGetUrl(catalystBackendDirect), {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json'
+          },
+          signal: controller.signal
+        });
+        if (response && response.status === 405) {
+          response = null;
+        }
+      } catch (directGetErr) {
+        console.warn(`[Catalyst API Function 7] Direct backend GET failed:`, directGetErr.message);
+        lastError = directGetErr;
+      }
+    }
+
+    // ATTEMPT 3: If GET failed or returned 405, try POST with JSON payload
+    if (!response) {
+      const postUrl = primaryUrl.startsWith('/') && !import.meta.env.DEV ? catalystBackendDirect : primaryUrl;
+      try {
+        console.info(`[Catalyst API Function 7] Retrying with POST: ${postUrl}`, requestPayload);
+        response = await fetch(postUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify(requestPayload),
+          signal: controller.signal
+        });
+      } catch (postErr) {
+        console.warn(`[Catalyst API Function 7] POST request to ${postUrl} failed:`, postErr.message);
+        lastError = postErr;
+      }
+    }
+
+    // ATTEMPT 4: If in local dev or proxy available, try local proxy route
+    if (!response && primaryUrl !== '/spikra/experience/list') {
+      try {
+        console.info(`[Catalyst API Function 7] Final fallback to local proxy /spikra/experience/list`);
+        response = await fetch(toGetUrl('/spikra/experience/list'), {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json'
+          },
+          signal: controller.signal
+        });
+      } catch (proxyErr) {
+        console.warn(`[Catalyst API Function 7] Local proxy fallback failed:`, proxyErr.message);
+        lastError = proxyErr;
+      }
+    }
+
+    if (!response) {
+      throw lastError || new Error('Unable to connect to Catalyst backend. Please check network connection.');
     }
 
     clearTimeout(timeoutId);
@@ -1394,10 +1448,13 @@ export async function getCustomerExperiences(filters = {}, timeoutMs = 30000) {
 
     if (!response.ok) {
       const errorMsg =
+        responseData?.data?.message ||
         responseData?.error_message ||
         responseData?.message ||
         responseData?.error ||
-        `Unable to retrieve customer experiences (HTTP ${response.status})`;
+        (response.status === 405
+          ? 'Experience list service request method is not supported (HTTP 405).'
+          : `Unable to retrieve customer experiences (HTTP ${response.status})`);
       console.error(`[Catalyst API Function 7] Request failed with HTTP ${response.status}:`, responseData);
       const err = new Error(errorMsg);
       err.status = response.status;
