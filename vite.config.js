@@ -20,6 +20,10 @@ export default defineConfig(({ mode }) => {
         'next/image': path.resolve(__dirname, './src/lib/next-image.tsx')
       }
     },
+    build: {
+      outDir: 'dist',
+      emptyOutDir: true
+    },
     server: {
       port: 3000,
       open: true,

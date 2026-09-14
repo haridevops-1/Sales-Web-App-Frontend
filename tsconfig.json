@@ -26,5 +26,5 @@
       "next/image": ["./src/lib/next-image.tsx"]
     }
   },
-  "include": ["src", "components"]
+  "include": ["src"]
 }
