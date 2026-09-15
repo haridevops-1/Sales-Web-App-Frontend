@@ -35,12 +35,12 @@
   width: 100%;
   border-radius: 22px;
   background: #ffffff;
-  box-shadow: inset 0 0 0 1px var(--border-subtle, #e2e8f0);
+  box-shadow: inset 0 0 0 1px #e2e8f0;
   display: flex;
   align-items: center;
   padding: 0 12px 0 14px;
   gap: 10px;
-  font-family: var(--font-family-body, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   transition: background-color 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -69,7 +69,7 @@
 }
 
 .spikra-search-icon {
-  stroke-width: 2.2px;
+  stroke-width: 2.2;
 }
 
 .spikra-search-input,
@@ -82,17 +82,15 @@
   background: transparent !important;
   border: none !important;
   outline: none !important;
-  outline-width: 0 !important;
-  outline-color: transparent !important;
-  outline-offset: 0 !important;
   box-shadow: none !important;
   font-size: 0.875rem;
   font-weight: 500;
-  color: var(--text-primary, #0b192c);
+  color: #0b192c;
   letter-spacing: -0.01em;
   padding: 0;
   line-height: 1.3;
   -webkit-appearance: none;
+  appearance: none;
 }
 
 .spikra-search-input::placeholder {
@@ -186,4 +184,3 @@
     width: 100%;
   }
 }
-

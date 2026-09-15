@@ -5,6 +5,8 @@
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "skipLibCheck": true,
+    "allowJs": true,
+    "checkJs": false,
 
     /* Bundler mode */
     "moduleResolution": "bundler",
@@ -21,10 +23,11 @@
     "noFallthroughCasesInSwitch": true,
 
     /* Path Aliases */
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"],
-      "next/image": ["./src/lib/next-image.tsx"]
+      "@/*": ["src/*"],
+      "next/image": ["src/lib/next-image.tsx"]
     }
   },
-  "include": ["src"]
+  "include": ["src/**/*"]
 }
