@@ -4,16 +4,19 @@
  * Centralized API service for communicating with Zoho Catalyst serverless backend.
  */
 
+export const DEFAULT_CATALYST_BASE_URL = 'https://spikra-ai-proposal-698386704.development.catalystserverless.com';
+
 /**
  * Get the configured Catalyst API base URL.
- * When running directly on the Spikra-AI-Proposal domain or in local dev, returns empty string for same-origin relative URLs.
- * @returns {string} The base URL or empty string for same-origin.
+ * When running directly on the Catalyst serverless domain, returns empty string for same-origin relative requests.
+ * When running on Slate (onslate.com), localhost, or any custom domain, returns the full absolute backend URL.
+ * @returns {string} The base URL.
  */
 export function getCatalystBaseUrl() {
   if (typeof window !== 'undefined') {
-    const host = window.location.hostname;
-    // When running on the Catalyst Spikra-AI-Proposal host, use same-origin relative requests
-    if (host.includes('spikra-ai-proposal')) {
+    const host = window.location.hostname.toLowerCase();
+    // Only use same-origin relative URLs when running directly on the Catalyst serverless web client host
+    if (host.includes('catalystserverless.com') || host.includes('zohocatalyst.com')) {
       return '';
     }
   }
@@ -28,7 +31,7 @@ export function getCatalystBaseUrl() {
     return envUrl.trim().replace(/\/+$/, '');
   }
 
-  return 'https://spikra-ai-proposal-698386704.development.catalystserverless.com';
+  return DEFAULT_CATALYST_BASE_URL;
 }
 
 /**
@@ -38,17 +41,28 @@ export function getCatalystBaseUrl() {
  * @returns {string} The resolved URL
  */
 function resolveEndpointUrl(relativePath, envOverride) {
-  if (import.meta.env.DEV) {
-    return relativePath;
-  }
-  if (typeof window !== 'undefined' && window.location.hostname.includes('spikra-ai-proposal')) {
-    return relativePath;
-  }
   if (envOverride && typeof envOverride === 'string' && envOverride.trim()) {
     return envOverride.trim();
   }
-  const base = getCatalystBaseUrl();
-  return base ? `${base}${relativePath}` : relativePath;
+  if (import.meta.env.DEV) {
+    return relativePath;
+  }
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname.toLowerCase();
+    if (host.includes('catalystserverless.com') || host.includes('zohocatalyst.com')) {
+      return relativePath;
+    }
+  }
+  const base = getCatalystBaseUrl() || DEFAULT_CATALYST_BASE_URL;
+  return `${base}${relativePath}`;
+}
+
+/**
+ * Get the configured Function 1 Document Upload API URL.
+ * @returns {string} The upload API URL.
+ */
+export function getCatalystUploadApiUrl() {
+  return resolveEndpointUrl('/spikra/document/upload', import.meta.env.VITE_CATALYST_API_BASE_URL ? `${import.meta.env.VITE_CATALYST_API_BASE_URL.replace(/\/+$/, '')}/spikra/document/upload` : null);
 }
 
 /**
@@ -88,7 +102,7 @@ export function getCatalystExperienceDeployApiUrl() {
  * @returns {string} The process status API URL.
  */
 export function getCatalystProcessStatusApiUrl() {
-  return resolveEndpointUrl('/spikra/process/status', import.meta.env.VITE_CATALYST_PROCESS_STATUS_API_URL);
+  return resolveEndpointUrl('/spikra/experience/deploy?action=status', import.meta.env.VITE_CATALYST_PROCESS_STATUS_API_URL);
 }
 
 /**
@@ -96,7 +110,7 @@ export function getCatalystProcessStatusApiUrl() {
  * @returns {string} The experience list API URL.
  */
 export function getCatalystExperienceListApiUrl() {
-  return resolveEndpointUrl('/spikra/experience/list', import.meta.env.VITE_CATALYST_EXPERIENCE_LIST_API_URL);
+  return resolveEndpointUrl('/spikra/experience/deploy?action=list', import.meta.env.VITE_CATALYST_EXPERIENCE_LIST_API_URL);
 }
 
 
@@ -142,19 +156,9 @@ export async function uploadTechnicalDocument({
   }
 
   // 2. Check API Endpoint Configuration
-  let endpointUrl;
-  if (import.meta.env.DEV) {
-    endpointUrl = '/spikra/document/upload';
-  } else {
-    const baseUrl = getCatalystBaseUrl();
-    if (!baseUrl) {
-      console.error('[Catalyst API Function 1] Missing VITE_CATALYST_API_BASE_URL in environment configuration.');
-      throw new Error(
-        'Catalyst API URL is not configured. Please set VITE_CATALYST_API_BASE_URL in your .env file.'
-      );
-    }
-    endpointUrl = `${baseUrl}/spikra/document/upload`;
-  }
+  const uploadApiUrl = getCatalystUploadApiUrl();
+  const base = getCatalystBaseUrl() || DEFAULT_CATALYST_BASE_URL;
+  const endpointUrl = uploadApiUrl || `${base}/spikra/document/upload`;
 
   // 3. Build multipart/form-data
   const formData = new FormData();
@@ -332,9 +336,10 @@ export async function processDocument({ documentId, timeoutMs = 180000 }) {
         signal: controller.signal
       });
     } catch (fetchErr) {
-      if (processApiUrl !== '/spikra/document/process') {
-        console.warn('[Catalyst API Function 2] Direct fetch failed (likely CORS preflight). Retrying via proxy /spikra/document/process');
-        response = await fetch('/spikra/document/process', {
+      const fallbackUrl = resolveEndpointUrl('/spikra/experience/deploy?action=process');
+      if (processApiUrl !== fallbackUrl) {
+        console.warn('[Catalyst API Function 2] Direct fetch failed. Retrying via proxy:', fallbackUrl);
+        response = await fetch(fallbackUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -502,9 +507,10 @@ export async function analyzeDocument({ documentId, timeoutMs = 120000 }) {
         signal: controller.signal
       });
     } catch (fetchErr) {
-      if (analysisApiUrl !== '/spikra/document/analyze') {
-        console.warn('[Catalyst API Function 3] Direct fetch failed. Retrying via proxy /spikra/document/analyze');
-        response = await fetch('/spikra/document/analyze', {
+      const fallbackUrl = resolveEndpointUrl('/spikra/experience/deploy?action=analyze');
+      if (analysisApiUrl !== fallbackUrl) {
+        console.warn('[Catalyst API Function 3] Direct fetch failed. Retrying via proxy:', fallbackUrl);
+        response = await fetch(fallbackUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -673,23 +679,10 @@ export async function generateCustomerExperience({ projectId, documentId, timeou
         signal: controller.signal
       });
     } catch (fetchErr) {
-      // Fallback: If dev proxy failed or direct URL is needed
-      if (primaryUrl !== '/spikra/experience/generate') {
-        console.warn('[Catalyst API Function 4] Direct fetch failed (likely CORS preflight). Retrying via proxy /spikra/experience/generate');
-        response = await fetch('/spikra/experience/generate', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            project_id: cleanProjectId,
-            document_id: cleanDocumentId
-          }),
-          signal: controller.signal
-        });
-      } else if (configuredDirectUrl) {
-        console.warn(`[Catalyst API Function 4] Proxy fetch failed. Retrying via direct URL: ${configuredDirectUrl}`);
-        response = await fetch(configuredDirectUrl, {
+      const fallbackUrl = resolveEndpointUrl('/spikra/experience/deploy?action=generate');
+      if (primaryUrl !== fallbackUrl) {
+        console.warn('[Catalyst API Function 4] Direct fetch failed. Retrying via proxy:', fallbackUrl);
+        response = await fetch(fallbackUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -1246,8 +1239,8 @@ export async function getProcessStatus({
  * @returns {Promise<{success: boolean, count: number, experiences: Array<Object>}>} List of real experiences
  */
 export async function getCustomerExperiences(filters = {}, timeoutMs = 30000) {
-  const isDirectOrigin = typeof window !== 'undefined' && window.location.hostname.includes('spikra-ai-proposal-698386704');
-  const directBase = 'https://spikra-ai-proposal-698386704.development.catalystserverless.com';
+  const isDirectOrigin = typeof window !== 'undefined' && (window.location.hostname.includes('catalystserverless.com') || window.location.hostname.includes('zohocatalyst.com'));
+  const directBase = getCatalystBaseUrl() || DEFAULT_CATALYST_BASE_URL;
 
   // Primary URL uses the Advanced I/O deploy endpoint with action=list for full universal CORS support (including onslate.com)
   const primaryCorsUrl = isDirectOrigin || import.meta.env.DEV
