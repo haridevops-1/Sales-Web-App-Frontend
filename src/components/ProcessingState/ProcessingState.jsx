@@ -22,8 +22,8 @@ const STAGE_COPY = {
     stage: (biz) => `Extracting requirements, scope & project goals for ${biz}...`
   },
   [UPLOAD_STAGES.AI_ANALYZING]: {
-    title: 'Structuring AI Proposal with Claude...',
-    stage: (biz) => `Drafting tailored recommendations & solution architecture for ${biz}...`
+    title: 'Analyzing Discovery Requirements...',
+    stage: (biz) => `Structuring tailored recommendations & solution architecture for ${biz}...`
   },
   [UPLOAD_STAGES.GENERATING_EXPERIENCE]: {
     title: 'Building Interactive Experience...',
@@ -60,7 +60,7 @@ export default function ProcessingState({
     },
     {
       primary: 'Structuring tailored proposal & architecture',
-      secondary: 'Spikra AI intelligence'
+      secondary: 'Solution architecture'
     },
     {
       primary: 'Building client-ready interactive experience',
