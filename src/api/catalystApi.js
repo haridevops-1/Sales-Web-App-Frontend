@@ -70,7 +70,7 @@ export function getCatalystUploadApiUrl() {
  * @returns {string} The process API URL.
  */
 export function getCatalystProcessApiUrl() {
-  return resolveEndpointUrl('/spikra/document/process', import.meta.env.VITE_CATALYST_DOCUMENT_PROCESS_API_URL);
+  return resolveEndpointUrl('/spikra/experience/deploy?action=process', import.meta.env.VITE_CATALYST_DOCUMENT_PROCESS_API_URL);
 }
 
 /**
@@ -78,7 +78,7 @@ export function getCatalystProcessApiUrl() {
  * @returns {string} The analysis API URL.
  */
 export function getCatalystAnalysisApiUrl() {
-  return resolveEndpointUrl('/spikra/document/analyze', import.meta.env.VITE_CATALYST_AI_ANALYSIS_API_URL);
+  return resolveEndpointUrl('/spikra/experience/deploy?action=analyze', import.meta.env.VITE_CATALYST_AI_ANALYSIS_API_URL);
 }
 
 /**
@@ -86,7 +86,7 @@ export function getCatalystAnalysisApiUrl() {
  * @returns {string} The experience generate API URL.
  */
 export function getCatalystExperienceApiUrl() {
-  return resolveEndpointUrl('/spikra/experience/generate', import.meta.env.VITE_CATALYST_EXPERIENCE_GENERATE_API_URL);
+  return resolveEndpointUrl('/spikra/experience/deploy?action=generate', import.meta.env.VITE_CATALYST_EXPERIENCE_GENERATE_API_URL);
 }
 
 /**
@@ -328,7 +328,7 @@ export async function processDocument({ documentId, timeoutMs = 180000 }) {
       response = await fetch(processApiUrl, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'text/plain'
         },
         body: JSON.stringify({
           document_id: cleanDocumentId
@@ -342,7 +342,7 @@ export async function processDocument({ documentId, timeoutMs = 180000 }) {
         response = await fetch(fallbackUrl, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'text/plain'
           },
           body: JSON.stringify({
             document_id: cleanDocumentId
@@ -499,7 +499,7 @@ export async function analyzeDocument({ documentId, timeoutMs = 120000 }) {
       response = await fetch(analysisApiUrl, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'text/plain'
         },
         body: JSON.stringify({
           document_id: cleanDocumentId
@@ -513,7 +513,7 @@ export async function analyzeDocument({ documentId, timeoutMs = 120000 }) {
         response = await fetch(fallbackUrl, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'text/plain'
           },
           body: JSON.stringify({
             document_id: cleanDocumentId
@@ -670,7 +670,7 @@ export async function generateCustomerExperience({ projectId, documentId, timeou
       response = await fetch(primaryUrl, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'text/plain'
         },
         body: JSON.stringify({
           project_id: cleanProjectId,
@@ -685,7 +685,7 @@ export async function generateCustomerExperience({ projectId, documentId, timeou
         response = await fetch(fallbackUrl, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'text/plain'
           },
           body: JSON.stringify({
             project_id: cleanProjectId,
@@ -880,7 +880,7 @@ export async function deployCustomerExperience({
       response = await fetch(primaryUrl, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'text/plain'
         },
         body: JSON.stringify(requestPayload),
         signal: controller.signal
@@ -892,7 +892,7 @@ export async function deployCustomerExperience({
         response = await fetch('/spikra/experience/deploy', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'text/plain'
           },
           body: JSON.stringify(requestPayload),
           signal: controller.signal
@@ -902,7 +902,7 @@ export async function deployCustomerExperience({
         response = await fetch(configuredDirectUrl, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'text/plain'
           },
           body: JSON.stringify(requestPayload),
           signal: controller.signal
@@ -1102,17 +1102,18 @@ export async function getProcessStatus({
       response = await fetch(primaryUrl, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'text/plain'
         },
         body: JSON.stringify(requestPayload),
         signal: controller.signal
       });
     } catch (fetchErr) {
-      if (primaryUrl !== '/spikra/process/status') {
-        response = await fetch('/spikra/process/status', {
+      if (primaryUrl !== '/spikra/experience/deploy?action=status') {
+        const fallbackStatusUrl = resolveEndpointUrl('/spikra/experience/deploy?action=status');
+        response = await fetch(fallbackStatusUrl, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'text/plain'
           },
           body: JSON.stringify(requestPayload),
           signal: controller.signal
@@ -1121,7 +1122,7 @@ export async function getProcessStatus({
         response = await fetch(configuredDirectUrl, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'text/plain'
           },
           body: JSON.stringify(requestPayload),
           signal: controller.signal
