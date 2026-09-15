@@ -190,14 +190,12 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
       setUploadResult(fn1Result);
 
       if (!fn1Result?.documentId) {
-        throw new Error('Function 1 did not return a valid document_id.');
+        throw new Error('Upload incomplete.');
       }
     } catch (fn1Err) {
       console.error('[Function 1 Upload Failed]', fn1Err);
-      const errorMsg = fn1Err.message || 'Document upload failed. Please check the file and try again.';
-      setInlineError(`Document upload failed. ${errorMsg}`);
       updateStage(UPLOAD_STAGES.FAILED);
-      if (onError) onError(errorMsg);
+      if (onError) onError('Document upload failed. Please try again.');
       return;
     }
 
@@ -220,18 +218,16 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
       }
     } catch (fn2Err) {
       console.error('[Document Extraction Failed]', fn2Err);
-      const errorMsg = fn2Err.message || 'Document extraction failed.';
       const fn2FailureObj = {
         success: false,
         processingStatus: 'FAILED',
         jobStatus: 'FAILED',
-        message: errorMsg
+        message: 'Extraction failed.'
       };
 
       setProcessResult(fn2FailureObj);
       updateStage(UPLOAD_STAGES.FAILED);
-      setInlineError('Document processing could not be completed. Please try again.');
-      if (onError) onError('Document processing could not be completed. Please try again.');
+      if (onError) onError('Document processing failed. Please try again.');
       return;
     }
 
@@ -272,11 +268,8 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
         setExperienceResult(fn4Result);
       } catch (fn4Err) {
         console.error('[Experience Generation Failed]', fn4Err);
-        const errorMsg = fn4Err.message || 'Customer experience generation failed.';
-        setGenerationError(errorMsg);
         updateStage(UPLOAD_STAGES.FAILED);
-        setInlineError('Unable to generate proposal experience. Please try again.');
-        if (onError) onError('Unable to generate proposal experience. Please try again.');
+        if (onError) onError('Proposal generation failed. Please try again.');
         setIsGenerating(false);
         return;
       } finally {
@@ -322,10 +315,8 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
               } else if (currentStatus === 'FAILED' || pollCount >= maxPolls) {
                 clearInterval(pollTimer);
                 if (currentStatus === 'FAILED') {
-                  const errMsg = statusResponse?.error_message || 'Publication failed.';
-                  setDeployError(errMsg);
                   updateStage(UPLOAD_STAGES.FAILED);
-                  if (onError) onError(errMsg);
+                  if (onError) onError('Publication failed. Please try again.');
                 } else {
                   handleStatusPublished(statusResponse || fn5Result);
                 }
@@ -340,28 +331,23 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
         }
       } catch (fn5Err) {
         console.error('[Experience Deploy Failed]', fn5Err);
-        const errorMsg = fn5Err.message || 'Customer proposal publication failed. Please try again.';
-        setDeployError(errorMsg);
         updateStage(UPLOAD_STAGES.FAILED);
-        setInlineError(errorMsg);
-        if (onError) onError(errorMsg);
+        if (onError) onError('Proposal publication failed. Please try again.');
       } finally {
         setIsDeploying(false);
       }
     } catch (fn3Err) {
       console.error('[Analysis Failed]', fn3Err);
-      const errorMsg = fn3Err.message || 'Analysis failed.';
       const fn3FailureObj = {
         success: false,
         processingStatus: 'FAILED',
         jobStatus: 'FAILED',
-        message: errorMsg
+        message: 'Analysis failed.'
       };
 
       setAnalysisResult(fn3FailureObj);
       updateStage(UPLOAD_STAGES.FAILED);
-      setInlineError('Document analysis could not be completed. Please try again.');
-      if (onError) onError('Document analysis could not be completed. Please try again.');
+      if (onError) onError('Document analysis failed. Please try again.');
     }
   };
 
