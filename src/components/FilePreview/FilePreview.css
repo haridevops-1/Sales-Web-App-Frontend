@@ -214,22 +214,84 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 0.75rem;
-  padding-top: 0.5rem;
+  gap: 12px;
+  padding-top: 1rem;
   border-top: 1px solid #f1f5f9;
 }
 
-.btn-upload-cta {
+.btn-change-file-action {
   display: inline-flex;
   align-items: center;
-  font-weight: 700;
-  padding: 0;
-  border: none;
-  background: transparent;
+  justify-content: center;
+  height: 42px;
+  padding: 0 1.35rem;
+  background-color: #ffffff;
+  color: #334155;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+  outline: none;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
-.btn-cancel-action {
-  padding: 0.7rem 1.1rem;
+.btn-change-file-action:hover:not(:disabled) {
+  background-color: #f8fafc;
+  border-color: #94a3b8;
+  color: #0f172a;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.08);
+}
+
+.btn-change-file-action:active:not(:disabled) {
+  transform: translateY(0);
+  background-color: #f1f5f9;
+}
+
+.btn-change-file-action:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn-upload-submit-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 42px;
+  padding: 0 1.65rem;
+  background: linear-gradient(135deg, #ff6b00 0%, #ea580c 100%);
+  color: #ffffff;
+  border: 1px solid #ea580c;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+  outline: none;
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.3);
+}
+
+.btn-upload-submit-action:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(234, 88, 12, 0.42);
+  filter: brightness(1.03);
+}
+
+.btn-upload-submit-action:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(234, 88, 12, 0.35);
+}
+
+.btn-upload-submit-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+  filter: grayscale(0.2);
 }
 
 /* Business Logo Upload & Preview Styles */

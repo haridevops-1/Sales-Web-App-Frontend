@@ -2,8 +2,6 @@ import React, { useRef, useState } from 'react';
 import './FilePreview.css';
 import { formatBytes } from '../../utils/helpers';
 import { SUPPORTED_LOGO_EXTENSIONS } from '../../utils/constants';
-import SpinningBorderButton from '../ui/spinning-border-button';
-import { UploadCloud } from 'lucide-react';
 
 export default function FilePreview({
   file,
@@ -326,21 +324,20 @@ export default function FilePreview({
         <div className="form-submit-row">
           <button
             type="button"
-            className="btn btn-secondary btn-cancel-action"
+            className="btn-change-file-action"
             onClick={onRemove}
             disabled={disabled}
           >
             Change File
           </button>
 
-          <SpinningBorderButton
+          <button
             type="submit"
             disabled={!isFormValid}
-            className="btn-upload-cta"
+            className="btn-upload-submit-action"
           >
-            <UploadCloud size={16} />
-            <span>Upload Document</span>
-          </SpinningBorderButton>
+            Upload Document
+          </button>
         </div>
       </form>
     </div>

@@ -21,7 +21,7 @@ export function getCatalystBaseUrl() {
     }
   }
 
-  // In local development, return empty string so Vite proxy handles routing
+  // In local development with Vite proxy
   if (import.meta.env.DEV) {
     return '';
   }
@@ -62,7 +62,7 @@ function resolveEndpointUrl(relativePath, envOverride) {
  * @returns {string} The upload API URL.
  */
 export function getCatalystUploadApiUrl() {
-  return resolveEndpointUrl('/spikra/document/upload', import.meta.env.VITE_CATALYST_API_BASE_URL ? `${import.meta.env.VITE_CATALYST_API_BASE_URL.replace(/\/+$/, '')}/spikra/document/upload` : null);
+  return resolveEndpointUrl('/spikra/document/upload', import.meta.env.VITE_CATALYST_API_BASE_URL ? `${import.meta.env.VITE_CATALYST_API_BASE_URL.replace(/\/+$/, '')}/spikra/document/upload` : `${DEFAULT_CATALYST_BASE_URL}/spikra/document/upload`);
 }
 
 /**
@@ -70,7 +70,7 @@ export function getCatalystUploadApiUrl() {
  * @returns {string} The process API URL.
  */
 export function getCatalystProcessApiUrl() {
-  return resolveEndpointUrl('/spikra/experience/deploy?action=process', import.meta.env.VITE_CATALYST_DOCUMENT_PROCESS_API_URL);
+  return resolveEndpointUrl('/spikra/experience/deploy?action=process', import.meta.env.VITE_CATALYST_DOCUMENT_PROCESS_API_URL || `${DEFAULT_CATALYST_BASE_URL}/spikra/experience/deploy?action=process`);
 }
 
 /**
@@ -78,7 +78,7 @@ export function getCatalystProcessApiUrl() {
  * @returns {string} The analysis API URL.
  */
 export function getCatalystAnalysisApiUrl() {
-  return resolveEndpointUrl('/spikra/experience/deploy?action=analyze', import.meta.env.VITE_CATALYST_AI_ANALYSIS_API_URL);
+  return resolveEndpointUrl('/spikra/experience/deploy?action=analyze', import.meta.env.VITE_CATALYST_AI_ANALYSIS_API_URL || `${DEFAULT_CATALYST_BASE_URL}/spikra/experience/deploy?action=analyze`);
 }
 
 /**
@@ -86,7 +86,7 @@ export function getCatalystAnalysisApiUrl() {
  * @returns {string} The experience generate API URL.
  */
 export function getCatalystExperienceApiUrl() {
-  return resolveEndpointUrl('/spikra/experience/deploy?action=generate', import.meta.env.VITE_CATALYST_EXPERIENCE_GENERATE_API_URL);
+  return resolveEndpointUrl('/spikra/experience/deploy?action=generate', import.meta.env.VITE_CATALYST_EXPERIENCE_GENERATE_API_URL || `${DEFAULT_CATALYST_BASE_URL}/spikra/experience/deploy?action=generate`);
 }
 
 /**
@@ -94,7 +94,7 @@ export function getCatalystExperienceApiUrl() {
  * @returns {string} The experience deploy API URL.
  */
 export function getCatalystExperienceDeployApiUrl() {
-  return resolveEndpointUrl('/spikra/experience/deploy', import.meta.env.VITE_CATALYST_EXPERIENCE_DEPLOY_API_URL);
+  return resolveEndpointUrl('/spikra/experience/deploy', import.meta.env.VITE_CATALYST_EXPERIENCE_DEPLOY_API_URL || `${DEFAULT_CATALYST_BASE_URL}/spikra/experience/deploy`);
 }
 
 /**
@@ -102,7 +102,7 @@ export function getCatalystExperienceDeployApiUrl() {
  * @returns {string} The process status API URL.
  */
 export function getCatalystProcessStatusApiUrl() {
-  return resolveEndpointUrl('/spikra/experience/deploy?action=status', import.meta.env.VITE_CATALYST_PROCESS_STATUS_API_URL);
+  return resolveEndpointUrl('/spikra/experience/deploy?action=status', import.meta.env.VITE_CATALYST_PROCESS_STATUS_API_URL || `${DEFAULT_CATALYST_BASE_URL}/spikra/experience/deploy?action=status`);
 }
 
 /**
@@ -110,7 +110,7 @@ export function getCatalystProcessStatusApiUrl() {
  * @returns {string} The experience list API URL.
  */
 export function getCatalystExperienceListApiUrl() {
-  return resolveEndpointUrl('/spikra/experience/deploy?action=list', import.meta.env.VITE_CATALYST_EXPERIENCE_LIST_API_URL);
+  return resolveEndpointUrl('/spikra/experience/deploy?action=list', import.meta.env.VITE_CATALYST_EXPERIENCE_LIST_API_URL || `${DEFAULT_CATALYST_BASE_URL}/spikra/experience/deploy?action=list`);
 }
 
 
@@ -308,13 +308,7 @@ export async function processDocument({ documentId, timeoutMs = 300000 }) {
   }
 
   // 2. Determine Endpoint URL
-  const processApiUrl = getCatalystProcessApiUrl();
-  if (!processApiUrl) {
-    console.error('[Catalyst API Function 2] Missing VITE_CATALYST_DOCUMENT_PROCESS_API_URL in environment configuration.');
-    throw new Error(
-      'Document Process API URL is not configured. Please set VITE_CATALYST_DOCUMENT_PROCESS_API_URL in your .env file.'
-    );
-  }
+  const processApiUrl = getCatalystProcessApiUrl() || `${DEFAULT_CATALYST_BASE_URL}/spikra/experience/deploy?action=process`;
 
   // 3. Setup abort controller
   const controller = new AbortController();
@@ -479,13 +473,7 @@ export async function analyzeDocument({ documentId, timeoutMs = 300000 }) {
   }
 
   // 2. Determine Endpoint URL
-  const analysisApiUrl = getCatalystAnalysisApiUrl();
-  if (!analysisApiUrl) {
-    console.error('[Catalyst API Function 3] Missing VITE_CATALYST_AI_ANALYSIS_API_URL in environment configuration.');
-    throw new Error(
-      'AI Analysis API URL is not configured. Please set VITE_CATALYST_AI_ANALYSIS_API_URL in your .env file.'
-    );
-  }
+  const analysisApiUrl = getCatalystAnalysisApiUrl() || `${DEFAULT_CATALYST_BASE_URL}/spikra/experience/deploy?action=analyze`;
 
   // 3. Setup abort controller
   const controller = new AbortController();
@@ -645,15 +633,7 @@ export async function generateCustomerExperience({ projectId, documentId, timeou
   const experienceApiUrl = getCatalystExperienceApiUrl();
   const configuredDirectUrl = import.meta.env.VITE_CATALYST_EXPERIENCE_GENERATE_API_URL;
 
-  if (!experienceApiUrl && !configuredDirectUrl) {
-    console.error('[Catalyst API Function 4] Missing VITE_CATALYST_EXPERIENCE_GENERATE_API_URL in environment configuration.');
-    throw new Error(
-      'Experience Generate API URL is not configured. Please set VITE_CATALYST_EXPERIENCE_GENERATE_API_URL in your .env file.'
-    );
-  }
-
-  // Primary URL is the resolved proxy or configured direct URL
-  const primaryUrl = experienceApiUrl || configuredDirectUrl;
+  const primaryUrl = experienceApiUrl || configuredDirectUrl || `${DEFAULT_CATALYST_BASE_URL}/spikra/experience/deploy?action=generate`;
 
   // 3. Setup abort controller
   const controller = new AbortController();
@@ -846,15 +826,7 @@ export async function deployCustomerExperience({
   const experienceDeployApiUrl = getCatalystExperienceDeployApiUrl();
   const configuredDirectUrl = import.meta.env.VITE_CATALYST_EXPERIENCE_DEPLOY_API_URL;
 
-  if (!experienceDeployApiUrl && !configuredDirectUrl) {
-    console.error('[Catalyst API Function 5] Missing VITE_CATALYST_EXPERIENCE_DEPLOY_API_URL in environment configuration.');
-    throw new Error(
-      'Experience Deploy API URL is not configured. Please set VITE_CATALYST_EXPERIENCE_DEPLOY_API_URL in your .env file.'
-    );
-  }
-
-  // Primary URL is the resolved proxy or configured direct URL
-  const primaryUrl = experienceDeployApiUrl || configuredDirectUrl;
+  const primaryUrl = experienceDeployApiUrl || configuredDirectUrl || `${DEFAULT_CATALYST_BASE_URL}/spikra/experience/deploy`;
 
   // 3. Setup abort controller
   const controller = new AbortController();
