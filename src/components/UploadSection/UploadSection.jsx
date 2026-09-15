@@ -123,7 +123,7 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
   const handleUploadSubmit = async () => {
     // 1. Front-end validation checks
     if (!selectedFile) {
-      setInlineError('Please select a PDF document.');
+      setInlineError('Please select a PDF or Word document (.pdf, .docx).');
       return;
     }
 
