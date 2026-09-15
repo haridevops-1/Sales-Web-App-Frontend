@@ -296,10 +296,10 @@ export async function uploadTechnicalDocument({
  * 
  * @param {Object} params
  * @param {string} params.documentId - Real document_id returned from Function 1 (required)
- * @param {number} [params.timeoutMs=180000] - Request timeout in ms (3 min, to accommodate large PDF/Word extraction)
+ * @param {number} [params.timeoutMs=300000] - Request timeout in ms (5 min, to accommodate large PDF/Word extraction)
  * @returns {Promise<Object>} Real response containing processing_status: "EXTRACTED", job_status: "COMPLETED"
  */
-export async function processDocument({ documentId, timeoutMs = 180000 }) {
+export async function processDocument({ documentId, timeoutMs = 300000 }) {
   // 1. Validate parameter
   const cleanDocumentId = documentId ? String(documentId).trim() : '';
 
@@ -467,10 +467,10 @@ export function sanitizeBackendErrorMessage(rawMsg) {
  * 
  * @param {Object} params
  * @param {string} params.documentId - Real document_id returned from Function 1 (required)
- * @param {number} [params.timeoutMs=120000] - Request timeout in ms
+ * @param {number} [params.timeoutMs=300000] - Request timeout in ms (5 min for deep AI analysis on multi-section documents)
  * @returns {Promise<Object>} Real response containing processing_status: "COMPLETED", job_status: "COMPLETED"
  */
-export async function analyzeDocument({ documentId, timeoutMs = 120000 }) {
+export async function analyzeDocument({ documentId, timeoutMs = 300000 }) {
   // 1. Validate parameter
   const cleanDocumentId = documentId ? String(documentId).trim() : '';
 
@@ -625,10 +625,10 @@ export async function analyzeDocument({ documentId, timeoutMs = 120000 }) {
  * @param {Object} params
  * @param {string} params.projectId - Real project_id from previous workflow state (required)
  * @param {string} params.documentId - Real document_id from previous workflow state (required)
- * @param {number} [params.timeoutMs=120000] - Request timeout in ms (default 120s for code generation & Stratus uploads)
+ * @param {number} [params.timeoutMs=300000] - Request timeout in ms (default 300s for code generation & Stratus uploads)
  * @returns {Promise<Object>} Real response containing experience_id, status: "GENERATED", content_object_key, files
  */
-export async function generateCustomerExperience({ projectId, documentId, timeoutMs = 120000 }) {
+export async function generateCustomerExperience({ projectId, documentId, timeoutMs = 300000 }) {
   // 1. Validate parameters
   const cleanProjectId = projectId ? String(projectId).trim() : '';
   const cleanDocumentId = documentId ? String(documentId).trim() : '';
