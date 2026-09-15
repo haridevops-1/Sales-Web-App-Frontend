@@ -101,7 +101,7 @@
   padding: 4px 12px;
   border-radius: 9999px;
   font-size: 0.725rem;
-  font-weight: 750;
+  font-weight: 700;
   letter-spacing: 0.05em;
   box-shadow: 0 1px 3px rgba(5, 150, 105, 0.08);
 }
@@ -161,7 +161,7 @@
   color: #475569;
   margin: 0;
   line-height: 1.55;
-  font-weight: 450;
+  font-weight: 500;
 }
 
 /* Basic Info Grid: Two Distinct Executive Cards */
@@ -244,7 +244,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 750;
+  font-weight: 700;
   font-size: 0.875rem;
   box-shadow: 0 2px 6px rgba(11, 25, 44, 0.2);
   flex-shrink: 0;
@@ -387,7 +387,7 @@
   padding: 0 16px;
   height: 38px;
   font-size: 0.8125rem;
-  font-weight: 650;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   white-space: nowrap;
@@ -432,7 +432,7 @@
   background: linear-gradient(135deg, #ff6b00 0%, #f4611f 50%, #e04e00 100%);
   color: #ffffff;
   font-size: 0.875rem;
-  font-weight: 650;
+  font-weight: 600;
   letter-spacing: -0.01em;
   text-decoration: none;
   cursor: pointer;
@@ -526,7 +526,7 @@
   align-items: center;
   gap: 9px;
   color: #ffffff;
-  font-weight: 650;
+  font-weight: 600;
   white-space: nowrap;
 }
 
@@ -567,7 +567,7 @@
   color: #0b192c;
   border: 1.5px solid #cbd5e1;
   font-size: 0.875rem;
-  font-weight: 650;
+  font-weight: 600;
   letter-spacing: 0.01em;
   cursor: pointer;
   box-shadow: 0 1px 3px rgba(11, 25, 44, 0.04);
@@ -610,7 +610,7 @@
   color: #ffffff;
   border: none;
   font-size: 0.875rem;
-  font-weight: 650;
+  font-weight: 600;
   cursor: pointer;
   transition: background 0.2s ease;
 }

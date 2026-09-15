@@ -35,7 +35,7 @@ const VARIANTS: Record<
     rows: [
       { primary: "Uploading discovery notes & client logo", secondary: "Verification" },
       { primary: "Reading requirements, goals & technical scope", secondary: "Scope extraction" },
-      { primary: "Structuring tailored proposal & recommendations", secondary: "AI intelligence" },
+      { primary: "Structuring tailored proposal & recommendations", secondary: "Solution architecture" },
       { primary: "Building client-ready interactive experience", secondary: "Interactive format" },
       { primary: "Publishing live proposal & generating your link", secondary: "Shareable link" },
     ],

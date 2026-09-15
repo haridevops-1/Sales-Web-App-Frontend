@@ -97,7 +97,7 @@
 
 .spikra-search-input::placeholder {
   color: #94a3b8;
-  font-weight: 450;
+  font-weight: 500;
   opacity: 0.85;
   transition: color 0.2s ease;
 }
