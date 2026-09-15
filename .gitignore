@@ -80,3 +80,5 @@ coverage/
 .eslintcache
 .temp/
 .tmp/
+scratch/
+.deploy.zip

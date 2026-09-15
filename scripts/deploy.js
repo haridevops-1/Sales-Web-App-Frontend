@@ -11,7 +11,7 @@ const projectRoot = path.resolve(__dirname, '..');
 const distDir = path.join(projectRoot, 'dist');
 
 async function deploy() {
-  console.log('🚀 Preparing deployment for Zoho Catalyst (Internal-Sales-App)...');
+  console.log('🚀 Preparing deployment for Zoho Catalyst (Spikra-AI-Proposal)...');
 
   if (!fs.existsSync(distDir)) {
     console.error('❌ dist/ directory does not exist. Please run "npm run build" first.');
@@ -45,41 +45,52 @@ async function deploy() {
 
   auth();
 
-  const projectId = '822000000782003';
   const org = '698386704';
-  const envId = '822000000782020';
 
-  const headers = {
-    'CATALYST-ORG': org,
-    'CATALYST-PROJECT': projectId,
-    'CATALYST-ENV': envId
-  };
-
-  const api = new API({ headers, authNeeded: true });
-  console.log('📡 Uploading to Zoho Catalyst Web Client...');
-
-  try {
-    const stream = fs.createReadStream(tempZip);
-    const res = await api.post(`/baas/v1/project/${projectId}/webapp`, {
-      formData: { app_zip: stream },
-      json: false
-    });
-
-    // Cleanup temp zip
-    if (fs.existsSync(tempZip)) {
-      fs.unlinkSync(tempZip);
+  // Primary project: Spikra-AI-Proposal (where all functions and tables live)
+  const targets = [
+    {
+      name: 'Spikra-AI-Proposal',
+      projectId: '822000000769001',
+      envId: '822000000769018',
+      liveUrl: 'https://spikra-ai-proposal-698386704.development.catalystserverless.com/app/index.html'
+    },
+    {
+      name: 'Internal-Sales-App',
+      projectId: '822000000782003',
+      envId: '822000000782020',
+      liveUrl: 'https://internal-sales-app-698386704.development.catalystserverless.com/app/'
     }
+  ];
 
-    console.log('\n✅ Successfully deployed to Zoho Catalyst under Internal-Sales-App!');
-    console.log('🌐 Live Application URL:');
-    console.log('   https://internal-sales-app-698386704.development.catalystserverless.com/app/\n');
-  } catch (err) {
-    if (fs.existsSync(tempZip)) {
-      fs.unlinkSync(tempZip);
+  for (const target of targets) {
+    console.log(`\n📡 Uploading to Zoho Catalyst Web Client (${target.name} - ${target.projectId})...`);
+    const headers = {
+      'CATALYST-ORG': org,
+      'CATALYST-PROJECT': target.projectId,
+      'CATALYST-ENV': target.envId
+    };
+
+    const api = new API({ headers, authNeeded: true });
+
+    try {
+      const stream = fs.createReadStream(tempZip);
+      await api.post(`/baas/v1/project/${target.projectId}/webapp`, {
+        formData: { app_zip: stream },
+        json: false
+      });
+      console.log(`✅ Successfully deployed to Zoho Catalyst under ${target.name}!`);
+      console.log(`🌐 Live Application URL: ${target.liveUrl}`);
+    } catch (err) {
+      console.error(`⚠️ Deployment warning for ${target.name}:`, err.status, err.message);
     }
-    console.error('❌ Deployment failed:', err.status, err.message);
-    process.exit(1);
   }
+
+  // Cleanup temp zip
+  if (fs.existsSync(tempZip)) {
+    fs.unlinkSync(tempZip);
+  }
+  console.log('\n🎉 Deployment process finished!\n');
 }
 
 deploy();

@@ -10,11 +10,11 @@
   "projects": [
     {
       "idx": 1,
-      "id": "822000000782003",
-      "name": "Internal-Sales-App",
+      "id": "822000000769001",
+      "name": "Spikra-AI-Proposal",
       "domain": {
         "id": "10134025182",
-        "name": "internal-sales-app-698386704.development"
+        "name": "spikra-ai-proposal-698386704.development"
       },
       "timezone": "Asia/Kolkata",
       "env": [
@@ -28,3 +28,4 @@
     }
   ]
 }
+

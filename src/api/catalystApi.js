@@ -5,160 +5,100 @@
  */
 
 /**
- * Get the configured Catalyst API base URL from Vite environment variables.
- * @returns {string} The base URL or empty string if not configured.
+ * Get the configured Catalyst API base URL.
+ * When running directly on the Spikra-AI-Proposal domain or in local dev, returns empty string for same-origin relative URLs.
+ * @returns {string} The base URL or empty string for same-origin.
  */
 export function getCatalystBaseUrl() {
-  const envUrl = import.meta.env.VITE_CATALYST_API_BASE_URL;
-  if (!envUrl || typeof envUrl !== 'string') {
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    // When running on the Catalyst Spikra-AI-Proposal host, use same-origin relative requests
+    if (host.includes('spikra-ai-proposal')) {
+      return '';
+    }
+  }
+
+  // In local development, return empty string so Vite proxy handles routing
+  if (import.meta.env.DEV) {
     return '';
   }
-  return envUrl.trim().replace(/\/+$/, '');
+
+  const envUrl = import.meta.env.VITE_CATALYST_API_BASE_URL;
+  if (envUrl && typeof envUrl === 'string' && envUrl.trim()) {
+    return envUrl.trim().replace(/\/+$/, '');
+  }
+
+  return 'https://spikra-ai-proposal-698386704.development.catalystserverless.com';
 }
 
 /**
- * Get the configured Function 2 Document Process API URL from Vite environment variables.
- * In local development, routes via Vite dev server proxy to prevent browser CORS preflight issues.
- * @returns {string} The process API URL or empty string if not configured.
+ * Helper to construct an endpoint URL.
+ * @param {string} relativePath - The path, e.g. '/spikra/document/process'
+ * @param {string} [envOverride] - Optional env variable URL
+ * @returns {string} The resolved URL
+ */
+function resolveEndpointUrl(relativePath, envOverride) {
+  if (import.meta.env.DEV) {
+    return relativePath;
+  }
+  if (typeof window !== 'undefined' && window.location.hostname.includes('spikra-ai-proposal')) {
+    return relativePath;
+  }
+  if (envOverride && typeof envOverride === 'string' && envOverride.trim()) {
+    return envOverride.trim();
+  }
+  const base = getCatalystBaseUrl();
+  return base ? `${base}${relativePath}` : relativePath;
+}
+
+/**
+ * Get the configured Function 2 Document Process API URL.
+ * @returns {string} The process API URL.
  */
 export function getCatalystProcessApiUrl() {
-  // In local development, route through Vite proxy to eliminate browser CORS preflight blocks
-  if (import.meta.env.DEV) {
-    return '/spikra/document/process';
-  }
-
-  const processUrl = import.meta.env.VITE_CATALYST_DOCUMENT_PROCESS_API_URL;
-  if (processUrl && typeof processUrl === 'string' && processUrl.trim()) {
-    return processUrl.trim();
-  }
-
-  const baseUrl = getCatalystBaseUrl();
-  if (baseUrl) {
-    return `${baseUrl}/spikra/document/process`;
-  }
-
-  return '/spikra/document/process';
+  return resolveEndpointUrl('/spikra/document/process', import.meta.env.VITE_CATALYST_DOCUMENT_PROCESS_API_URL);
 }
 
 /**
- * Get the configured Function 3 AI Analysis API URL from Vite environment variables.
- * In local development, routes via Vite dev server proxy to prevent browser CORS preflight issues.
- * @returns {string} The analysis API URL or empty string if not configured.
+ * Get the configured Function 3 AI Analysis API URL.
+ * @returns {string} The analysis API URL.
  */
 export function getCatalystAnalysisApiUrl() {
-  // In local development, route through Vite proxy to eliminate browser CORS preflight blocks
-  if (import.meta.env.DEV) {
-    return '/spikra/document/analyze';
-  }
-
-  const analysisUrl = import.meta.env.VITE_CATALYST_AI_ANALYSIS_API_URL;
-  if (analysisUrl && typeof analysisUrl === 'string' && analysisUrl.trim()) {
-    return analysisUrl.trim();
-  }
-
-  const baseUrl = getCatalystBaseUrl();
-  if (baseUrl) {
-    return `${baseUrl}/spikra/document/analyze`;
-  }
-
-  return '/spikra/document/analyze';
+  return resolveEndpointUrl('/spikra/document/analyze', import.meta.env.VITE_CATALYST_AI_ANALYSIS_API_URL);
 }
 
 /**
- * Get the configured Function 4 Customer Experience Generate API URL from Vite environment variables.
- * In local development, routes via Vite dev server proxy to prevent browser CORS preflight issues.
- * @returns {string} The experience generate API URL or empty string if not configured.
+ * Get the configured Function 4 Customer Experience Generate API URL.
+ * @returns {string} The experience generate API URL.
  */
 export function getCatalystExperienceApiUrl() {
-  // In local development, route through Vite proxy to eliminate browser CORS preflight blocks
-  if (import.meta.env.DEV) {
-    return '/spikra/experience/generate';
-  }
-
-  const expUrl = import.meta.env.VITE_CATALYST_EXPERIENCE_GENERATE_API_URL;
-  if (expUrl && typeof expUrl === 'string' && expUrl.trim()) {
-    return expUrl.trim();
-  }
-
-  const baseUrl = getCatalystBaseUrl();
-  if (baseUrl) {
-    return `${baseUrl}/spikra/experience/generate`;
-  }
-
-  return '/spikra/experience/generate';
+  return resolveEndpointUrl('/spikra/experience/generate', import.meta.env.VITE_CATALYST_EXPERIENCE_GENERATE_API_URL);
 }
 
 /**
- * Get the configured Function 5 Customer Experience Deploy API URL from Vite environment variables.
- * In local development, routes via Vite dev server proxy to prevent browser CORS preflight issues.
- * @returns {string} The experience deploy API URL or empty string if not configured.
+ * Get the configured Function 5 Customer Experience Deploy API URL.
+ * @returns {string} The experience deploy API URL.
  */
 export function getCatalystExperienceDeployApiUrl() {
-  // In local development, route through Vite proxy to eliminate browser CORS preflight blocks
-  if (import.meta.env.DEV) {
-    return '/spikra/experience/deploy';
-  }
-
-  const deployUrl = import.meta.env.VITE_CATALYST_EXPERIENCE_DEPLOY_API_URL;
-  if (deployUrl && typeof deployUrl === 'string' && deployUrl.trim()) {
-    return deployUrl.trim();
-  }
-
-  const baseUrl = getCatalystBaseUrl();
-  if (baseUrl) {
-    return `${baseUrl}/spikra/experience/deploy`;
-  }
-
-  return '/spikra/experience/deploy';
+  return resolveEndpointUrl('/spikra/experience/deploy', import.meta.env.VITE_CATALYST_EXPERIENCE_DEPLOY_API_URL);
 }
 
 /**
- * Get the configured Function 6 Spikra Process Status API URL from Vite environment variables.
- * In local development, routes via Vite dev server proxy to prevent browser CORS preflight issues.
- * @returns {string} The process status API URL or empty string if not configured.
+ * Get the configured Function 6 Spikra Process Status API URL.
+ * @returns {string} The process status API URL.
  */
 export function getCatalystProcessStatusApiUrl() {
-  // In local development, route through Vite proxy to eliminate browser CORS preflight blocks
-  if (import.meta.env.DEV) {
-    return '/spikra/process/status';
-  }
-
-  const statusUrl = import.meta.env.VITE_CATALYST_PROCESS_STATUS_API_URL;
-  if (statusUrl && typeof statusUrl === 'string' && statusUrl.trim()) {
-    return statusUrl.trim();
-  }
-
-  const baseUrl = getCatalystBaseUrl();
-  if (baseUrl) {
-    return `${baseUrl}/spikra/process/status`;
-  }
-
-  return 'https://spikra-ai-proposal-698386704.development.catalystserverless.com/spikra/process/status';
+  return resolveEndpointUrl('/spikra/process/status', import.meta.env.VITE_CATALYST_PROCESS_STATUS_API_URL);
 }
 
 /**
- * Get the configured Function 7 Spikra Customer Experience List API URL from Vite environment variables.
- * In local development, routes via Vite dev server proxy to prevent browser CORS preflight issues.
- * @returns {string} The experience list API URL or empty string if not configured.
+ * Get the configured Function 7 Spikra Customer Experience List API URL.
+ * @returns {string} The experience list API URL.
  */
 export function getCatalystExperienceListApiUrl() {
-  // In local development, route through Vite proxy to eliminate browser CORS preflight blocks
-  if (import.meta.env.DEV) {
-    return '/spikra/experience/list';
-  }
-
-  const listUrl = import.meta.env.VITE_CATALYST_EXPERIENCE_LIST_API_URL;
-  if (listUrl && typeof listUrl === 'string' && listUrl.trim()) {
-    return listUrl.trim();
-  }
-
-  const baseUrl = getCatalystBaseUrl();
-  if (baseUrl) {
-    return `${baseUrl}/spikra/experience/list`;
-  }
-
-  return 'https://spikra-ai-proposal-698386704.development.catalystserverless.com/spikra/experience/list';
+  return resolveEndpointUrl('/spikra/experience/list', import.meta.env.VITE_CATALYST_EXPERIENCE_LIST_API_URL);
 }
+
 
 /**
  * FUNCTION 1: Upload a technical discovery document and optional business logo to Zoho Catalyst backend.
@@ -1291,11 +1231,32 @@ export async function getProcessStatus({
  * @param {number} [timeoutMs=30000] - Request timeout in milliseconds
  * @returns {Promise<{success: boolean, count: number, experiences: Array<Object>}>} List of real experiences
  */
+/**
+ * FUNCTION 7: Retrieve generated customer experiences from the Spikra backend.
+ * 
+ * API Name: Spikra-Experience-List-API
+ * Endpoint: /spikra/experience/deploy?action=list (or /spikra/experience/list)
+ * Method: GET (with POST fallback)
+ * 
+ * @param {Object} [filters={}] - Optional query filters (e.g. { project_id: '...' }, { business_name: '...' }, { status: '...' })
+ * @param {string} [filters.project_id] - Filter by specific project ID
+ * @param {string} [filters.business_name] - Filter by business name
+ * @param {string} [filters.status] - Filter by status (e.g. 'PUBLISHED')
+ * @param {number} [timeoutMs=30000] - Request timeout in milliseconds
+ * @returns {Promise<{success: boolean, count: number, experiences: Array<Object>}>} List of real experiences
+ */
 export async function getCustomerExperiences(filters = {}, timeoutMs = 30000) {
-  const listApiUrl = getCatalystExperienceListApiUrl();
-  const configuredDirectUrl = import.meta.env.VITE_CATALYST_EXPERIENCE_LIST_API_URL;
-  const catalystBackendDirect = 'https://spikra-ai-proposal-698386704.development.catalystserverless.com/spikra/experience/list';
-  const primaryUrl = listApiUrl || configuredDirectUrl || catalystBackendDirect;
+  const isDirectOrigin = typeof window !== 'undefined' && window.location.hostname.includes('spikra-ai-proposal-698386704');
+  const directBase = 'https://spikra-ai-proposal-698386704.development.catalystserverless.com';
+
+  // Primary URL uses the Advanced I/O deploy endpoint with action=list for full universal CORS support (including onslate.com)
+  const primaryCorsUrl = isDirectOrigin || import.meta.env.DEV
+    ? '/spikra/experience/deploy?action=list'
+    : `${directBase}/spikra/experience/deploy?action=list`;
+
+  const fallbackListUrl = isDirectOrigin || import.meta.env.DEV
+    ? '/spikra/experience/list'
+    : `${directBase}/spikra/experience/list`;
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -1318,91 +1279,72 @@ export async function getCustomerExperiences(filters = {}, timeoutMs = 30000) {
     }
   }
 
-  // Cache-busting timestamp parameter ensures live updates without requiring
-  // custom non-safelisted headers (Cache-Control, Pragma, Expires) that cause browser CORS OPTIONS preflight failures
+  // Cache-busting timestamp parameter ensures live updates
   queryParams.set('_ts', String(Date.now()));
   const queryString = queryParams.toString();
   const toGetUrl = (base) => (base.includes('?') ? `${base}&${queryString}` : `${base}?${queryString}`);
 
   try {
-    console.info(`[Catalyst API Function 7] Fetching experiences from ${primaryUrl}`);
-
     let response = null;
     let lastError = null;
 
-    // ATTEMPT 1: Clean GET request (safelisted Accept header only, no CORS OPTIONS preflight)
+    // ATTEMPT 1: Primary CORS-enabled endpoint (/spikra/experience/deploy?action=list)
     try {
-      response = await fetch(toGetUrl(primaryUrl), {
+      console.info(`[Catalyst API Function 7] Fetching experiences from ${primaryCorsUrl}`);
+      response = await fetch(toGetUrl(primaryCorsUrl), {
         method: 'GET',
         headers: {
           'Accept': 'application/json'
         },
         signal: controller.signal
       });
-      // If server explicitly returned 405 Method Not Allowed, mark for fallback
-      if (response && response.status === 405) {
-        console.warn(`[Catalyst API Function 7] GET ${primaryUrl} returned HTTP 405, attempting alternative method`);
+      if (response && !response.ok && response.status !== 404 && response.status !== 405) {
+        // Continue to parse if standard response
+      } else if (response && (response.status === 404 || response.status === 405)) {
         response = null;
       }
-    } catch (getErr) {
-      console.warn(`[Catalyst API Function 7] Primary GET to ${primaryUrl} failed:`, getErr.message);
-      lastError = getErr;
+    } catch (corsErr) {
+      console.warn(`[Catalyst API Function 7] Primary CORS endpoint fetch failed:`, corsErr.message);
+      lastError = corsErr;
+      response = null;
     }
 
-    // ATTEMPT 2: If primary was relative (like in dev) and failed, try direct Catalyst backend GET
-    if (!response && primaryUrl !== catalystBackendDirect) {
+    // ATTEMPT 2: Fallback to basic list GET endpoint (/spikra/experience/list)
+    if (!response) {
       try {
-        console.info(`[Catalyst API Function 7] Retrying with direct backend GET: ${catalystBackendDirect}`);
-        response = await fetch(toGetUrl(catalystBackendDirect), {
+        console.info(`[Catalyst API Function 7] Retrying with secondary endpoint: ${fallbackListUrl}`);
+        response = await fetch(toGetUrl(fallbackListUrl), {
           method: 'GET',
           headers: {
             'Accept': 'application/json'
           },
           signal: controller.signal
         });
-        if (response && response.status === 405) {
+        if (response && (response.status === 404 || response.status === 405)) {
           response = null;
         }
-      } catch (directGetErr) {
-        console.warn(`[Catalyst API Function 7] Direct backend GET failed:`, directGetErr.message);
-        lastError = directGetErr;
+      } catch (fallbackGetErr) {
+        console.warn(`[Catalyst API Function 7] Secondary GET failed:`, fallbackGetErr.message);
+        lastError = fallbackGetErr;
+        response = null;
       }
     }
 
-    // ATTEMPT 3: If GET failed or returned 405, try POST with JSON payload
-    if (!response) {
-      const postUrl = primaryUrl.startsWith('/') && !import.meta.env.DEV ? catalystBackendDirect : primaryUrl;
+    // ATTEMPT 3: Direct backend list GET
+    if (!response && !fallbackListUrl.startsWith('http')) {
       try {
-        console.info(`[Catalyst API Function 7] Retrying with POST: ${postUrl}`, requestPayload);
-        response = await fetch(postUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          body: JSON.stringify(requestPayload),
-          signal: controller.signal
-        });
-      } catch (postErr) {
-        console.warn(`[Catalyst API Function 7] POST request to ${postUrl} failed:`, postErr.message);
-        lastError = postErr;
-      }
-    }
-
-    // ATTEMPT 4: If in local dev or proxy available, try local proxy route
-    if (!response && primaryUrl !== '/spikra/experience/list') {
-      try {
-        console.info(`[Catalyst API Function 7] Final fallback to local proxy /spikra/experience/list`);
-        response = await fetch(toGetUrl('/spikra/experience/list'), {
+        const directList = `${directBase}/spikra/experience/list`;
+        console.info(`[Catalyst API Function 7] Retrying with direct backend GET: ${directList}`);
+        response = await fetch(toGetUrl(directList), {
           method: 'GET',
           headers: {
             'Accept': 'application/json'
           },
           signal: controller.signal
         });
-      } catch (proxyErr) {
-        console.warn(`[Catalyst API Function 7] Local proxy fallback failed:`, proxyErr.message);
-        lastError = proxyErr;
+      } catch (directErr) {
+        console.warn(`[Catalyst API Function 7] Direct backend GET failed:`, directErr.message);
+        lastError = directErr;
       }
     }
 
@@ -1452,9 +1394,7 @@ export async function getCustomerExperiences(filters = {}, timeoutMs = 30000) {
         responseData?.error_message ||
         responseData?.message ||
         responseData?.error ||
-        (response.status === 405
-          ? 'Experience list service request method is not supported (HTTP 405).'
-          : `Unable to retrieve customer experiences (HTTP ${response.status})`);
+        `Unable to retrieve customer experiences (HTTP ${response.status})`;
       console.error(`[Catalyst API Function 7] Request failed with HTTP ${response.status}:`, responseData);
       const err = new Error(errorMsg);
       err.status = response.status;
@@ -1490,4 +1430,5 @@ export async function getCustomerExperiences(filters = {}, timeoutMs = 30000) {
 
 // Alias for getCustomerExperiences
 export const getExperiences = getCustomerExperiences;
+
 
