@@ -2,9 +2,23 @@ import * as React from "react";
 
 export interface SpinningBorderButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  theme?: "orange" | "dark" | "navy";
+  theme?: "orange" | "blue" | "dark" | "navy";
   showArrow?: boolean;
 }
+
+// The ring's resting color is a translucent white — deliberately NOT the same
+// color as the button surface — so it reads as a distinct ring at all times,
+// with a brighter "comet" continuously sweeping around it for the spin effect.
+// (An earlier version used the button's own color for the ring's resting state,
+// which made the rotation almost invisible except for an instant once per lap.)
+const RING_GRADIENT: Record<string, string> = {
+  orange:
+    "conic-gradient(from 0deg, rgba(255,255,255,0.4) 0deg, rgba(255,255,255,0.4) 260deg, #FFD9A8 300deg, #FFFFFF 330deg, #FFD9A8 355deg, rgba(255,255,255,0.4) 360deg)",
+  blue:
+    "conic-gradient(from 0deg, rgba(255,255,255,0.4) 0deg, rgba(255,255,255,0.4) 260deg, #B8CCFF 300deg, #FFFFFF 330deg, #B8CCFF 355deg, rgba(255,255,255,0.4) 360deg)",
+  dark: "conic-gradient(from 0deg, rgba(255,255,255,0.25) 0deg, rgba(255,255,255,0.25) 260deg, #d4d4d8 300deg, #FFFFFF 330deg, #d4d4d8 355deg, rgba(255,255,255,0.25) 360deg)",
+  navy: "conic-gradient(from 0deg, rgba(255,255,255,0.25) 0deg, rgba(255,255,255,0.25) 260deg, #8fa8cc 300deg, #FFFFFF 330deg, #8fa8cc 355deg, rgba(255,255,255,0.25) 360deg)",
+};
 
 export const SpinningBorderButton = React.forwardRef<
   HTMLButtonElement,
@@ -13,6 +27,7 @@ export const SpinningBorderButton = React.forwardRef<
   {
     children = "Upload Document",
     className = "",
+    style,
     theme = "orange",
     showArrow = false,
     disabled,
@@ -21,49 +36,53 @@ export const SpinningBorderButton = React.forwardRef<
   ref,
 ) {
   const isOrange = theme === "orange";
+  const isBlue = theme === "blue";
   const isDark = theme === "dark";
 
   return (
     <button
       ref={ref}
       disabled={disabled}
+      // padding is set inline (not via a p-[3px] Tailwind class) because that
+      // arbitrary-value utility was silently not being generated in this project's
+      // build — computed padding measured 0px despite the class being present,
+      // which in turn meant the surface layer (sized 100%/100%) covered the ring
+      // layer completely, at every instant, with zero space for it to ever show.
+      // An inline style can't be dropped by a build-tool content scan.
+      style={{ padding: 3, ...style }}
       className={
-        `group relative inline-flex items-center justify-center h-[38px] rounded-full p-[1.5px] overflow-hidden transition-all duration-300 select-none ${
+        `group relative inline-flex items-center justify-center h-[38px] rounded-full overflow-hidden transition-all duration-300 select-none ${
           disabled
             ? "opacity-50 cursor-not-allowed pointer-events-none shadow-none"
             : isOrange
             ? "hover:-translate-y-0.5 hover:shadow-[0_6px_22px_rgba(255,107,0,0.5),0_0_18px_rgba(255,140,40,0.3)] shadow-[0_2px_10px_rgba(255,107,0,0.3)] active:translate-y-0"
+            : isBlue
+            ? "hover:-translate-y-0.5 hover:shadow-[0_6px_22px_rgba(0,82,255,0.5),0_0_18px_rgba(77,139,255,0.3)] shadow-[0_2px_10px_rgba(0,82,255,0.3)] active:translate-y-0"
             : "hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(255,255,255,0.15)] shadow-sm"
         }` + (className ? ` ${className}` : "")
       }
       {...props}
     >
-      {/* 1. Permanent Base Border - Solid and intact at all times */}
+      {/* 1. Spinning gradient ring, filling the whole button. Only the 3px edge stays
+             visible because the surface layer below is a normal (non-absolute) flow
+             child sized w-full/h-full — inside a flex button with p-[3px], that
+             resolves against the content-box, so it naturally covers everything
+             except this ring. (No mask-composite trick needed — that rendered
+             nothing in practice; plain layering is simpler and actually works.) */}
       <span
-        className={
-          isOrange
-            ? "absolute inset-0 rounded-full bg-gradient-to-r from-[#FF6B00] via-[#FFA843] to-[#FF5500] opacity-90 transition-opacity duration-300 group-hover:opacity-100"
-            : isDark
-            ? "absolute inset-0 rounded-full bg-zinc-800 transition-opacity duration-300"
-            : "absolute inset-0 rounded-full bg-[#0B192C] transition-opacity duration-300"
-        }
+        aria-hidden="true"
+        className="absolute inset-0 rounded-full animate-[spin_2.2s_linear_infinite] pointer-events-none"
+        style={{ background: RING_GRADIENT[theme] ?? RING_GRADIENT.orange }}
       />
 
-      {/* 2. True Centered Spinning Border Beam - Perfectly circular 360-degree rotation with zero cutoff */}
-      <span
-        className={
-          isOrange
-            ? "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350%] aspect-square animate-[spikra-spin-beam_3s_linear_infinite] bg-[conic-gradient(from_0deg_at_50%_50%,rgba(255,107,0,0)_0deg,rgba(255,107,0,0)_240deg,rgba(255,160,50,0.35)_280deg,#FFA843_320deg,#FFE8B8_345deg,#FFFFFF_355deg,rgba(255,107,0,0)_360deg)] opacity-95 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-            : "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350%] aspect-square animate-[spikra-spin-beam_3s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,transparent_0%,transparent_75%,#ffffff_100%)] opacity-70 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-        }
-      />
-
-      {/* 3. Button Surface & Content with Generous Horizontal Padding */}
+      {/* 2. Button Surface & Content with Generous Horizontal Padding */}
       <span
         className={
           `relative z-10 inline-flex items-center justify-center gap-2.5 uppercase text-[12px] font-bold tracking-wider w-full h-full rounded-full px-8 transition-all duration-300 whitespace-nowrap ${
             isOrange
               ? "text-white bg-gradient-to-r from-[#FF6B00] via-[#FF7A00] to-[#FF5500] shadow-[inset_0_1px_0_rgba(255,255,255,0.45),inset_0_-1px_0_rgba(0,0,0,0.15)] group-hover:brightness-105"
+              : isBlue
+              ? "text-white bg-gradient-to-r from-[#0052FF] via-[#1E6BFF] to-[#003087] shadow-[inset_0_1px_0_rgba(255,255,255,0.45),inset_0_-1px_0_rgba(0,0,0,0.15)] group-hover:brightness-105"
               : isDark
               ? "text-zinc-300 group-hover:text-white bg-gradient-to-b from-zinc-800 to-zinc-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]"
               : "text-white bg-gradient-to-b from-[#1E2E45] to-[#0B192C]"
@@ -82,7 +101,7 @@ export const SpinningBorderButton = React.forwardRef<
             strokeWidth="2.5"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className="transition-transform duration-300 group-hover:translate-x-1 flex-shrink-0"
+            className="relative z-10 transition-transform duration-300 group-hover:translate-x-1 flex-shrink-0"
           >
             <path d="M5 12h14" />
             <path d="m12 5 7 7-7 7" />

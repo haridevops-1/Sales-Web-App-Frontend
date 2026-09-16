@@ -1,0 +1,14 @@
+.generator-dashboard-view {
+  padding-bottom: 3.5rem;
+}
+
+.dashboard-back-row {
+  padding-top: 1.5rem;
+}
+
+.generator-body-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+

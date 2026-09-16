@@ -77,9 +77,9 @@ export default function AllExperiences({
               <ArrowLeft size={15} className="btn-back-arrow" />
               <span>Back to Upload Document</span>
             </button>
-            <h1 className="archive-main-title">All Customer Experiences</h1>
+            <h1 className="archive-main-title">All Customer Showcases</h1>
             <p className="archive-subtitle">
-              Interactive proposal experiences generated from technical discovery documents.
+              Interactive proposal showcases generated from technical discovery documents.
             </p>
           </div>
 
@@ -91,7 +91,7 @@ export default function AllExperiences({
                   className="btn btn-secondary"
                   onClick={onRefresh}
                   disabled={isLoading}
-                  title="Refresh customer experiences from Catalyst backend"
+                  title="Refresh customer showcases from Catalyst backend"
                 >
                   <span className={isLoading ? 'spinning' : ''}>↻</span>
                   <span>{isLoading ? 'Refreshing...' : 'Refresh'}</span>
@@ -171,7 +171,7 @@ export default function AllExperiences({
         {isLoading && totalCount === 0 ? (
           <div className="archive-empty-card animate-fade-in">
             <div className="gen-exp-spinner" style={{ margin: '0 auto 1rem' }}></div>
-            <h3 className="empty-heading">Loading customer experiences...</h3>
+            <h3 className="empty-heading">Loading customer showcases...</h3>
             <p className="empty-text">
               Retrieving live customer proposals from Zoho Catalyst serverless backend...
             </p>
@@ -180,7 +180,7 @@ export default function AllExperiences({
           /* ERROR STATE */
           <div className="archive-empty-card animate-fade-in" style={{ borderColor: '#fed7d7', background: '#fff5f5' }}>
             <div className="empty-symbol">⚠️</div>
-            <h3 className="empty-heading" style={{ color: '#c53030' }}>Unable to load customer experiences.</h3>
+            <h3 className="empty-heading" style={{ color: '#c53030' }}>Unable to load customer showcases.</h3>
             <p className="empty-text" style={{ color: '#742a2a' }}>
               {typeof error === 'string' ? error : error?.message || 'A network error occurred.'}
             </p>
@@ -202,7 +202,7 @@ export default function AllExperiences({
               {searchQuery.trim() && (
                 <div className="archive-search-active-bar animate-fade-in">
                   <span>
-                    Showing <strong>{filteredExperiences.length}</strong> of {totalCount} experiences matching "<em>{searchQuery}</em>"
+                    Showing <strong>{filteredExperiences.length}</strong> of {totalCount} showcases matching "<em>{searchQuery}</em>"
                   </span>
                   <button
                     type="button"
@@ -371,12 +371,12 @@ export default function AllExperiences({
                               disabled={!isPublished || !generatedUrl}
                               title={
                                 isPublished && generatedUrl
-                                  ? 'Open live customer experience in a new tab'
-                                  : 'Experience URL is not published yet'
+                                  ? 'Open live customer showcase in a new tab'
+                                  : 'Showcase URL is not published yet'
                               }
                             >
                               <ExternalLink size={14} />
-                              <span>Open Experience</span>
+                              <span>Open Showcase</span>
                             </Button>
 
                             <Button
@@ -386,7 +386,7 @@ export default function AllExperiences({
                               disabled={!isPublished || !generatedUrl}
                               title={
                                 isPublished && generatedUrl
-                                  ? 'Copy live customer experience URL'
+                                  ? 'Copy live customer showcase URL'
                                   : 'URL cannot be copied until published'
                               }
                             >
@@ -414,9 +414,9 @@ export default function AllExperiences({
             /* Empty Filtered Search State */
             <div className="archive-empty-card animate-fade-in search-empty-state">
               <div className="empty-symbol">🔍</div>
-              <h3 className="empty-heading">No matching customer experiences</h3>
+              <h3 className="empty-heading">No matching customer showcases</h3>
               <p className="empty-text">
-                No experiences found matching <strong>"{searchQuery}"</strong>. Try checking the business name, project keyword, or clear the search filter.
+                No showcases found matching <strong>"{searchQuery}"</strong>. Try checking the business name, project keyword, or clear the search filter.
               </p>
               <div className="empty-action-group">
                 <button
@@ -433,7 +433,7 @@ export default function AllExperiences({
           /* Empty State Banner */
           <div className="archive-empty-card">
             <div className="empty-symbol">📁</div>
-            <h3 className="empty-heading">No customer experiences have been generated yet.</h3>
+            <h3 className="empty-heading">No customer showcases have been generated yet.</h3>
             <p className="empty-text">
               Uploaded documents will appear here after processing and publishing.
             </p>

@@ -44,7 +44,7 @@ export default function QuickStats({ totalCount = 0, publishedCount = 0 }) {
             <span className="quick-stat-value">
               <CountUp to={publishedCount} duration={1.1} separator="" />
             </span>
-            <span className="quick-stat-label">Live Experiences</span>
+            <span className="quick-stat-label">Live Showcases</span>
           </div>
         </SpotlightCard>
       </motion.div>

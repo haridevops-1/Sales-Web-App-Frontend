@@ -42,10 +42,10 @@ export default function GeneratedExperiences({
               <span>Customer Proposals</span>
             </div>
             <h2 id="gen-exp-heading" className="gen-exp-main-title">
-              Generated Customer Experiences
+              Generated Customer Showcases
             </h2>
             <p className="gen-exp-subtitle">
-              Live interactive proposal experiences retrieved dynamically from the Spikra serverless backend.
+              Live interactive proposal showcases retrieved dynamically from the Spikra serverless backend.
             </p>
           </div>
 
@@ -241,11 +241,11 @@ export default function GeneratedExperiences({
                       disabled={!isPublished || !generatedUrl}
                       title={
                         isPublished && generatedUrl
-                          ? 'Open live customer experience in a new tab'
-                          : 'Live experience URL is not available yet'
+                          ? 'Open live customer showcase in a new tab'
+                          : 'Live showcase URL is not available yet'
                       }
                     >
-                      <span>Open Experience</span>
+                      <span>Open Showcase</span>
                     </button>
 
                     <button

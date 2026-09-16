@@ -11,6 +11,13 @@ html {
   font-size: 15px;
   -webkit-text-size-adjust: 100%;
   scroll-behavior: smooth;
+  /* App is a fixed light theme — without this, browsers in OS dark mode
+     paint their default (often black) canvas in any rounding/overscroll
+     gap instead of our background, which shows up as black slivers at
+     the edges of the viewport. */
+  color-scheme: light;
+  background-color: var(--bg-app);
+  height: 100%;
 }
 
 body {
@@ -22,6 +29,12 @@ body {
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
   overflow-x: hidden;
+  overscroll-behavior-y: none;
+}
+
+#root {
+  min-height: 100vh;
+  background-color: var(--bg-app);
 }
 
 h1, h2, h3, h4, h5, h6 {

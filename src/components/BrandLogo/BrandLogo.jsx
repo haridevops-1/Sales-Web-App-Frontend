@@ -1,7 +1,6 @@
 import React from 'react';
 import './BrandLogo.css';
-import { BorderBeam } from '@/components/ui/border-beam-search';
-import spikraLogoImg from '../../assets/brand/spikra-logo.png';
+import spikraSymbol from '@/assets/brand/spikra-symbol.png';
 
 export default function BrandLogo({ showSubtitle = true, theme = 'dark', onClick }) {
   return (
@@ -14,21 +13,19 @@ export default function BrandLogo({ showSubtitle = true, theme = 'dark', onClick
     >
       <div className="logo-image-container">
         <img
-          src={spikraLogoImg}
-          alt="Spikra Emblem"
-          className="spikra-logo-img"
+          src={spikraSymbol}
+          alt="Spikra"
+          className="spikra-logo-symbol-img"
         />
       </div>
 
       <div className="logo-text-group">
         <div className="logo-wordmark-row">
-          <span className="logo-name">Spikra</span>
-          <BorderBeam size="line" colorVariant="sunset" duration={3.5} borderRadius={6} className="logo-partner-beam">
-            <span className="logo-partner-pill">Zoho Premium Partner</span>
-          </BorderBeam>
+          <span className="logo-name">SPIKRA</span>
+          <span className="logo-partner-pill">Zoho Premium Partner</span>
         </div>
         {showSubtitle && (
-          <span className="logo-subtitle">Customer Experience Engine</span>
+          <span className="logo-subtitle">Internal Sales Hub</span>
         )}
       </div>
     </div>

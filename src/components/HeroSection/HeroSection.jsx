@@ -17,7 +17,7 @@ export default function HeroSection() {
             direction="top"
           />
           <GradientText className="hero-title-accent" animationSpeed={5}>
-            Clear Customer Experiences
+            Clear Customer Showcases
           </GradientText>
         </h1>
 

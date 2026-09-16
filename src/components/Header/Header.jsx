@@ -47,7 +47,7 @@ export default function Header({
               />
             )}
             <span className="tab-icon">⚡</span>
-            <span>Create Experience</span>
+            <span>Create Showcase</span>
           </button>
 
           <button
@@ -63,7 +63,7 @@ export default function Header({
               />
             )}
             <span className="tab-icon">📁</span>
-            <span>All Experiences</span>
+            <span>All Showcases</span>
             <AnimatePresence mode="popLayout">
               <motion.span
                 key={totalCount}

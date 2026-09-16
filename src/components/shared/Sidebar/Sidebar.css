@@ -1,0 +1,478 @@
+/* Spikra Enterprise Dark Navy Sidebar - Clean, Crisp, Professional & High-Performance */
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(4, 9, 18, 0.65);
+  backdrop-filter: blur(4px);
+  z-index: 998;
+}
+
+.spikra-enterprise-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 305px;
+  background-color: #060D17;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease, box-shadow 0.28s ease, visibility 0.28s ease;
+  font-family: var(--font-family-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+.spikra-enterprise-sidebar.sidebar-closed {
+  transform: translateX(-100%);
+  box-shadow: none !important;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.spikra-enterprise-sidebar.sidebar-open {
+  transform: translateX(0);
+  box-shadow: 14px 0 36px rgba(0, 0, 0, 0.55);
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.sidebar-inner-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 1rem 1.25rem 1.15rem; /* py-4 px-5 */
+}
+
+/* Top Header — text-only now (icon removed), so everything centers on one line */
+.sidebar-brand-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-bottom: 1.15rem;
+  margin-bottom: 1.35rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.sidebar-close-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+  flex-shrink: 0;
+}
+
+.sidebar-close-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #FFFFFF;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08);
+  transform: rotate(90deg) scale(1.06);
+}
+
+.sidebar-close-btn:active {
+  transform: rotate(90deg) scale(0.96);
+}
+
+/* Scroll Area & Section Distribution */
+.sidebar-nav-scroll {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding-right: 0.25rem;
+}
+
+.sidebar-nav-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar-nav-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 4px;
+}
+
+/* Section Header Typography */
+.sidebar-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.sidebar-section-title {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #64748B;
+  padding-left: 0.5rem;
+  text-transform: uppercase;
+}
+
+.sidebar-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+/* Active Salesperson Highlight Card */
+.salesperson-section {
+  gap: 0.45rem;
+}
+
+.sidebar-consultant-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 12px;
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(51, 65, 85, 0.5);
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.sidebar-consultant-card:hover {
+  background: rgba(30, 41, 59, 0.75);
+  border-color: rgba(71, 85, 105, 0.7);
+}
+
+.consultant-avatar-ring {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  padding: 2px;
+  background: conic-gradient(from 200deg, var(--spikra-orange), #0052FF, var(--spikra-orange));
+  flex-shrink: 0;
+}
+
+.consultant-avatar-circle {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #14335E 0%, #060D17 100%);
+  color: #FFFFFF;
+  font-size: 0.72rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.02em;
+}
+
+.consultant-pulse-dot {
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 9px;
+  height: 9px;
+  background-color: #10B981;
+  border: 2px solid #060D17;
+  border-radius: 50%;
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.75);
+  animation: live-avatar-pulse 2s infinite cubic-bezier(0.66, 0, 0, 1);
+}
+
+.consultant-info-box {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.sidebar-consultant-name {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #F8FAFC;
+  white-space: nowrap;
+}
+
+.consultant-role-badge {
+  font-size: 0.68rem;
+  color: #FFA34D;
+  font-weight: 500;
+}
+
+/* Module Block */
+.sidebar-module-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+/* Main Nav Item & Hover Animations */
+.sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.55rem 0.65rem;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  color: #FFFFFF;
+  font-family: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.18s ease, color 0.18s ease;
+  letter-spacing: -0.01em;
+}
+
+.sidebar-nav-item:hover:not(.is-disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  color: #FFFFFF;
+  transform: translateX(4px);
+}
+
+.sidebar-nav-item.is-active-parent {
+  color: #FFFFFF;
+}
+
+.sidebar-nav-item.is-disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.soon-badge {
+  margin-left: auto;
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: rgba(255, 255, 255, 0.08);
+  color: #94A3B8;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+}
+
+/* Nav Icons (Lucide) & Interactive Hover States */
+.nav-item-icon {
+  color: rgba(255, 255, 255, 0.75);
+  flex-shrink: 0;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s ease;
+}
+
+.nav-item-icon.orange {
+  color: #FF6B00;
+}
+
+.nav-item-icon.muted {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.sidebar-nav-item:hover:not(.is-disabled) .nav-item-icon {
+  transform: scale(1.12);
+  color: #FF7A00;
+}
+
+.nav-item-label {
+  color: #F8FAFC;
+}
+
+.nav-item-label.muted {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Submenu Links — indented under a continuous vertical guide line */
+.sidebar-sub-menu {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding-left: 1.5rem;
+  margin-left: 0.6rem;
+}
+
+.sidebar-sub-menu::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  bottom: 10px;
+  left: 0;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.sub-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.42rem 0.65rem;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.78);
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.18s ease, color 0.18s ease;
+  letter-spacing: -0.005em;
+}
+
+.sub-nav-icon {
+  color: rgba(255, 255, 255, 0.55);
+  flex-shrink: 0;
+  transition: color 0.18s ease, transform 0.18s ease;
+}
+
+.sub-nav-link:hover .sub-nav-icon {
+  color: #FFA34D;
+  transform: scale(1.12);
+}
+
+.sub-nav-link.is-active .sub-nav-icon {
+  color: var(--spikra-orange);
+}
+
+.sub-nav-link:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #FFFFFF;
+}
+
+.sub-nav-link.is-active {
+  background: rgba(255, 107, 0, 0.14);
+  color: #FFA34D;
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px rgba(255, 107, 0, 0.2);
+}
+
+/* Utility Links (Settings & Profile) */
+.sidebar-nav-item.utility-link {
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 500;
+  font-size: 0.88rem;
+  padding: 0.5rem 0.65rem;
+}
+
+.sidebar-nav-item.utility-link:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #FFFFFF;
+}
+
+.sidebar-nav-item.utility-link:hover .nav-item-icon {
+  color: #FF7A00;
+}
+
+/* Complete About Spikra Section */
+.about-section {
+  gap: 0.45rem;
+}
+
+.sidebar-about-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 0.75rem;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.sidebar-about-card:hover {
+  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.about-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+}
+
+.about-company-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+
+.about-partner-pill {
+  font-size: 0.56rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #FF851B;
+  background: rgba(255, 107, 0, 0.14);
+  border: 1px solid rgba(255, 107, 0, 0.3);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.about-company-desc {
+  font-size: 0.76rem;
+  color: #CBD5E1;
+  line-height: 1.5;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.about-company-desc strong {
+  color: #FFFFFF;
+  font-weight: 700;
+}
+
+.about-site-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #FFFFFF;
+  text-decoration: none;
+  margin-top: 0.15rem;
+  padding: 0.45rem 0.7rem;
+  border-radius: 7px;
+  background: linear-gradient(180deg, #FF7A1F 0%, #E65A00 100%);
+  box-shadow: 0 2px 8px rgba(255, 107, 0, 0.28);
+  transition: box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.about-site-link:hover {
+  box-shadow: 0 4px 14px rgba(255, 107, 0, 0.4);
+  transform: translateY(-1px);
+}
+
+.about-site-link-icon {
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.about-site-link:hover .about-site-link-icon {
+  transform: translate(2px, -2px);
+}
+
+/* Bottom Footer */
+.sidebar-footer {
+  padding-top: 0.75rem;
+  margin-top: auto;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sidebar-copyright-text {
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.4);
+  display: block;
+  padding-left: 0.25rem;
+}

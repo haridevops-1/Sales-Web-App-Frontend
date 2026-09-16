@@ -1,0 +1,328 @@
+.discovery-upload-card {
+  background: #ffffff;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+.discovery-upload-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--spikra-orange) 0%, #ffa043 50%, var(--spikra-blue) 100%);
+}
+
+.discovery-upload-inner {
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.discovery-glare-wrap {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  display: block;
+}
+
+/* Dashed Dropzone Box */
+.discovery-dropzone {
+  border: 1.5px dashed var(--border-medium);
+  border-radius: var(--radius-lg);
+  background-color: var(--bg-surface-muted);
+  padding: 3rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 0.6rem;
+  transition: border-color 220ms ease, background-color 220ms ease, box-shadow 220ms ease;
+}
+
+.discovery-dropzone.has-selection {
+  border-style: solid;
+  border-color: var(--color-success-border);
+  background-color: var(--color-success-bg);
+}
+
+.discovery-dropzone.disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.discovery-dropzone-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--spikra-blue-50);
+  color: var(--spikra-blue);
+  border: 1px solid var(--border-blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.4rem;
+  animation: discoveryIconFloat 2.6s ease-in-out infinite;
+}
+
+@keyframes discoveryIconFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+.discovery-dropzone:hover .discovery-dropzone-icon {
+  color: var(--spikra-orange);
+  background: var(--spikra-orange-50);
+  border-color: var(--spikra-orange-200);
+}
+
+.discovery-dropzone-title {
+  font-family: var(--font-family-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.discovery-dropzone-hint {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin: 0 0 0.5rem 0;
+  max-width: 380px;
+}
+
+.discovery-browse-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* Primary action: opens the real Zoho WorkDrive portal in a new tab */
+.btn-open-workdrive {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-family-display);
+  font-size: 0.9rem;
+  font-weight: 700;
+  padding: 0.7rem 1.5rem;
+  border-radius: var(--radius-md);
+  transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+  background: linear-gradient(180deg, #E65A00 0%, #C94600 100%);
+  color: #ffffff;
+  border: 1px solid var(--spikra-orange-dark);
+  box-shadow: 0 2px 6px rgba(201, 70, 0, 0.22);
+  cursor: pointer;
+}
+
+.btn-open-workdrive:hover:not(:disabled) {
+  background: linear-gradient(180deg, #FF6B00 0%, #D95300 100%);
+  box-shadow: 0 4px 12px rgba(255, 107, 0, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn-open-workdrive:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.discovery-supported-types {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin: 0.65rem 0 0 0;
+}
+
+/* Confirmation state, shown after WorkDrive has been opened */
+.discovery-workdrive-confirmed {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.discovery-confirmed-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--color-success-bg);
+  color: var(--color-success);
+  border: 1px solid var(--color-success-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.3rem;
+}
+
+.btn-reopen-workdrive {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--spikra-orange-hover);
+  padding: 0.35rem 0.1rem;
+}
+
+.btn-reopen-workdrive:hover {
+  color: var(--spikra-orange-dark);
+  text-decoration: underline;
+}
+
+/* Business / Customer Details Form */
+.discovery-details-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.discovery-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.discovery-field-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.discovery-req-asterisk {
+  color: var(--color-danger);
+}
+
+.discovery-field-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.discovery-field-icon {
+  position: absolute;
+  left: 0.85rem;
+  color: #94A3B8;
+  pointer-events: none;
+}
+
+.discovery-field-input {
+  width: 100%;
+  height: 2.5rem;
+  padding: 0 0.85rem 0 2.35rem;
+  background: var(--bg-surface-muted);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  font-family: var(--font-family-body);
+  font-size: 0.88rem;
+  color: var(--text-primary);
+  transition: background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.discovery-field-input::placeholder {
+  color: #94A3B8;
+}
+
+.discovery-field-input:focus {
+  outline: none;
+  background: #ffffff;
+  border-color: var(--spikra-orange);
+  box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.12);
+}
+
+.discovery-field-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+  .discovery-details-form {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Note Row */
+.discovery-note-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.85rem 1rem;
+  background: var(--spikra-blue-50);
+  border: 1px solid var(--border-blue);
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.discovery-note-icon {
+  color: var(--spikra-blue);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* Footer */
+.discovery-footer-row {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-discovery-continue {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.72rem 1.6rem;
+  background: linear-gradient(180deg, #E65A00 0%, #C94600 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-family: var(--font-family-display);
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(201, 70, 0, 0.22);
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+}
+
+.btn-discovery-continue:hover:not(:disabled) {
+  background: linear-gradient(180deg, #FF6B00 0%, #D95300 100%);
+  box-shadow: 0 4px 12px rgba(255, 107, 0, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn-discovery-continue:disabled {
+  background: #E2E8F0;
+  color: #94A3B8;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+  .discovery-upload-inner {
+    padding: 1.25rem;
+  }
+  .discovery-dropzone {
+    padding: 2rem 1.25rem;
+  }
+  .btn-open-workdrive {
+    width: 100%;
+    justify-content: center;
+  }
+  .discovery-footer-row {
+    justify-content: stretch;
+  }
+  .btn-discovery-continue {
+    width: 100%;
+  }
+}

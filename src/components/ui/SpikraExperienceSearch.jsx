@@ -19,6 +19,7 @@ export default function SpikraExperienceSearch({
   onChange,
   onClear,
   placeholder = 'Search business, proposal, or project...',
+  ariaLabel = 'Search customer experiences by business or project',
   totalCount,
   filteredCount,
 }) {
@@ -59,7 +60,7 @@ export default function SpikraExperienceSearch({
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
         placeholder={placeholder}
-        aria-label="Search customer experiences by business or project"
+        aria-label={ariaLabel}
         autoComplete="off"
         spellCheck="false"
       />

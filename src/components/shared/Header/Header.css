@@ -1,0 +1,131 @@
+.spikra-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background-color: var(--spikra-navy);
+  border-bottom: 1px solid #1E2E45;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.header-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 4.35rem;
+  gap: 1.25rem;
+}
+
+/* Left Group */
+.header-left-group {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.header-left-divider {
+  width: 1px;
+  height: 26px;
+  background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.16), transparent);
+  flex-shrink: 0;
+}
+
+/* Navigation Tabs */
+.header-nav-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background-color: rgba(255, 255, 255, 0.08);
+  padding: 0.25rem;
+  border-radius: var(--radius-md);
+  border: 1px solid #1E2E45;
+}
+
+.nav-tab-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.95rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #CBD5E1;
+  transition: color 150ms ease;
+  border: 1px solid transparent;
+  cursor: pointer;
+  background: transparent;
+  isolation: isolate;
+}
+
+.nav-tab-btn:hover:not(.active) {
+  color: #FF7A00;
+}
+
+.nav-tab-pill {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: var(--radius-sm);
+  background-color: var(--spikra-orange);
+  box-shadow: 0 2px 8px rgba(255, 107, 0, 0.35);
+  border: 1px solid var(--spikra-orange-dark);
+}
+
+.nav-tab-pill.proposal-pill {
+  background-color: #FF6B00;
+}
+
+.nav-tab-btn.active {
+  color: #FFFFFF;
+}
+
+.tab-icon {
+  font-size: 0.85rem;
+}
+
+.tab-badge {
+  position: relative;
+  background-color: rgba(0, 0, 0, 0.3);
+  color: #FFFFFF;
+  font-size: 0.675rem;
+  font-weight: 700;
+  padding: 0.1rem 0.4rem;
+  border-radius: var(--radius-full);
+  min-width: 1.15rem;
+  text-align: center;
+}
+
+.nav-tab-btn.active .tab-badge {
+  background-color: rgba(0, 0, 0, 0.35);
+}
+
+/* Header Right */
+.header-right {
+  display: flex;
+  align-items: center;
+}
+
+@media (max-width: 900px) {
+  .header-nav-tabs {
+    display: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .header-container {
+    gap: 0.5rem;
+  }
+  .header-left-group {
+    gap: 0.6rem;
+  }
+  .header-left-divider {
+    display: none;
+  }
+  .hamburger-label-group {
+    display: none;
+  }
+  .spikra-hamburger-btn {
+    padding: 0.5rem;
+  }
+}

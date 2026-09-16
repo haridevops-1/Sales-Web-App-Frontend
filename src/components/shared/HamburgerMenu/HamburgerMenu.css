@@ -1,0 +1,85 @@
+.spikra-hamburger-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0.85rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  color: #F8FAFC;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 500;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  outline: none;
+  user-select: none;
+}
+
+.spikra-hamburger-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.22);
+  color: #FFFFFF;
+  transform: translateY(-1px);
+}
+
+.spikra-hamburger-btn:active {
+  transform: translateY(0);
+}
+
+.spikra-hamburger-btn.is-active {
+  background: rgba(255, 107, 0, 0.15);
+  border-color: rgba(255, 107, 0, 0.4);
+  color: #FFA34D;
+}
+
+.hamburger-icon-box {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3.5px;
+  width: 16px;
+  height: 14px;
+}
+
+.hamburger-bar {
+  display: block;
+  width: 100%;
+  height: 2px;
+  background-color: currentColor;
+  border-radius: 2px;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+}
+
+.spikra-hamburger-btn.is-active .top-bar {
+  transform: translateY(5.5px) rotate(45deg);
+}
+
+.spikra-hamburger-btn.is-active .middle-bar {
+  opacity: 0;
+  transform: scaleX(0);
+}
+
+.spikra-hamburger-btn.is-active .bottom-bar {
+  transform: translateY(-5.5px) rotate(-45deg);
+}
+
+.hamburger-label-group {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.hamburger-label-text {
+  letter-spacing: -0.01em;
+}
+
+.hamburger-chevron {
+  transition: transform 0.25s ease;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.hamburger-chevron.rotated {
+  transform: rotate(180deg);
+  color: #FFA34D;
+}
