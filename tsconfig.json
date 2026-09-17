@@ -23,10 +23,9 @@
     "noFallthroughCasesInSwitch": true,
 
     /* Path Aliases */
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "next/image": ["src/lib/next-image.tsx"]
+      "@/*": ["./src/*"],
+      "next/image": ["./src/lib/next-image.tsx"]
     }
   },
   "include": ["src/**/*"]

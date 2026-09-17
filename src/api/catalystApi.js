@@ -67,26 +67,29 @@ export function getCatalystUploadApiUrl() {
 
 /**
  * Get the configured Function 2 Document Process API URL.
+ * Real Catalyst API Gateway route: POST /spikra/document/process -> spikra_document_process (basicio)
  * @returns {string} The process API URL.
  */
 export function getCatalystProcessApiUrl() {
-  return resolveEndpointUrl('/spikra/experience/deploy?action=process', import.meta.env.VITE_CATALYST_DOCUMENT_PROCESS_API_URL || `${DEFAULT_CATALYST_BASE_URL}/spikra/experience/deploy?action=process`);
+  return resolveEndpointUrl('/spikra/document/process', import.meta.env.VITE_CATALYST_DOCUMENT_PROCESS_API_URL || `${DEFAULT_CATALYST_BASE_URL}/spikra/document/process`);
 }
 
 /**
  * Get the configured Function 3 AI Analysis API URL.
+ * Real Catalyst API Gateway route: POST /spikra/document/analyze -> spikra_ai_analysis (basicio)
  * @returns {string} The analysis API URL.
  */
 export function getCatalystAnalysisApiUrl() {
-  return resolveEndpointUrl('/spikra/experience/deploy?action=analyze', import.meta.env.VITE_CATALYST_AI_ANALYSIS_API_URL || `${DEFAULT_CATALYST_BASE_URL}/spikra/experience/deploy?action=analyze`);
+  return resolveEndpointUrl('/spikra/document/analyze', import.meta.env.VITE_CATALYST_AI_ANALYSIS_API_URL || `${DEFAULT_CATALYST_BASE_URL}/spikra/document/analyze`);
 }
 
 /**
  * Get the configured Function 4 Customer Experience Generate API URL.
+ * Real Catalyst API Gateway route: POST /spikra/experience/generate -> spikra_experience_generate (basicio)
  * @returns {string} The experience generate API URL.
  */
 export function getCatalystExperienceApiUrl() {
-  return resolveEndpointUrl('/spikra/experience/deploy?action=generate', import.meta.env.VITE_CATALYST_EXPERIENCE_GENERATE_API_URL || `${DEFAULT_CATALYST_BASE_URL}/spikra/experience/deploy?action=generate`);
+  return resolveEndpointUrl('/spikra/experience/generate', import.meta.env.VITE_CATALYST_EXPERIENCE_GENERATE_API_URL || `${DEFAULT_CATALYST_BASE_URL}/spikra/experience/generate`);
 }
 
 /**
@@ -99,18 +102,20 @@ export function getCatalystExperienceDeployApiUrl() {
 
 /**
  * Get the configured Function 6 Spikra Process Status API URL.
+ * Real Catalyst API Gateway route: GET/POST /spikra/process/status -> spikra_process_status (basicio)
  * @returns {string} The process status API URL.
  */
 export function getCatalystProcessStatusApiUrl() {
-  return resolveEndpointUrl('/spikra/experience/deploy?action=status', import.meta.env.VITE_CATALYST_PROCESS_STATUS_API_URL || `${DEFAULT_CATALYST_BASE_URL}/spikra/experience/deploy?action=status`);
+  return resolveEndpointUrl('/spikra/process/status', import.meta.env.VITE_CATALYST_PROCESS_STATUS_API_URL || `${DEFAULT_CATALYST_BASE_URL}/spikra/process/status`);
 }
 
 /**
  * Get the configured Function 7 Spikra Customer Experience List API URL.
+ * Real Catalyst API Gateway route: GET/POST /spikra/experience/list -> spikra_experience_list (basicio)
  * @returns {string} The experience list API URL.
  */
 export function getCatalystExperienceListApiUrl() {
-  return resolveEndpointUrl('/spikra/experience/deploy?action=list', import.meta.env.VITE_CATALYST_EXPERIENCE_LIST_API_URL || `${DEFAULT_CATALYST_BASE_URL}/spikra/experience/deploy?action=list`);
+  return resolveEndpointUrl('/spikra/experience/list', import.meta.env.VITE_CATALYST_EXPERIENCE_LIST_API_URL || `${DEFAULT_CATALYST_BASE_URL}/spikra/experience/list`);
 }
 
 
@@ -308,39 +313,31 @@ export async function processDocument({ documentId, timeoutMs = 300000 }) {
   }
 
   // 2. Determine Endpoint URL
-  const processApiUrl = getCatalystProcessApiUrl() || `${DEFAULT_CATALYST_BASE_URL}/spikra/experience/deploy?action=process`;
+  // spikra_document_process is a basicio function that reads arguments via query params only
+  // (it has no JSON-body fallback), so document_id must be passed on the querystring.
+  const processApiUrl = getCatalystProcessApiUrl() || `${DEFAULT_CATALYST_BASE_URL}/spikra/document/process`;
+  const processUrlWithParams = `${processApiUrl}${processApiUrl.includes('?') ? '&' : '?'}document_id=${encodeURIComponent(cleanDocumentId)}`;
 
   // 3. Setup abort controller
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    console.info(`[Catalyst API Function 2] POST ${processApiUrl}`, { document_id: cleanDocumentId });
+    console.info(`[Catalyst API Function 2] POST ${processUrlWithParams}`);
 
     let response;
     try {
-      response = await fetch(processApiUrl, {
+      response = await fetch(processUrlWithParams, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'text/plain'
-        },
-        body: JSON.stringify({
-          document_id: cleanDocumentId
-        }),
         signal: controller.signal
       });
     } catch (fetchErr) {
-      const fallbackUrl = resolveEndpointUrl('/spikra/experience/deploy?action=process');
-      if (processApiUrl !== fallbackUrl) {
-        console.warn('[Catalyst API Function 2] Direct fetch failed. Retrying via proxy:', fallbackUrl);
-        response = await fetch(fallbackUrl, {
+      const fallbackUrl = resolveEndpointUrl('/spikra/document/process');
+      const fallbackUrlWithParams = `${fallbackUrl}${fallbackUrl.includes('?') ? '&' : '?'}document_id=${encodeURIComponent(cleanDocumentId)}`;
+      if (processUrlWithParams !== fallbackUrlWithParams) {
+        console.warn('[Catalyst API Function 2] Direct fetch failed. Retrying via proxy:', fallbackUrlWithParams);
+        response = await fetch(fallbackUrlWithParams, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'text/plain'
-          },
-          body: JSON.stringify({
-            document_id: cleanDocumentId
-          }),
           signal: controller.signal
         });
       } else {
@@ -473,39 +470,31 @@ export async function analyzeDocument({ documentId, timeoutMs = 300000 }) {
   }
 
   // 2. Determine Endpoint URL
-  const analysisApiUrl = getCatalystAnalysisApiUrl() || `${DEFAULT_CATALYST_BASE_URL}/spikra/experience/deploy?action=analyze`;
+  // spikra_ai_analysis is a basicio function that reads arguments via query params only
+  // (it has no JSON-body fallback), so document_id must be passed on the querystring.
+  const analysisApiUrl = getCatalystAnalysisApiUrl() || `${DEFAULT_CATALYST_BASE_URL}/spikra/document/analyze`;
+  const analysisUrlWithParams = `${analysisApiUrl}${analysisApiUrl.includes('?') ? '&' : '?'}document_id=${encodeURIComponent(cleanDocumentId)}`;
 
   // 3. Setup abort controller
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    console.info(`[Catalyst API Function 3] POST ${analysisApiUrl}`, { document_id: cleanDocumentId });
+    console.info(`[Catalyst API Function 3] POST ${analysisUrlWithParams}`);
 
     let response;
     try {
-      response = await fetch(analysisApiUrl, {
+      response = await fetch(analysisUrlWithParams, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'text/plain'
-        },
-        body: JSON.stringify({
-          document_id: cleanDocumentId
-        }),
         signal: controller.signal
       });
     } catch (fetchErr) {
-      const fallbackUrl = resolveEndpointUrl('/spikra/experience/deploy?action=analyze');
-      if (analysisApiUrl !== fallbackUrl) {
-        console.warn('[Catalyst API Function 3] Direct fetch failed. Retrying via proxy:', fallbackUrl);
-        response = await fetch(fallbackUrl, {
+      const fallbackUrl = resolveEndpointUrl('/spikra/document/analyze');
+      const fallbackUrlWithParams = `${fallbackUrl}${fallbackUrl.includes('?') ? '&' : '?'}document_id=${encodeURIComponent(cleanDocumentId)}`;
+      if (analysisUrlWithParams !== fallbackUrlWithParams) {
+        console.warn('[Catalyst API Function 3] Direct fetch failed. Retrying via proxy:', fallbackUrlWithParams);
+        response = await fetch(fallbackUrlWithParams, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'text/plain'
-          },
-          body: JSON.stringify({
-            document_id: cleanDocumentId
-          }),
           signal: controller.signal
         });
       } else {
@@ -630,47 +619,35 @@ export async function generateCustomerExperience({ projectId, documentId, timeou
   }
 
   // 2. Determine Endpoint URL
+  // spikra_experience_generate is a basicio function; pass IDs on the querystring so
+  // they're always readable via getArgument regardless of body content-type.
   const experienceApiUrl = getCatalystExperienceApiUrl();
   const configuredDirectUrl = import.meta.env.VITE_CATALYST_EXPERIENCE_GENERATE_API_URL;
 
-  const primaryUrl = experienceApiUrl || configuredDirectUrl || `${DEFAULT_CATALYST_BASE_URL}/spikra/experience/deploy?action=generate`;
+  const primaryUrl = experienceApiUrl || configuredDirectUrl || `${DEFAULT_CATALYST_BASE_URL}/spikra/experience/generate`;
+  const idQueryParams = `project_id=${encodeURIComponent(cleanProjectId)}&document_id=${encodeURIComponent(cleanDocumentId)}`;
+  const primaryUrlWithParams = `${primaryUrl}${primaryUrl.includes('?') ? '&' : '?'}${idQueryParams}`;
 
   // 3. Setup abort controller
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    console.info(`[Catalyst API Function 4] POST ${primaryUrl}`, {
-      project_id: cleanProjectId,
-      document_id: cleanDocumentId
-    });
+    console.info(`[Catalyst API Function 4] POST ${primaryUrlWithParams}`);
 
     let response;
     try {
-      response = await fetch(primaryUrl, {
+      response = await fetch(primaryUrlWithParams, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'text/plain'
-        },
-        body: JSON.stringify({
-          project_id: cleanProjectId,
-          document_id: cleanDocumentId
-        }),
         signal: controller.signal
       });
     } catch (fetchErr) {
-      const fallbackUrl = resolveEndpointUrl('/spikra/experience/deploy?action=generate');
-      if (primaryUrl !== fallbackUrl) {
-        console.warn('[Catalyst API Function 4] Direct fetch failed. Retrying via proxy:', fallbackUrl);
-        response = await fetch(fallbackUrl, {
+      const fallbackUrl = resolveEndpointUrl('/spikra/experience/generate');
+      const fallbackUrlWithParams = `${fallbackUrl}${fallbackUrl.includes('?') ? '&' : '?'}${idQueryParams}`;
+      if (primaryUrlWithParams !== fallbackUrlWithParams) {
+        console.warn('[Catalyst API Function 4] Direct fetch failed. Retrying via proxy:', fallbackUrlWithParams);
+        response = await fetch(fallbackUrlWithParams, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'text/plain'
-          },
-          body: JSON.stringify({
-            project_id: cleanProjectId,
-            document_id: cleanDocumentId
-          }),
           signal: controller.signal
         });
       } else {
@@ -1062,41 +1039,30 @@ export async function getProcessStatus({
     signal.addEventListener('abort', () => controller.abort(), { once: true });
   }
 
-  const requestPayload = {
-    project_id: cleanProjectId,
-    document_id: cleanDocumentId,
-    experience_id: cleanExperienceId
-  };
+  // spikra_process_status is a basicio function that reads arguments via query params only,
+  // so IDs must be passed on the querystring rather than a JSON body.
+  const idQueryParams = `project_id=${encodeURIComponent(cleanProjectId)}&document_id=${encodeURIComponent(cleanDocumentId)}&experience_id=${encodeURIComponent(cleanExperienceId)}`;
+  const primaryUrlWithParams = `${primaryUrl}${primaryUrl.includes('?') ? '&' : '?'}${idQueryParams}`;
 
   try {
     let response;
     try {
-      response = await fetch(primaryUrl, {
+      response = await fetch(primaryUrlWithParams, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'text/plain'
-        },
-        body: JSON.stringify(requestPayload),
         signal: controller.signal
       });
     } catch (fetchErr) {
-      if (primaryUrl !== '/spikra/experience/deploy?action=status') {
-        const fallbackStatusUrl = resolveEndpointUrl('/spikra/experience/deploy?action=status');
-        response = await fetch(fallbackStatusUrl, {
+      const fallbackStatusUrl = resolveEndpointUrl('/spikra/process/status');
+      const fallbackUrlWithParams = `${fallbackStatusUrl}${fallbackStatusUrl.includes('?') ? '&' : '?'}${idQueryParams}`;
+      if (primaryUrlWithParams !== fallbackUrlWithParams) {
+        response = await fetch(fallbackUrlWithParams, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'text/plain'
-          },
-          body: JSON.stringify(requestPayload),
           signal: controller.signal
         });
       } else if (configuredDirectUrl) {
-        response = await fetch(configuredDirectUrl, {
+        const configuredUrlWithParams = `${configuredDirectUrl}${configuredDirectUrl.includes('?') ? '&' : '?'}${idQueryParams}`;
+        response = await fetch(configuredUrlWithParams, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'text/plain'
-          },
-          body: JSON.stringify(requestPayload),
           signal: controller.signal
         });
       } else {
@@ -1215,14 +1181,15 @@ export async function getCustomerExperiences(filters = {}, timeoutMs = 30000) {
   const isDirectOrigin = typeof window !== 'undefined' && (window.location.hostname.includes('catalystserverless.com') || window.location.hostname.includes('zohocatalyst.com'));
   const directBase = getCatalystBaseUrl() || DEFAULT_CATALYST_BASE_URL;
 
-  // Primary URL uses the Advanced I/O deploy endpoint with action=list for full universal CORS support (including onslate.com)
+  // spikra_experience_list is the real, dedicated API Gateway route for this function.
+  // (There is no "list" action on the /spikra/experience/deploy dispatcher - that function
+  // only implements deployment. Cross-origin CORS for this basicio route is controlled by
+  // the Catalyst project's CORS domain allowlist, not by code in the function itself.)
   const primaryCorsUrl = isDirectOrigin || import.meta.env.DEV
-    ? '/spikra/experience/deploy?action=list'
-    : `${directBase}/spikra/experience/deploy?action=list`;
-
-  const fallbackListUrl = isDirectOrigin || import.meta.env.DEV
     ? '/spikra/experience/list'
     : `${directBase}/spikra/experience/list`;
+
+  const fallbackListUrl = primaryCorsUrl;
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -1254,7 +1221,7 @@ export async function getCustomerExperiences(filters = {}, timeoutMs = 30000) {
     let response = null;
     let lastError = null;
 
-    // ATTEMPT 1: Primary CORS-enabled endpoint (/spikra/experience/deploy?action=list)
+    // ATTEMPT 1: Real experience list endpoint (/spikra/experience/list)
     try {
       console.info(`[Catalyst API Function 7] Fetching experiences from ${primaryCorsUrl}`);
       response = await fetch(toGetUrl(primaryCorsUrl), {
@@ -1275,7 +1242,7 @@ export async function getCustomerExperiences(filters = {}, timeoutMs = 30000) {
       response = null;
     }
 
-    // ATTEMPT 2: Fallback to basic list GET endpoint (/spikra/experience/list)
+    // ATTEMPT 2: Retry once more in case of a transient failure
     if (!response) {
       try {
         console.info(`[Catalyst API Function 7] Retrying with secondary endpoint: ${fallbackListUrl}`);
