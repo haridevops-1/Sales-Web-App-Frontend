@@ -4,20 +4,17 @@ import { getProcessStatus } from '@/api/catalystApi';
 import { copyToClipboard, formatProposalUrl } from '@/utils/helpers';
 import SpotlightCard from '@/reactbits/SpotlightCard';
 import { motion } from 'framer-motion';
-import { 
-  ExternalLink, 
-  Copy, 
-  Check, 
-  Building2, 
-  Plus, 
-  Globe, 
-  Link2, 
+import {
+  ExternalLink,
+  Copy,
+  Check,
+  Building2,
+  Plus,
+  Globe,
+  Link2,
   FileCheck2,
-  RotateCcw,
-  Eye,
-  EyeOff
+  RotateCcw
 } from 'lucide-react';
-import CustomerExperiencePreview from '../CustomerExperiencePreview/CustomerExperiencePreview';
 
 const formatCleanText = (text) => {
   if (!text || typeof text !== 'string') return '';
@@ -80,7 +77,6 @@ export default function ProcessStatus({
   const [currentStage, setCurrentStage] = useState(propGeneratedUrl ? 'PUBLISHED' : 'DEPLOYING');
   const [fetchError, setFetchError] = useState(null);
   const [copiedUrl, setCopiedUrl] = useState(false);
-  const [showDocumentUI, setShowDocumentUI] = useState(false);
 
   const isMountedRef = useRef(true);
   const timerRef = useRef(null);
@@ -220,15 +216,6 @@ export default function ProcessStatus({
             {/* Header: Clean, modern status and headline (No security guard logo) */}
             <motion.div className="clean-result-header" variants={itemVariants}>
               <div className="clean-header-text">
-                <div className="clean-status-pill-row">
-                  <span className="clean-status-tag">
-                    <span className="clean-tag-dot-wrapper">
-                      <span className="clean-tag-dot-ping" />
-                      <span className="clean-tag-dot" />
-                    </span>
-                    <span>LIVE & CLIENT READY</span>
-                  </span>
-                </div>
                 <h3 className="clean-title">
                   Customer Proposal <span className="title-orange-accent">Ready</span>
                 </h3>
@@ -349,18 +336,6 @@ export default function ProcessStatus({
                 </span>
               </motion.button>
 
-              <motion.button
-                type="button"
-                className="btn-preview-minimal-ui"
-                onClick={() => setShowDocumentUI((prev) => !prev)}
-                whileHover={{ y: -2 }}
-                whileTap={{ y: 0, scale: 0.98 }}
-                title="Toggle inline minimal proposal UI for the uploaded document"
-              >
-                {showDocumentUI ? <EyeOff size={16} /> : <Eye size={16} />}
-                <span>{showDocumentUI ? 'Hide Document UI' : 'Preview Minimal UI'}</span>
-              </motion.button>
-
               {onUploadAnother && (
                 <motion.button
                   type="button"
@@ -374,46 +349,6 @@ export default function ProcessStatus({
                 </motion.button>
               )}
             </motion.div>
-
-            {/* In-App Minimal Proposal UI for the Uploaded Document */}
-            {showDocumentUI && (
-              <motion.div
-                className="document-minimal-preview-wrapper"
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.35, ease: 'easeOut' }}
-              >
-                <div className="document-minimal-preview-banner">
-                  <div className="preview-banner-left">
-                    <span className="preview-live-dot" />
-                    <strong>Uploaded Document Minimal UI</strong>
-                    <span className="preview-sep">•</span>
-                    <span>{displayBusinessName}</span>
-                  </div>
-                  <button
-                    type="button"
-                    className="btn-close-minimal-ui"
-                    onClick={() => setShowDocumentUI(false)}
-                    aria-label="Close minimal UI preview"
-                  >
-                    ✕ Close
-                  </button>
-                </div>
-                <div className="document-minimal-preview-body">
-                  <CustomerExperiencePreview
-                    businessName={displayBusinessName}
-                    projectName={displayProjectName}
-                    experienceTitle={displayProjectName}
-                    businessLogoPreview={businessLogoPreview}
-                    businessLogoFile={businessLogoFile}
-                    status={currentStage === 'PUBLISHED' ? 'PUBLISHED' : 'GENERATED'}
-                    generatedUrl={generatedUrl}
-                    analysisData={analysisData}
-                  />
-                </div>
-              </motion.div>
-            )}
           </motion.div>
         ) : isFailed ? (
           /* 2. FAILED STATE */
