@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './CustomerExperiencePreview.css';
+import { formatProposalUrl } from '@/utils/helpers';
 
 export default function CustomerExperiencePreview({
   businessName = '',
@@ -41,8 +42,9 @@ export default function CustomerExperiencePreview({
   };
 
   const handleOpenUrl = () => {
-    if (generatedUrl) {
-      window.open(generatedUrl, '_blank', 'noopener,noreferrer');
+    const targetUrl = formatProposalUrl(generatedUrl);
+    if (targetUrl) {
+      window.open(targetUrl, '_blank', 'noopener,noreferrer');
     }
   };
 

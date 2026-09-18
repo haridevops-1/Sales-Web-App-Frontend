@@ -4,6 +4,8 @@
  * Centralized API service for communicating with Zoho Catalyst serverless backend.
  */
 
+import { formatProposalUrl } from '../utils/helpers';
+
 export const DEFAULT_CATALYST_BASE_URL = 'https://spikra-ai-proposal-698386704.development.catalystserverless.com';
 
 /**
@@ -920,7 +922,8 @@ export async function deployCustomerExperience({
     // 6. Parse and normalize returned fields
     const dataObj = responseData?.data || responseData || {};
     const rawStatus = String(dataObj.status || responseData.status || '').toUpperCase();
-    const generatedUrl = (dataObj.generated_url || dataObj.generatedUrl || responseData.generated_url || '').trim();
+    const rawGeneratedUrl = (dataObj.generated_url || dataObj.generatedUrl || responseData.generated_url || '').trim();
+    const generatedUrl = formatProposalUrl(rawGeneratedUrl, cleanExperienceId);
 
     // Helper: validate absolute URL
     const isValidAbsoluteUrl = (url) => {
@@ -1124,6 +1127,12 @@ export async function getProcessStatus({
 
     const rawStage = String(responseData?.current_stage || responseData?.status || '').toUpperCase();
     const errorMessage = responseData?.error_message || responseData?.message || null;
+    const rawExperience = responseData?.experience || null;
+    const sanitizedExperience = rawExperience ? {
+      ...rawExperience,
+      generated_url: formatProposalUrl(rawExperience.generated_url || rawExperience.generatedUrl || '', rawExperience.experience_id || cleanExperienceId),
+      generatedUrl: formatProposalUrl(rawExperience.generatedUrl || rawExperience.generated_url || '', rawExperience.experience_id || cleanExperienceId)
+    } : null;
 
     return {
       success: responseData?.success !== false,
@@ -1131,7 +1140,7 @@ export async function getProcessStatus({
       error_message: errorMessage,
       project: responseData?.project || null,
       document: responseData?.document || null,
-      experience: responseData?.experience || null,
+      experience: sanitizedExperience,
       jobs: Array.isArray(responseData?.jobs) ? responseData.jobs : [],
       raw: responseData
     };
@@ -1340,12 +1349,21 @@ export async function getCustomerExperiences(filters = {}, timeoutMs = 30000) {
     }
 
     const rawExperiences = Array.isArray(responseData?.experiences) ? responseData.experiences : [];
-    const count = typeof responseData?.count === 'number' ? responseData.count : rawExperiences.length;
+    const formattedExperiences = rawExperiences.map((exp) => {
+      const expId = exp.experience_id || exp.experienceId || '';
+      const sanitizedUrl = formatProposalUrl(exp.generated_url || exp.generatedUrl || '', expId);
+      return {
+        ...exp,
+        generated_url: sanitizedUrl,
+        generatedUrl: sanitizedUrl
+      };
+    });
+    const count = typeof responseData?.count === 'number' ? responseData.count : formattedExperiences.length;
 
     return {
       success: responseData?.success !== false,
       count,
-      experiences: rawExperiences,
+      experiences: formattedExperiences,
       raw: responseData
     };
   } catch (err) {

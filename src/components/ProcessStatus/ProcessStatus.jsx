@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './ProcessStatus.css';
 import { getProcessStatus } from '../../api/catalystApi';
-import { copyToClipboard } from '../../utils/helpers';
+import { copyToClipboard, formatProposalUrl } from '../../utils/helpers';
 import SpotlightCard from '../../reactbits/SpotlightCard';
 import { motion } from 'framer-motion';
 import { 
@@ -87,7 +87,8 @@ export default function ProcessStatus({
   const displayBusinessName = formatCleanText(rawBiz) || 'Business Client';
   const rawProj = statusData?.experience?.experience_title || experienceTitle || statusData?.project?.project_name || projectName || 'Customer Proposal';
   const displayProjectName = formatCleanText(rawProj) || 'Customer Proposal';
-  const generatedUrl = (propGeneratedUrl || statusData?.experience?.generated_url || '').trim();
+  const rawUrl = (propGeneratedUrl || statusData?.experience?.generated_url || '').trim();
+  const generatedUrl = formatProposalUrl(rawUrl, actualExperienceId);
 
   const pollProcessStatus = useCallback(async () => {
     if (!isMountedRef.current || isFetchingRef.current || !isPollingRef.current) {

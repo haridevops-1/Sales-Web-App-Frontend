@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import './AllExperiences.css';
-import { formatDate, copyToClipboard } from '../../utils/helpers';
+import { formatDate, copyToClipboard, formatProposalUrl } from '@/utils/helpers';
 import CountUp from '../../reactbits/CountUp';
 import SpotlightCard from '../../reactbits/SpotlightCard';
 import SpinningBorderButton from '@/components/ui/spinning-border-button';
@@ -49,17 +49,19 @@ export default function AllExperiences({
   }, [experiences, searchQuery]);
 
   const handleCopyLink = async (id, url) => {
-    if (!url) return;
-    const ok = await copyToClipboard(url);
+    const targetUrl = formatProposalUrl(url, id);
+    if (!targetUrl) return;
+    const ok = await copyToClipboard(targetUrl);
     if (ok) {
       setCopiedId(id);
       setTimeout(() => setCopiedId(null), 2500);
     }
   };
 
-  const handleOpenExperience = (url) => {
-    if (url) {
-      window.open(url, '_blank', 'noopener,noreferrer');
+  const handleOpenExperience = (url, id = '') => {
+    const targetUrl = formatProposalUrl(url, id);
+    if (targetUrl) {
+      window.open(targetUrl, '_blank', 'noopener,noreferrer');
     }
   };
 
@@ -229,7 +231,8 @@ export default function AllExperiences({
                   const businessName = rawBiz.replace(/~\d+/g, '').trim() || 'Business Client';
                   const experienceTitle = exp.experience_title || exp.experienceTitle || `${businessName} — Technical Proposal`;
                   const projectName = exp.project_name || exp.projectName || (exp.project_id ? `Project #${exp.project_id}` : '—');
-                  const generatedUrl = (exp.generated_url || exp.generatedUrl || '').trim();
+                  const rawGenUrl = (exp.generated_url || exp.generatedUrl || '').trim();
+                  const generatedUrl = formatProposalUrl(rawGenUrl, cardId);
                   const createdDate = exp.published_time || exp.created_time || exp.createdAt || exp.modified_time;
                   const errorMessage = exp.error_message || exp.errorMessage;
                   const logoUrl = (
@@ -367,7 +370,7 @@ export default function AllExperiences({
                             <Button
                               variant="default"
                               className="exp-btn-open"
-                              onClick={() => handleOpenExperience(generatedUrl)}
+                              onClick={() => handleOpenExperience(generatedUrl, cardId)}
                               disabled={!isPublished || !generatedUrl}
                               title={
                                 isPublished && generatedUrl

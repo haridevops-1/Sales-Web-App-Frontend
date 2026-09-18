@@ -12,6 +12,7 @@ import AllExperiences from '@/pages/experience/AllExperiences/AllExperiences';
 import { Pattern } from '@/components/ui/v-card-17';
 import { AnimatePresence, motion } from 'framer-motion';
 import { getCustomerExperiences } from '@/api/catalystApi';
+import { formatProposalUrl } from '@/utils/helpers';
 
 // Normalize experience object so both camelCase and snake_case properties are supported
 const normalizeExperience = (exp) => {
@@ -20,10 +21,11 @@ const normalizeExperience = (exp) => {
   const proj = exp.project_name || exp.projectName || '';
   const title = exp.experience_title || exp.experienceTitle || `${biz} — Technical Proposal`;
   const stat = (exp.status || 'GENERATED').toUpperCase();
-  const url = (exp.generated_url || exp.generatedUrl || '').trim();
+  const expId = exp.experience_id || exp.experienceId || exp.project_id || exp.projectId || String(Date.now());
+  const rawUrl = (exp.generated_url || exp.generatedUrl || '').trim();
+  const url = formatProposalUrl(rawUrl, expId);
   const date = exp.published_time || exp.created_time || exp.createdAt || exp.modified_time || new Date().toISOString();
   const err = exp.error_message || exp.errorMessage || '';
-  const expId = exp.experience_id || exp.experienceId || exp.project_id || exp.projectId || String(Date.now());
   const projId = exp.project_id || exp.projectId || '';
   const docId = exp.document_id || exp.documentId || '';
 

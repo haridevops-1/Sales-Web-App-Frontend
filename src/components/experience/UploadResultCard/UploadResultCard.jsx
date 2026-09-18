@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import './UploadResultCard.css';
-import { formatBytes, copyToClipboard } from '@/utils/helpers';
+import { formatBytes, copyToClipboard, formatProposalUrl } from '@/utils/helpers';
 import { STATUS_MAPPING, UPLOAD_STAGES, FUNCTION_5_LABELS } from '@/utils/constants';
 import SpikraDotBorderButton from '@/components/ui/SpikraDotBorderButton';
 
@@ -52,7 +52,8 @@ export default function UploadResultCard({
   ];
 
   // Function 5 Slate deployment attributes
-  const generatedUrl = (deploymentResult?.generatedUrl || deploymentResult?.generated_url || '').trim();
+  const rawGeneratedUrl = (deploymentResult?.generatedUrl || deploymentResult?.generated_url || '').trim();
+  const generatedUrl = formatProposalUrl(rawGeneratedUrl, experienceId);
   const slateAppId = deploymentResult?.slateAppId || deploymentResult?.slate_app_id || '';
   const slateDeploymentId = deploymentResult?.slateDeploymentId || deploymentResult?.slate_deployment_id || '';
 

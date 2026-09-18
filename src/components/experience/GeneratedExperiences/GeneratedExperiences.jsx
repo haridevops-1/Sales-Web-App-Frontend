@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import './GeneratedExperiences.css';
-import { formatDate, copyToClipboard } from '@/utils/helpers';
+import { formatDate, copyToClipboard, formatProposalUrl } from '@/utils/helpers';
 
 export default function GeneratedExperiences({
   experiences = [],
@@ -12,17 +12,19 @@ export default function GeneratedExperiences({
   const [copiedId, setCopiedId] = useState(null);
 
   const handleCopyLink = async (id, url) => {
-    if (!url) return;
-    const ok = await copyToClipboard(url);
+    const targetUrl = formatProposalUrl(url, id);
+    if (!targetUrl) return;
+    const ok = await copyToClipboard(targetUrl);
     if (ok) {
       setCopiedId(id);
       setTimeout(() => setCopiedId(null), 2500);
     }
   };
 
-  const handleOpenExperience = (url) => {
-    if (url) {
-      window.open(url, '_blank', 'noopener,noreferrer');
+  const handleOpenExperience = (url, id = '') => {
+    const targetUrl = formatProposalUrl(url, id);
+    if (targetUrl) {
+      window.open(targetUrl, '_blank', 'noopener,noreferrer');
     }
   };
 
@@ -139,7 +141,8 @@ export default function GeneratedExperiences({
               const businessName = exp.business_name || exp.businessName || 'Unnamed Business';
               const experienceTitle = exp.experience_title || exp.experienceTitle || `${businessName} — Technical Proposal`;
               const projectName = exp.project_name || exp.projectName || (exp.project_id ? `Project #${exp.project_id}` : 'Technical Proposal');
-              const generatedUrl = (exp.generated_url || exp.generatedUrl || '').trim();
+              const rawGenUrl = (exp.generated_url || exp.generatedUrl || '').trim();
+              const generatedUrl = formatProposalUrl(rawGenUrl, cardId);
               const createdDate = exp.published_time || exp.created_time || exp.createdAt || exp.modified_time;
               const errorMessage = exp.error_message || exp.errorMessage;
 
