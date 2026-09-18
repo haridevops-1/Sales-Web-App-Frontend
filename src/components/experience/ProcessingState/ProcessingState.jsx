@@ -43,11 +43,13 @@ export default function ProcessingState({
   stage = UPLOAD_STAGES.UPLOADING,
   businessName,
   projectName,
-  hasLogo = false
+  hasLogo = false,
+  onCancel
 }) {
   const activeIndex = STAGE_INDEX_MAP[stage] ?? 0;
   const copy = STAGE_COPY[stage] || STAGE_COPY[UPLOAD_STAGES.UPLOADING];
   const bizLabel = businessName || 'your client';
+  const isAnalyzing = stage === UPLOAD_STAGES.AI_ANALYZING;
 
   const thinkingRows = [
     {
@@ -82,7 +84,24 @@ export default function ProcessingState({
           <h4 className="processing-main-text">{copy.title}</h4>
           <span className="processing-active-stage">{copy.stage(bizLabel)}</span>
         </div>
+        {isAnalyzing && onCancel && (
+          <button
+            type="button"
+            className="btn-cancel-processing"
+            onClick={onCancel}
+            title="Cancel and return to the form"
+            aria-label="Cancel analysis"
+          >
+            ✕
+          </button>
+        )}
       </div>
+
+      {isAnalyzing && (
+        <p className="processing-analyzing-notice">
+          Analyzing your document — this can take a while for larger documents.
+        </p>
+      )}
 
       {/* Spikra-Themed 5 Thinking Steps for Sales Reps */}
       <div className="processing-thinking-wrapper">

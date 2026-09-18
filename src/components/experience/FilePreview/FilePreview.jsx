@@ -176,7 +176,7 @@ export default function FilePreview({
           {/* Business Logo Upload Field */}
           <div className="form-field-group full-width">
             <div className="label-with-hint">
-              <label htmlFor="business-logo-dropzone" className="form-field-label">
+              <label htmlFor="business-logo-input" className="form-field-label">
                 Business Logo
               </label>
               <span className="optional-tag">Optional • PNG, JPG, JPEG, SVG, WebP up to 5 MB</span>

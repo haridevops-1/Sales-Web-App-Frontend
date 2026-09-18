@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import './UploadSection.css';
 import UploadDropzone from '../UploadDropzone/UploadDropzone';
 import FilePreview from '../FilePreview/FilePreview';
@@ -35,6 +35,11 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
   const [inlineError, setInlineError] = useState(null);
   const [generationError, setGenerationError] = useState(null);
   const [deployError, setDeployError] = useState(null);
+
+  // Lets the user cancel the client-side wait for Function 3 (AI analysis) without touching the
+  // backend job - it just stops this tab from polling; analyzeDocument()'s own in-flight guard is
+  // what actually prevents duplicate Agent calls.
+  const analysisAbortControllerRef = useRef(null);
 
   const updateStage = (stage) => {
     setUploadStage(stage);
@@ -238,10 +243,15 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
 
     let fn3Result = null;
     try {
+      const analysisController = new AbortController();
+      analysisAbortControllerRef.current = analysisController;
+
       fn3Result = await analyzeDocument({
-        documentId: fn1Result.documentId
+        documentId: fn1Result.documentId,
+        signal: analysisController.signal
       });
 
+      analysisAbortControllerRef.current = null;
       setAnalysisResult(fn3Result);
 
       if (onUploadSuccess) {
@@ -337,6 +347,15 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
         setIsDeploying(false);
       }
     } catch (fn3Err) {
+      analysisAbortControllerRef.current = null;
+
+      if (fn3Err?.name === 'CancelledError') {
+        // User clicked cancel - just return to the form with the file/fields intact, no error toast.
+        setAnalysisResult(null);
+        updateStage(UPLOAD_STAGES.READY);
+        return;
+      }
+
       console.error('[Analysis Failed]', fn3Err);
       const fn3FailureObj = {
         success: false,
@@ -348,6 +367,12 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
       setAnalysisResult(fn3FailureObj);
       updateStage(UPLOAD_STAGES.FAILED);
       if (onError) onError('Document analysis failed. Please try again.');
+    }
+  };
+
+  const handleCancelAnalysis = () => {
+    if (analysisAbortControllerRef.current) {
+      analysisAbortControllerRef.current.abort();
     }
   };
 
@@ -708,6 +733,7 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
                         businessName={businessName}
                         projectName={projectName}
                         hasLogo={Boolean(businessLogoFile)}
+                        onCancel={uploadStage === UPLOAD_STAGES.AI_ANALYZING ? handleCancelAnalysis : undefined}
                       />
                     ) : activeView === 'preview' ? (
                       <FilePreview

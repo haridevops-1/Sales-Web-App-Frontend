@@ -467,7 +467,12 @@ export function sanitizeBackendErrorMessage(rawMsg) {
  * @param {number} [params.timeoutMs=300000] - Request timeout in ms (5 min for deep AI analysis on multi-section documents)
  * @returns {Promise<Object>} Real response containing processing_status: "COMPLETED", job_status: "COMPLETED"
  */
-export async function analyzeDocument({ documentId, timeoutMs = 300000 }) {
+// Documents currently being analyzed, keyed by document_id. A second analyzeDocument() call for
+// a document already in flight piggybacks on the same in-progress request instead of firing a new
+// one - the main client-side defense against duplicate Zia Agent invocations for one document.
+const inFlightAnalysisRequests = new Map();
+
+export async function analyzeDocument({ documentId, timeoutMs = 300000, signal: externalSignal }) {
   // 1. Validate parameter
   const cleanDocumentId = documentId ? String(documentId).trim() : '';
 
@@ -475,15 +480,44 @@ export async function analyzeDocument({ documentId, timeoutMs = 300000 }) {
     throw new Error('document_id is required for AI analysis.');
   }
 
+  if (inFlightAnalysisRequests.has(cleanDocumentId)) {
+    console.info(`[Catalyst API Function 3] Analysis already in flight for document ${cleanDocumentId}. Reusing existing request instead of firing a new one.`);
+    return inFlightAnalysisRequests.get(cleanDocumentId);
+  }
+
+  const requestPromise = runAnalyzeDocumentRequest(cleanDocumentId, timeoutMs, externalSignal);
+  inFlightAnalysisRequests.set(cleanDocumentId, requestPromise);
+  try {
+    return await requestPromise;
+  } finally {
+    inFlightAnalysisRequests.delete(cleanDocumentId);
+  }
+}
+
+async function runAnalyzeDocumentRequest(cleanDocumentId, timeoutMs, externalSignal) {
   // 2. Determine Endpoint URL
   // spikra_ai_analysis is a basicio function that reads arguments via query params only
   // (it has no JSON-body fallback), so document_id must be passed on the querystring.
   const analysisApiUrl = getCatalystAnalysisApiUrl() || `${DEFAULT_CATALYST_BASE_URL}/spikra/document/analyze`;
   const analysisUrlWithParams = `${analysisApiUrl}${analysisApiUrl.includes('?') ? '&' : '?'}document_id=${encodeURIComponent(cleanDocumentId)}`;
 
-  // 3. Setup abort controller
+  // 3. Setup abort controller - also wired to an optional external signal so the caller (e.g. a
+  // user clicking a cancel/X button) can stop the polling loop below without this being treated
+  // as a real failure.
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  let cancelledByCaller = false;
+  const onExternalAbort = () => {
+    cancelledByCaller = true;
+    controller.abort();
+  };
+  if (externalSignal) {
+    if (externalSignal.aborted) {
+      onExternalAbort();
+    } else {
+      externalSignal.addEventListener('abort', onExternalAbort);
+    }
+  }
 
   try {
     console.info(`[Catalyst API Function 3] POST ${analysisUrlWithParams}`);
@@ -569,12 +603,17 @@ export async function analyzeDocument({ documentId, timeoutMs = 300000 }) {
       console.info('[Catalyst API Function 3] Analysis started asynchronously by backend. Polling for completion...');
       const pollStartTime = Date.now();
       const maxPollMs = Math.min(timeoutMs, 240000); // Poll up to 4 minutes
-      const pollIntervalMs = 3500;
+      const pollIntervalMs = 7000; // One request every 6-8s - sequential, never overlapping
 
       while (Date.now() - pollStartTime < maxPollMs) {
         await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
 
         if (controller.signal.aborted) {
+          if (cancelledByCaller) {
+            const cancelErr = new Error('Analysis polling was cancelled.');
+            cancelErr.name = 'CancelledError';
+            throw cancelErr;
+          }
           throw new Error('Analysis polling aborted.');
         }
 
@@ -651,6 +690,13 @@ export async function analyzeDocument({ documentId, timeoutMs = 300000 }) {
   } catch (err) {
     clearTimeout(timeoutId);
 
+    if (cancelledByCaller || err.name === 'CancelledError') {
+      console.info('[Catalyst API Function 3] Analysis polling cancelled by caller.');
+      const cancelErr = new Error('Analysis was cancelled.');
+      cancelErr.name = 'CancelledError';
+      throw cancelErr;
+    }
+
     if (err.name === 'AbortError') {
       console.error('[Catalyst API Function 3] Request timed out after', timeoutMs, 'ms');
       throw new Error('Document analysis request timed out. Processing may need more time for large documents.');
@@ -663,6 +709,10 @@ export async function analyzeDocument({ documentId, timeoutMs = 300000 }) {
     }
 
     throw new Error('Document analysis failed. Please check backend connection and try again.');
+  } finally {
+    if (externalSignal) {
+      externalSignal.removeEventListener('abort', onExternalAbort);
+    }
   }
 }
 
