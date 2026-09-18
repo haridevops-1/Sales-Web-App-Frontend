@@ -20,7 +20,7 @@
 
 .spikra-brand-logo.clickable:hover .logo-image-container {
   transform: scale(1.06);
-  filter: drop-shadow(0 2px 6px rgba(255, 133, 51, 0.35));
+  filter: drop-shadow(0 2px 6px rgba(255, 122, 26, 0.35));
 }
 
 .spikra-brand-logo.clickable:active .logo-image-container {
@@ -87,9 +87,9 @@
 }
 
 .spikra-brand-logo.dark .logo-partner-pill {
-  background-color: rgba(255, 133, 51, 0.16);
-  color: #FFAA5E;
-  border: 1px solid rgba(255, 133, 51, 0.38);
+  background-color: rgba(255, 122, 26, 0.16);
+  color: #FF9240;
+  border: 1px solid rgba(255, 122, 26, 0.38);
 }
 
 .spikra-brand-logo.dark .logo-subtitle {

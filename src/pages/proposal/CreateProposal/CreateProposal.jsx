@@ -140,7 +140,7 @@ export default function CreateProposal({
           </motion.div>
 
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: 'easeOut', delay: 0.08 }}>
-            <SpotlightCard className="proposal-stat-card" spotlightColor="rgba(255, 133, 51, 0.12)">
+            <SpotlightCard className="proposal-stat-card" spotlightColor="rgba(255, 122, 26, 0.12)">
               <div className="proposal-stat-icon orange">
                 <FileEdit size={18} strokeWidth={2.2} />
               </div>

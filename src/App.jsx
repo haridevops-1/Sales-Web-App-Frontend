@@ -10,6 +10,7 @@ import CreateProposal from '@/pages/proposal/CreateProposal/CreateProposal';
 import Dashboard from '@/pages/experience/Dashboard/Dashboard';
 import AllExperiences from '@/pages/experience/AllExperiences/AllExperiences';
 import { Pattern } from '@/components/ui/v-card-17';
+import { SpotlightCursor } from '@/components/ui/spotlight-cursor';
 import { AnimatePresence, motion } from 'framer-motion';
 import { getCustomerExperiences } from '@/api/catalystApi';
 import { formatProposalUrl } from '@/utils/helpers';
@@ -263,6 +264,9 @@ export default function App() {
 
   return (
     <div className="spikra-app-root">
+      {/* Interactive Spotlight Cursor for Light Theme */}
+      <SpotlightCursor config={{ radius: 260, brightness: 0.08, color: '#FF7A1A', smoothing: 0.15 }} />
+
       {/* Enterprise Collapsible Sidebar */}
       <Sidebar
         isOpen={isSidebarOpen}

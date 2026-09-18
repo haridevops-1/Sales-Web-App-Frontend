@@ -81,19 +81,19 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #ff822e 0%, #ffa259 100%);
+  background: linear-gradient(135deg, #FF7A1A 0%, #FF9240 100%);
   color: #ffffff;
   border: 1px solid rgba(255, 255, 255, 0.45);
   border-radius: 12px;
-  box-shadow: 0 4px 14px rgba(255, 130, 46, 0.28);
+  box-shadow: 0 4px 14px rgba(255, 122, 26, 0.28);
   font-family: var(--font-family-primary);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .btn-create-proposal-shiny:hover {
-  background: linear-gradient(135deg, #ff7820 0%, #ff984a 100%);
-  box-shadow: 0 6px 20px rgba(255, 130, 46, 0.38);
+  background: linear-gradient(135deg, #E86A00 0%, #FF9240 100%);
+  box-shadow: 0 6px 20px rgba(255, 122, 26, 0.38);
   transform: translateY(-1px);
 }
 
@@ -111,7 +111,7 @@
   gap: 1rem;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
-  border-left: 3px solid var(--spikra-orange, #FF8533);
+  border-left: 3px solid var(--spikra-orange, #FF7A1A);
   padding: 0.65rem 1.15rem;
   border-radius: 10px;
   font-size: 0.85rem;
@@ -122,7 +122,7 @@
 .archive-search-clear-link {
   background: none;
   border: none;
-  color: var(--spikra-orange, #FF8533);
+  color: var(--spikra-orange, #FF7A1A);
   font-size: 0.8125rem;
   font-weight: 600;
   cursor: pointer;

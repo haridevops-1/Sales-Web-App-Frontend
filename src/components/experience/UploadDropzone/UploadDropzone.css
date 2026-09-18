@@ -20,14 +20,14 @@
   border-color: var(--spikra-orange);
   background-color: var(--spikra-orange-50);
   transform: translateY(-1px);
-  box-shadow: 0 8px 20px -8px rgba(255, 133, 51, 0.25);
+  box-shadow: 0 8px 20px -8px rgba(255, 122, 26, 0.25);
 }
 
 .compact-dropzone.drag-active {
   border-color: var(--spikra-orange);
   background-color: var(--spikra-orange-50);
   border-style: solid;
-  box-shadow: 0 0 0 4px rgba(255, 133, 51, 0.15);
+  box-shadow: 0 0 0 4px rgba(255, 122, 26, 0.15);
   transform: scale(1.005);
 }
 
@@ -113,7 +113,7 @@
   background-color: var(--spikra-orange);
   border-color: var(--spikra-orange-dark);
   transform: translateY(-1px);
-  box-shadow: 0 4px 10px rgba(255, 133, 51, 0.3);
+  box-shadow: 0 4px 10px rgba(255, 122, 26, 0.3);
 }
 
 .btn-browse-trigger:active {

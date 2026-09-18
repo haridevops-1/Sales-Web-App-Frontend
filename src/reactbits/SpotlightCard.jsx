@@ -7,7 +7,7 @@ import './SpotlightCard.css';
  * Unlike the stock version this ships no card chrome (background/border/radius) —
  * it's meant to overlay an existing themed card and just add the cursor-follow glow.
  */
-export default function SpotlightCard({ children, className = '', spotlightColor = 'rgba(255, 133, 51, 0.16)' }) {
+export default function SpotlightCard({ children, className = '', spotlightColor = 'rgba(255, 122, 26, 0.16)' }) {
   const divRef = useRef(null);
   const [opacity, setOpacity] = useState(0);
   const [position, setPosition] = useState({ x: 0, y: 0 });

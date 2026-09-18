@@ -190,7 +190,7 @@ export default function ThinkingState({
           width="16"
           height="16"
           viewBox="0 0 24 24"
-          fill={working ? "var(--orange, #FF8533)" : "var(--ink-2)"}
+          fill={working ? "var(--orange, #FF7A1A)" : "var(--ink-2)"}
           className="transition-colors duration-300"
         >
           <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" />

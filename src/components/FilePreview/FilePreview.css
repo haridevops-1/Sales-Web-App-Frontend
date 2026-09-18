@@ -155,7 +155,7 @@
 }
 
 .req-star {
-  color: #FF8A3A;
+  color: #E86A00;
 }
 
 .input-field-wrapper {
@@ -262,9 +262,9 @@
   justify-content: center;
   height: 42px;
   padding: 0 1.65rem;
-  background: linear-gradient(135deg, #FF8533 0%, #FFA259 100%);
+  background: linear-gradient(135deg, #FF7A1A 0%, #FF9240 100%);
   color: #ffffff;
-  border: 1px solid #FF8A3A;
+  border: 1px solid #E86A00;
   border-radius: 10px;
   font-size: 0.875rem;
   font-weight: 700;

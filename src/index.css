@@ -100,3 +100,26 @@
     transform: translate(-50%, -50%) rotate(360deg);
   }
 }
+
+/* Interactive Hover Micro-Animations for White/Light Surfaces */
+button,
+[role="button"],
+.btn {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              color 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+button:not(:disabled):hover,
+[role="button"]:not([aria-disabled="true"]):hover,
+.btn:not(:disabled):hover {
+  transform: translateY(-1.5px);
+}
+
+button:not(:disabled):active,
+[role="button"]:not([aria-disabled="true"]):active,
+.btn:not(:disabled):active {
+  transform: translateY(0) scale(0.985);
+}

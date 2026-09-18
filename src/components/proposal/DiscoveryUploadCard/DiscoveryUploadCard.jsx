@@ -33,7 +33,7 @@ export default function DiscoveryUploadCard({ onContinue, disabled = false }) {
   };
 
   return (
-    <SpotlightCard className="discovery-upload-card" spotlightColor="rgba(255, 133, 51, 0.1)">
+    <SpotlightCard className="discovery-upload-card" spotlightColor="rgba(255, 122, 26, 0.1)">
       <div className="discovery-upload-inner">
         <GlareHover className="discovery-glare-wrap">
           <div className={`discovery-dropzone ${hasOpenedWorkDrive ? 'has-selection' : ''} ${disabled ? 'disabled' : ''}`}>

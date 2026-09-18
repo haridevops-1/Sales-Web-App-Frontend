@@ -80,7 +80,7 @@ export const SpinningBorderButton = React.forwardRef<
         className={
           `relative z-10 inline-flex items-center justify-center gap-2.5 uppercase text-[12px] font-bold tracking-wider w-full h-full rounded-full px-8 transition-all duration-300 whitespace-nowrap ${
             isOrange
-              ? "text-white bg-gradient-to-r from-[#FF8533] via-[#FF9645] to-[#FF8533] shadow-[inset_0_1px_0_rgba(255,255,255,0.45),inset_0_-1px_0_rgba(0,0,0,0.15)] group-hover:brightness-105"
+              ? "text-white bg-gradient-to-r from-[#FF7A1A] via-[#FF9240] to-[#FF7A1A] shadow-[inset_0_1px_0_rgba(255,255,255,0.45),inset_0_-1px_0_rgba(0,0,0,0.15)] group-hover:brightness-105"
               : isBlue
               ? "text-white bg-gradient-to-r from-[#0052FF] via-[#1E6BFF] to-[#003087] shadow-[inset_0_1px_0_rgba(255,255,255,0.45),inset_0_-1px_0_rgba(0,0,0,0.15)] group-hover:brightness-105"
               : isDark

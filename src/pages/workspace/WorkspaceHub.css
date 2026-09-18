@@ -69,7 +69,7 @@
 }
 
 .workspace-module-card.accent-orange {
-  --accent-from: #FF8533;
+  --accent-from: #FF7A1A;
   --accent-to: #FFB27A;
 }
 
@@ -191,33 +191,33 @@
   align-items: center;
 }
 
-/* Primary CTA — amber-to-orange gradient with depth + arrow micro-interaction */
+/* Primary CTA — warm vibrant orange gradient with depth + arrow micro-interaction */
 .btn-workspace-cta {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  min-width: 172px;
-  height: 38px;
+  min-width: 180px;
+  height: 42px;
   padding: 0 1.75rem;
-  background-image: linear-gradient(to right, #FFB347, #FF8533);
+  background-image: linear-gradient(135deg, #FF7A1A, #FF9240);
   color: #FFFFFF;
   border: none;
   border-radius: 9999px;
   font-family: var(--font-family-display);
-  font-size: 0.85rem;
+  font-size: 0.88rem;
   font-weight: 700;
   letter-spacing: 0.01em;
   cursor: pointer;
-  box-shadow: var(--shadow-sm);
-  transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(255, 122, 26, 0.22);
+  transition: all 180ms cubic-bezier(0.4, 0, 0.2, 1);
   white-space: nowrap;
 }
 
 .btn-workspace-cta:hover {
-  background-image: linear-gradient(to right, #FFAA5E, #FF7820);
-  box-shadow: 0 8px 20px -4px rgba(255, 133, 51, 0.35);
-  transform: translateY(-1px);
+  background-image: linear-gradient(135deg, #E86A00, #FF7A1A);
+  box-shadow: 0 8px 22px -4px rgba(255, 122, 26, 0.4);
+  transform: translateY(-2px);
 }
 
 .btn-workspace-cta:active {

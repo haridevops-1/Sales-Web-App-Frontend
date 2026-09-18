@@ -14,19 +14,19 @@
   --spikra-blue-100:   #DBEAFE;
   --spikra-blue-200:   #BFDBFE;
 
-  /* Spikra Signature Orange (with Refined Light Orange Accents) */
-  --spikra-orange:         #FF8533;
-  --spikra-orange-hover:   #FF7820;
-  --spikra-orange-dark:    #E05A00;
-  --spikra-orange-light:   #FF8533;
-  --spikra-orange-lighter: #FFA259;
-  --spikra-orange-soft:    #FFB37A;
+  /* Spikra Signature Orange — Balanced Warm Vibrant */
+  --spikra-orange:         #FF7A1A;
+  --spikra-orange-hover:   #E86A00;
+  --spikra-orange-dark:    #CC5500;
+  --spikra-orange-light:   #FF9240;
+  --spikra-orange-lighter: #FFB06A;
+  --spikra-orange-soft:    #FFC48E;
   --spikra-orange-50:      #FFF7ED;
   --spikra-orange-100:     #FFEDD5;
   --spikra-orange-200:     #FED7AA;
 
-  /* shadcn / Tailwind Primary Variable (Lighter Orange Accent: hsl(26, 100%, 58%)) */
-  --primary: 26 100% 58%;
+  /* shadcn / Tailwind Primary Variable */
+  --primary: 26 100% 55%;
   --primary-foreground: 0 0% 100%;
 
   /* Crisp White Surfaces & Backgrounds */
@@ -41,7 +41,7 @@
   --color-success-border:#A7F3D0;
   --color-success-text:  #065F46;
 
-  --color-warning:       #FFB347;
+  --color-warning:       #FFB06A;
   --color-warning-bg:    #FFFBEB;
   --color-warning-border:#FDE68A;
 
@@ -93,7 +93,7 @@
   --shadow-sm: 0 1px 3px 0 rgba(11, 25, 44, 0.06), 0 1px 2px -1px rgba(11, 25, 44, 0.04);
   --shadow-md: 0 4px 6px -1px rgba(11, 25, 44, 0.06), 0 2px 4px -2px rgba(11, 25, 44, 0.04);
   --shadow-lg: 0 10px 15px -3px rgba(11, 25, 44, 0.07), 0 4px 6px -4px rgba(11, 25, 44, 0.03);
-  --shadow-orange-glow: 0 4px 14px rgba(255, 133, 51, 0.25);
+  --shadow-orange-glow: 0 4px 14px rgba(255, 122, 26, 0.25);
   --shadow-blue-glow:   0 4px 14px rgba(0, 82, 255, 0.2);
 
   /* Transitions */

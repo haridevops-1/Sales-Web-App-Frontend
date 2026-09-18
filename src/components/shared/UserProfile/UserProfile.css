@@ -15,7 +15,7 @@
 
 .spikra-user-profile.dark:hover {
   background: rgba(255, 255, 255, 0.09);
-  border-color: rgba(255, 133, 51, 0.35);
+  border-color: rgba(255, 122, 26, 0.35);
 }
 
 .spikra-user-profile.light {
@@ -91,8 +91,8 @@
   text-transform: uppercase;
   letter-spacing: 0.03em;
   color: #FFA34D;
-  background: rgba(255, 133, 51, 0.14);
-  border: 1px solid rgba(255, 133, 51, 0.25);
+  background: rgba(255, 122, 26, 0.14);
+  border: 1px solid rgba(255, 122, 26, 0.25);
   border-radius: var(--radius-xs);
   padding: 0.05rem 0.4rem;
   white-space: nowrap;

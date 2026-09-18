@@ -5,10 +5,10 @@
   --line-weight: 1.5px;
   --line-distance: 0.5rem 0.65rem;
   --animation-speed: 0.32s;
-  --dot-color: var(--spikra-orange, #FF8533);
-  --line-color: var(--spikra-orange, #FF8533);
-  --grid-color: rgba(255, 133, 51, 0.22);
-  --dot-glow: 0 0 8px rgba(255, 133, 51, 0.85);
+  --dot-color: var(--spikra-orange, #FF7A1A);
+  --line-color: var(--spikra-orange, #FF7A1A);
+  --grid-color: rgba(255, 122, 26, 0.22);
+  --dot-glow: 0 0 8px rgba(255, 122, 26, 0.85);
 
   position: relative;
   display: inline-flex;
@@ -275,7 +275,7 @@
 }
 
 .spikra-dot-inner-btn:focus-visible {
-  outline: 2px solid var(--spikra-orange, #FF8533);
+  outline: 2px solid var(--spikra-orange, #FF7A1A);
   outline-offset: 2px;
 }
 
@@ -285,22 +285,22 @@
 .spikra-dot-btn-wrapper.theme-orange {
   --dot-color: #FFA500;
   --line-color: #FF7A1A;
-  --grid-color: rgba(255, 133, 51, 0.35);
-  --dot-glow: 0 0 8px rgba(255, 133, 51, 0.9);
+  --grid-color: rgba(255, 122, 26, 0.35);
+  --dot-glow: 0 0 8px rgba(255, 122, 26, 0.9);
 }
 
 .spikra-dot-btn-wrapper.theme-orange .spikra-dot-inner-btn {
-  background: linear-gradient(135deg, #FF8533 0%, #FFAA5E 100%);
+  background: linear-gradient(135deg, #FF7A1A 0%, #FF9240 100%);
   color: #FFFFFF;
   border-color: rgba(255, 255, 255, 0.2);
-  box-shadow: 0 2px 8px rgba(255, 133, 51, 0.35);
+  box-shadow: 0 2px 8px rgba(255, 122, 26, 0.35);
 }
 
 .spikra-dot-btn-wrapper.theme-orange:hover:not(.is-disabled) .spikra-dot-inner-btn {
-  background: linear-gradient(135deg, #FF7820 0%, #FF8533 100%);
+  background: linear-gradient(135deg, #E86A00 0%, #FF7A1A 100%);
   transform: scale(1.03);
   letter-spacing: 0.02em;
-  box-shadow: 0 6px 20px rgba(255, 133, 51, 0.45);
+  box-shadow: 0 6px 20px rgba(255, 122, 26, 0.45);
 }
 
 .spikra-dot-btn-wrapper.theme-orange:active:not(.is-disabled) .spikra-dot-inner-btn {
@@ -310,16 +310,16 @@
 
 /* 2. Spikra Dark Navy Theme */
 .spikra-dot-btn-wrapper.theme-navy {
-  --dot-color: #FF8533;
-  --line-color: rgba(255, 133, 51, 0.85);
-  --grid-color: rgba(255, 133, 51, 0.25);
-  --dot-glow: 0 0 8px rgba(255, 133, 51, 0.8);
+  --dot-color: #FF7A1A;
+  --line-color: rgba(255, 122, 26, 0.85);
+  --grid-color: rgba(255, 122, 26, 0.25);
+  --dot-glow: 0 0 8px rgba(255, 122, 26, 0.8);
 }
 
 .spikra-dot-btn-wrapper.theme-navy .spikra-dot-inner-btn {
   background-color: var(--spikra-navy, #0B192C);
   color: #FFFFFF;
-  border-color: rgba(255, 133, 51, 0.4);
+  border-color: rgba(255, 122, 26, 0.4);
   box-shadow: 0 2px 8px rgba(11, 25, 44, 0.25);
 }
 
@@ -328,8 +328,8 @@
   color: #FFFFFF;
   transform: scale(1.03);
   letter-spacing: 0.02em;
-  box-shadow: 0 4px 16px rgba(255, 133, 51, 0.3);
-  border-color: var(--spikra-orange, #FF8533);
+  box-shadow: 0 4px 16px rgba(255, 122, 26, 0.3);
+  border-color: var(--spikra-orange, #FF7A1A);
 }
 
 .spikra-dot-btn-wrapper.theme-navy:active:not(.is-disabled) .spikra-dot-inner-btn {

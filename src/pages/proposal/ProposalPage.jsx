@@ -111,7 +111,7 @@ export default function ProposalPage({
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.4, ease: 'easeOut', delay: 0.08 }}
           >
-            <SpotlightCard className="stat-card" spotlightColor="rgba(255, 133, 51, 0.12)">
+            <SpotlightCard className="stat-card" spotlightColor="rgba(255, 122, 26, 0.12)">
               <div className="stat-icon orange">
                 <FileEdit size={16} strokeWidth={2.2} />
               </div>

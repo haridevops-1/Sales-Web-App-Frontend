@@ -110,15 +110,15 @@ a:focus-visible {
 }
 
 .btn-primary {
-  background: var(--spikra-orange-light, #ff822e);
+  background: linear-gradient(135deg, #FF7A1A 0%, #FF9240 100%);
   color: #ffffff;
-  box-shadow: 0 1px 4px rgba(255, 130, 46, 0.28);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 2px 8px rgba(255, 122, 26, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: var(--spikra-orange-hover, #ff7820);
-  box-shadow: 0 4px 14px rgba(255, 130, 46, 0.35);
+  background: var(--spikra-orange-hover, #E86A00);
+  box-shadow: 0 4px 14px rgba(255, 122, 26, 0.35);
   transform: translateY(-1px);
 }
 
