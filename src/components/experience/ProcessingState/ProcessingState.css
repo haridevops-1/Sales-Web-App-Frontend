@@ -63,6 +63,7 @@
 }
 
 .processing-main-text {
+  font-family: var(--font-family-display);
   font-size: 1.25rem;
   font-weight: 700;
   color: #0f172a;
@@ -71,6 +72,7 @@
 }
 
 .processing-active-stage {
+  font-family: var(--font-family-body);
   font-size: 0.875rem;
   color: #ea580c;
   font-weight: 600;

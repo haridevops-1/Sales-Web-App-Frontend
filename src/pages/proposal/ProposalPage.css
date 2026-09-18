@@ -46,6 +46,7 @@
 }
 
 .archive-main-title {
+  font-family: var(--font-family-display);
   font-size: 1.65rem;
   font-weight: 800;
   color: #0f172a;
@@ -54,6 +55,7 @@
 }
 
 .archive-subtitle {
+  font-family: var(--font-family-body);
   font-size: 0.875rem;
   color: #64748b;
 }

@@ -115,7 +115,7 @@ const DOT_BORDER_BUTTON_SOURCE = `<!DOCTYPE html>
       background-color: #fff0;
       border: 1px solid var(--grid-color);
       color: #fffd;
-      font-family: "Inter", sans-serif;
+      font-family: "Poppins", sans-serif;
       letter-spacing: -0.01em;
       font-size: 1rem;
       font-weight: 600;

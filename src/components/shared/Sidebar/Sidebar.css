@@ -111,6 +111,7 @@
 }
 
 .sidebar-section-title {
+  font-family: var(--font-family-display);
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -193,6 +194,7 @@
 }
 
 .sidebar-consultant-name {
+  font-family: var(--font-family-display);
   font-size: 0.84rem;
   font-weight: 600;
   color: #F8FAFC;
@@ -200,6 +202,7 @@
 }
 
 .consultant-role-badge {
+  font-family: var(--font-family-body);
   font-size: 0.68rem;
   color: #FFA34D;
   font-weight: 500;
@@ -223,7 +226,7 @@
   background: transparent;
   border: none;
   color: #FFFFFF;
-  font-family: inherit;
+  font-family: var(--font-family-display);
   font-size: 0.92rem;
   font-weight: 600;
   cursor: pointer;
