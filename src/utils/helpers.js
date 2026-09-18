@@ -195,14 +195,16 @@ export function formatProposalUrl(rawUrl, experienceId = '') {
     const parsed = new URL(trimmed);
     if (parsed.hostname.toLowerCase().includes('onslate.com')) {
       const pathname = parsed.pathname.replace(/^\/+|\/+$/g, '');
-      if (pathname && pathname.toLowerCase() !== 'index.html' && !parsed.searchParams.has('slug')) {
-        parsed.pathname = '/';
-        parsed.searchParams.set('slug', pathname);
-        if (experienceId && !parsed.searchParams.has('experience_id')) {
-          parsed.searchParams.set('experience_id', String(experienceId).trim());
+      if (pathname && pathname.toLowerCase() !== 'index.html' && pathname.toLowerCase() !== '404.html') {
+        if (!parsed.searchParams.has('slug')) {
+          parsed.searchParams.set('slug', pathname);
         }
-        return parsed.toString();
+        parsed.pathname = '/';
       }
+      if (experienceId && !parsed.searchParams.has('experience_id')) {
+        parsed.searchParams.set('experience_id', String(experienceId).trim());
+      }
+      return parsed.toString();
     }
     return trimmed;
   } catch {

@@ -5,11 +5,11 @@ import FilePreview from '../FilePreview/FilePreview';
 import ProcessingState from '../ProcessingState/ProcessingState';
 import UploadResultCard from '../UploadResultCard/UploadResultCard';
 import ProcessStatus from '../ProcessStatus/ProcessStatus';
-import SpotlightCard from '../../reactbits/SpotlightCard';
+import SpotlightCard from '@/reactbits/SpotlightCard';
 import { AnimatePresence, motion } from 'framer-motion';
-import { validateFile, inferBusinessName, validateLogoFile } from '../../utils/helpers';
-import { uploadTechnicalDocument, processDocument, analyzeDocument, generateCustomerExperience, deployCustomerExperience, getProcessStatus } from '../../api/catalystApi';
-import { UPLOAD_STAGES } from '../../utils/constants';
+import { validateFile, inferBusinessName, validateLogoFile } from '@/utils/helpers';
+import { uploadTechnicalDocument, processDocument, analyzeDocument, generateCustomerExperience, deployCustomerExperience, getProcessStatus } from '@/api/catalystApi';
+import { UPLOAD_STAGES } from '@/utils/constants';
 
 export default function UploadSection({ onStageChange, onUploadSuccess, onExperienceCreated, onError }) {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -656,6 +656,7 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
             generatedUrl={deploymentResult?.generatedUrl || deploymentResult?.generated_url}
             businessLogoPreview={businessLogoPreview}
             businessLogoFile={businessLogoFile}
+            analysisData={analysisResult}
             onPublished={handleStatusPublished}
             onError={handleStatusError}
             onUploadAnother={handleUploadAnother}

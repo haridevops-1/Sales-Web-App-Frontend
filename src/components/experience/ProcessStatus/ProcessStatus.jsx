@@ -13,8 +13,11 @@ import {
   Globe, 
   Link2, 
   FileCheck2,
-  RotateCcw
+  RotateCcw,
+  Eye,
+  EyeOff
 } from 'lucide-react';
+import CustomerExperiencePreview from '../CustomerExperiencePreview/CustomerExperiencePreview';
 
 const formatCleanText = (text) => {
   if (!text || typeof text !== 'string') return '';
@@ -62,6 +65,8 @@ export default function ProcessStatus({
   experienceTitle = '',
   generatedUrl: propGeneratedUrl = '',
   businessLogoPreview = null,
+  businessLogoFile = null,
+  analysisData = null,
   onPublished = null,
   onError = null,
   onStageChange = null,
@@ -75,6 +80,7 @@ export default function ProcessStatus({
   const [currentStage, setCurrentStage] = useState(propGeneratedUrl ? 'PUBLISHED' : 'DEPLOYING');
   const [fetchError, setFetchError] = useState(null);
   const [copiedUrl, setCopiedUrl] = useState(false);
+  const [showDocumentUI, setShowDocumentUI] = useState(false);
 
   const isMountedRef = useRef(true);
   const timerRef = useRef(null);
@@ -343,6 +349,18 @@ export default function ProcessStatus({
                 </span>
               </motion.button>
 
+              <motion.button
+                type="button"
+                className="btn-preview-minimal-ui"
+                onClick={() => setShowDocumentUI((prev) => !prev)}
+                whileHover={{ y: -2 }}
+                whileTap={{ y: 0, scale: 0.98 }}
+                title="Toggle inline minimal proposal UI for the uploaded document"
+              >
+                {showDocumentUI ? <EyeOff size={16} /> : <Eye size={16} />}
+                <span>{showDocumentUI ? 'Hide Document UI' : 'Preview Minimal UI'}</span>
+              </motion.button>
+
               {onUploadAnother && (
                 <motion.button
                   type="button"
@@ -356,6 +374,46 @@ export default function ProcessStatus({
                 </motion.button>
               )}
             </motion.div>
+
+            {/* In-App Minimal Proposal UI for the Uploaded Document */}
+            {showDocumentUI && (
+              <motion.div
+                className="document-minimal-preview-wrapper"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.35, ease: 'easeOut' }}
+              >
+                <div className="document-minimal-preview-banner">
+                  <div className="preview-banner-left">
+                    <span className="preview-live-dot" />
+                    <strong>Uploaded Document Minimal UI</strong>
+                    <span className="preview-sep">•</span>
+                    <span>{displayBusinessName}</span>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn-close-minimal-ui"
+                    onClick={() => setShowDocumentUI(false)}
+                    aria-label="Close minimal UI preview"
+                  >
+                    ✕ Close
+                  </button>
+                </div>
+                <div className="document-minimal-preview-body">
+                  <CustomerExperiencePreview
+                    businessName={displayBusinessName}
+                    projectName={displayProjectName}
+                    experienceTitle={displayProjectName}
+                    businessLogoPreview={businessLogoPreview}
+                    businessLogoFile={businessLogoFile}
+                    status={currentStage === 'PUBLISHED' ? 'PUBLISHED' : 'GENERATED'}
+                    generatedUrl={generatedUrl}
+                    analysisData={analysisData}
+                  />
+                </div>
+              </motion.div>
+            )}
           </motion.div>
         ) : isFailed ? (
           /* 2. FAILED STATE */

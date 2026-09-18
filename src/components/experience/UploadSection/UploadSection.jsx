@@ -656,6 +656,7 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
             generatedUrl={deploymentResult?.generatedUrl || deploymentResult?.generated_url}
             businessLogoPreview={businessLogoPreview}
             businessLogoFile={businessLogoFile}
+            analysisData={analysisResult}
             onPublished={handleStatusPublished}
             onError={handleStatusError}
             onUploadAnother={handleUploadAnother}

@@ -17,8 +17,8 @@ export const DEFAULT_CATALYST_BASE_URL = 'https://spikra-ai-proposal-698386704.d
 export function getCatalystBaseUrl() {
   if (typeof window !== 'undefined') {
     const host = window.location.hostname.toLowerCase();
-    // Only use same-origin relative URLs when running directly on the Catalyst serverless web client host
-    if (host.includes('catalystserverless.com') || host.includes('zohocatalyst.com')) {
+    // Only use same-origin relative URLs when running directly on any Catalyst serverless web client host (.com, .in, .eu, etc.)
+    if (host.includes('catalystserverless') || host.includes('zohocatalyst')) {
       return '';
     }
   }
@@ -55,7 +55,7 @@ function resolveEndpointUrl(relativePath, envOverride) {
   }
   if (typeof window !== 'undefined') {
     const host = window.location.hostname.toLowerCase();
-    if (host.includes('catalystserverless.com') || host.includes('zohocatalyst.com')) {
+    if (host.includes('catalystserverless') || host.includes('zohocatalyst')) {
       return relativePath;
     }
   }
@@ -553,6 +553,70 @@ export async function analyzeDocument({ documentId, timeoutMs = 300000 }) {
       err.status = response.status;
       err.responseData = responseData;
       throw err;
+    }
+
+    // Check if backend reports asynchronous analysis started / still processing
+    const isAsyncProcessing =
+      responseData?.still_processing === true ||
+      responseData?.processing_status === 'PROCESSING' ||
+      responseData?.job_status === 'RUNNING' ||
+      (typeof responseData?.message === 'string' && (
+        responseData.message.includes('Analysis started') ||
+        responseData.message.includes('still in progress')
+      ));
+
+    if (isAsyncProcessing) {
+      console.info('[Catalyst API Function 3] Analysis started asynchronously by backend. Polling for completion...');
+      const pollStartTime = Date.now();
+      const maxPollMs = Math.min(timeoutMs, 240000); // Poll up to 4 minutes
+      const pollIntervalMs = 3500;
+
+      while (Date.now() - pollStartTime < maxPollMs) {
+        await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
+
+        if (controller.signal.aborted) {
+          throw new Error('Analysis polling aborted.');
+        }
+
+        try {
+          console.info(`[Catalyst API Function 3] Checking analysis status for document: ${cleanDocumentId} (elapsed ${Math.round((Date.now() - pollStartTime) / 1000)}s)`);
+          const pollResponse = await fetch(analysisUrlWithParams, {
+            method: 'POST',
+            signal: controller.signal
+          });
+
+          if (pollResponse.ok) {
+            let pollData = null;
+            const pollContentType = pollResponse.headers.get('content-type') || '';
+            if (pollContentType.includes('application/json')) {
+              pollData = await pollResponse.json();
+            } else {
+              const text = await pollResponse.text();
+              try { pollData = JSON.parse(text); } catch { pollData = { message: text }; }
+            }
+
+            if (pollData && typeof pollData.output === 'string') {
+              try { pollData = JSON.parse(pollData.output); } catch {}
+            }
+
+            if (pollData?.success === true || pollData?.processing_status === 'COMPLETED' || pollData?.job_status === 'COMPLETED') {
+              console.info('[Catalyst API Function 3] Analysis completed successfully!');
+              responseData = pollData;
+              break;
+            }
+
+            if (pollData?.processing_status === 'FAILED' || pollData?.job_status === 'FAILED') {
+              const msg = pollData?.error_message || pollData?.error || pollData?.message || 'Document analysis failed.';
+              throw new Error(sanitizeBackendErrorMessage(msg));
+            }
+          }
+        } catch (pollErr) {
+          if (pollErr.message && pollErr.message.includes('failed')) {
+            throw pollErr;
+          }
+          console.warn('[Catalyst API Function 3] Poll attempt notice:', pollErr.message);
+        }
+      }
     }
 
     // Check if backend returned explicit failure in payload
