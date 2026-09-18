@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import './ProposalCard.css';
 import { Building2, Calendar, ArrowUpRight, Copy, Check } from 'lucide-react';
 import { copyToClipboard } from '@/utils/helpers';
+import { ShinyButton } from '@/components/ui/shiny-button';
 
 export default function ProposalCard({
   proposal,
@@ -85,7 +86,7 @@ export default function ProposalCard({
 
       {/* Actions */}
       <div className="proposal-glass-actions">
-        <button
+        <ShinyButton
           type="button"
           className="btn-proposal-view"
           onClick={(e) => {
@@ -93,9 +94,11 @@ export default function ProposalCard({
             if (onSelect) onSelect(proposal);
           }}
         >
-          <ArrowUpRight size={14} />
-          <span>View Proposal</span>
-        </button>
+          <span className="inline-flex items-center justify-center gap-1.5 font-bold">
+            <ArrowUpRight size={14} />
+            <span>View Proposal</span>
+          </span>
+        </ShinyButton>
 
         <button
           type="button"

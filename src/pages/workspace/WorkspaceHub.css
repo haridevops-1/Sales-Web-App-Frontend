@@ -69,7 +69,7 @@
 }
 
 .workspace-module-card.accent-orange {
-  --accent-from: #FF6B00;
+  --accent-from: #FF8533;
   --accent-to: #FFB27A;
 }
 
@@ -200,7 +200,7 @@
   min-width: 172px;
   height: 38px;
   padding: 0 1.75rem;
-  background-image: linear-gradient(to right, #F59E0B, #FF6B00);
+  background-image: linear-gradient(to right, #FFB347, #FF8533);
   color: #FFFFFF;
   border: none;
   border-radius: 9999px;
@@ -215,8 +215,8 @@
 }
 
 .btn-workspace-cta:hover {
-  background-image: linear-gradient(to right, #D97706, #E65C00);
-  box-shadow: 0 8px 20px -4px rgba(255, 107, 0, 0.35);
+  background-image: linear-gradient(to right, #FFAA5E, #FF7820);
+  box-shadow: 0 8px 20px -4px rgba(255, 133, 51, 0.35);
   transform: translateY(-1px);
 }
 

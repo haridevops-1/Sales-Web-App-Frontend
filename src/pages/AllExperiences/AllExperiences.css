@@ -87,6 +87,39 @@
   width: 100%;
 }
 
+/* Simple Upload Document Button (no spinning animation) */
+.btn-upload-simple {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  height: 2.35rem;
+  padding: 0 1.1rem;
+  font-size: 0.825rem;
+  font-weight: 600;
+  font-family: var(--font-family-primary, 'Poppins', sans-serif);
+  border-radius: 10px;
+  color: var(--spikra-navy, #0B192C);
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  box-shadow: 0 1px 4px rgba(11, 25, 44, 0.06);
+  cursor: pointer;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+}
+
+.btn-upload-simple:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  box-shadow: 0 2px 8px rgba(11, 25, 44, 0.10);
+  transform: translateY(-1px);
+}
+
+.btn-upload-simple:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 3px rgba(11, 25, 44, 0.06);
+}
+
 /* Active Search Info Bar */
 .archive-search-active-bar {
   display: flex;
@@ -95,7 +128,7 @@
   gap: 1rem;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
-  border-left: 3px solid var(--spikra-orange, #ff6b00);
+  border-left: 3px solid var(--spikra-orange, #FF8533);
   padding: 0.65rem 1.15rem;
   border-radius: 10px;
   font-size: 0.85rem;
@@ -106,7 +139,7 @@
 .archive-search-clear-link {
   background: none;
   border: none;
-  color: var(--spikra-orange, #ff6b00);
+  color: var(--spikra-orange, #FF8533);
   font-size: 0.8125rem;
   font-weight: 600;
   cursor: pointer;
@@ -117,7 +150,7 @@
 }
 
 .archive-search-clear-link:hover {
-  color: #cc4e00;
+  color: #E05A00;
 }
 
 .search-empty-state {
@@ -271,8 +304,8 @@
 }
 
 .experience-glass-card.tone-orange:hover {
-  box-shadow: 0 16px 32px -10px rgba(255, 107, 0, 0.22) !important;
-  border-color: rgba(255, 107, 0, 0.35) !important;
+  box-shadow: 0 16px 32px -10px rgba(255, 133, 51, 0.22) !important;
+  border-color: rgba(255, 133, 51, 0.35) !important;
 }
 
 .experience-glass-card.tone-blue:hover {
@@ -297,7 +330,7 @@
 }
 
 .experience-glass-card.tone-orange::before {
-  background: linear-gradient(90deg, #ff6b00, #ff9a52);
+  background: linear-gradient(90deg, #FF8533, #ff9a52);
 }
 
 .experience-glass-card.tone-blue::before {
@@ -332,7 +365,7 @@
   padding: 0.2rem 0.6rem;
   border-radius: 9999px;
   background: #fff7ed;
-  color: #ea580c;
+  color: #FF8A3A;
   border: 1px solid #ffedd5;
 }
 
@@ -407,7 +440,7 @@
 .exp-glass-biz {
   font-size: 0.72rem;
   font-weight: 800;
-  color: #ea580c;
+  color: #FF8A3A;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   white-space: nowrap;
@@ -499,17 +532,18 @@
   border-radius: 10px !important;
   font-size: 0.8rem !important;
   font-weight: 700 !important;
-  background: linear-gradient(135deg, #ff6b00 0%, #ff851b 100%) !important;
+  background: linear-gradient(135deg, #ff822e 0%, #ffa259 100%) !important;
   color: #ffffff !important;
-  border: none !important;
-  box-shadow: 0 3px 10px rgba(255, 107, 0, 0.25) !important;
+  border: 1px solid rgba(255, 255, 255, 0.45) !important;
+  box-shadow: 0 3px 12px rgba(255, 130, 46, 0.28) !important;
   transition: all 0.18s ease !important;
   gap: 0.4rem !important;
+  font-family: var(--font-family-primary) !important;
 }
 
 .exp-btn-open:hover:not(:disabled) {
-  background: linear-gradient(135deg, #e65c00 0%, #ff6b00 100%) !important;
-  box-shadow: 0 6px 16px rgba(255, 107, 0, 0.35) !important;
+  background: linear-gradient(135deg, #ff7820 0%, #ff984a 100%) !important;
+  box-shadow: 0 6px 18px rgba(255, 130, 46, 0.38) !important;
   transform: translateY(-1px);
 }
 
@@ -573,7 +607,7 @@
   padding: 3px 8px;
   border-radius: 12px;
   background: #FFF7ED;
-  color: var(--spikra-orange, #FF6B00);
+  color: var(--spikra-orange, #FF8533);
   border: 1px solid #FFEDD5;
 }
 

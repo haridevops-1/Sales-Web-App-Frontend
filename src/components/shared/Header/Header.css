@@ -69,12 +69,12 @@
   z-index: -1;
   border-radius: var(--radius-sm);
   background-color: var(--spikra-orange);
-  box-shadow: 0 2px 8px rgba(255, 107, 0, 0.35);
+  box-shadow: 0 2px 8px rgba(255, 133, 51, 0.35);
   border: 1px solid var(--spikra-orange-dark);
 }
 
 .nav-tab-pill.proposal-pill {
-  background-color: #FF6B00;
+  background-color: #FF8533;
 }
 
 .nav-tab-btn.active {

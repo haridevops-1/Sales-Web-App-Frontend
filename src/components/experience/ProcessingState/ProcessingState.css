@@ -11,7 +11,7 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
-  box-shadow: 0 10px 30px -5px rgba(11, 25, 44, 0.06), 0 4px 12px rgba(255, 107, 0, 0.04);
+  box-shadow: 0 10px 30px -5px rgba(11, 25, 44, 0.06), 0 4px 12px rgba(255, 133, 51, 0.04);
   position: relative;
   overflow: hidden;
 }
@@ -23,7 +23,7 @@
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, #ff6b00 0%, #ffa043 50%, #ff5500 100%);
+  background: linear-gradient(90deg, #FF8533 0%, #FFBE75 50%, #FF8533 100%);
 }
 
 .processing-compact-header {
@@ -36,21 +36,21 @@
   width: 38px;
   height: 38px;
   border: 3.5px solid #ffedd5;
-  border-top-color: #ff6b00;
+  border-top-color: #FF8533;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 0 14px rgba(255, 107, 0, 0.25);
+  box-shadow: 0 0 14px rgba(255, 133, 51, 0.25);
 }
 
 .spinner-center-dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #ff6b00;
+  background: #FF8533;
 }
 
 @keyframes spin {
@@ -74,7 +74,7 @@
 .processing-active-stage {
   font-family: var(--font-family-body);
   font-size: 0.875rem;
-  color: #ea580c;
+  color: #FF8A3A;
   font-weight: 600;
   display: block;
   overflow: hidden;

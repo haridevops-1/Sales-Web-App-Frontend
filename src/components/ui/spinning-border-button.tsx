@@ -55,7 +55,7 @@ export const SpinningBorderButton = React.forwardRef<
           disabled
             ? "opacity-50 cursor-not-allowed pointer-events-none shadow-none"
             : isOrange
-            ? "hover:-translate-y-0.5 hover:shadow-[0_6px_22px_rgba(255,107,0,0.5),0_0_18px_rgba(255,140,40,0.3)] shadow-[0_2px_10px_rgba(255,107,0,0.3)] active:translate-y-0"
+            ? "hover:-translate-y-0.5 hover:shadow-[0_6px_22px_rgba(255,133,51,0.5),0_0_18px_rgba(255,140,40,0.3)] shadow-[0_2px_10px_rgba(255,133,51,0.3)] active:translate-y-0"
             : isBlue
             ? "hover:-translate-y-0.5 hover:shadow-[0_6px_22px_rgba(0,82,255,0.5),0_0_18px_rgba(77,139,255,0.3)] shadow-[0_2px_10px_rgba(0,82,255,0.3)] active:translate-y-0"
             : "hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(255,255,255,0.15)] shadow-sm"
@@ -80,7 +80,7 @@ export const SpinningBorderButton = React.forwardRef<
         className={
           `relative z-10 inline-flex items-center justify-center gap-2.5 uppercase text-[12px] font-bold tracking-wider w-full h-full rounded-full px-8 transition-all duration-300 whitespace-nowrap ${
             isOrange
-              ? "text-white bg-gradient-to-r from-[#FF6B00] via-[#FF7A00] to-[#FF5500] shadow-[inset_0_1px_0_rgba(255,255,255,0.45),inset_0_-1px_0_rgba(0,0,0,0.15)] group-hover:brightness-105"
+              ? "text-white bg-gradient-to-r from-[#FF8533] via-[#FF9645] to-[#FF8533] shadow-[inset_0_1px_0_rgba(255,255,255,0.45),inset_0_-1px_0_rgba(0,0,0,0.15)] group-hover:brightness-105"
               : isBlue
               ? "text-white bg-gradient-to-r from-[#0052FF] via-[#1E6BFF] to-[#003087] shadow-[inset_0_1px_0_rgba(255,255,255,0.45),inset_0_-1px_0_rgba(0,0,0,0.15)] group-hover:brightness-105"
               : isDark

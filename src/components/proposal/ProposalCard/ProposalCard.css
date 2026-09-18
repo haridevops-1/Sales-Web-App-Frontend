@@ -32,12 +32,12 @@
 }
 
 .proposal-glass-card.tone-approved::before { background: linear-gradient(90deg, #10b981, #6ee7b7); }
-.proposal-glass-card.tone-review::before { background: linear-gradient(90deg, #ff6b00, #ff9a52); }
+.proposal-glass-card.tone-review::before { background: linear-gradient(90deg, #FF8533, #ff9a52); }
 .proposal-glass-card.tone-sent::before { background: linear-gradient(90deg, #0052ff, #4d8bff); }
 .proposal-glass-card.tone-draft::before { background: linear-gradient(90deg, #94a3b8, #cbd5e1); }
 
 .proposal-glass-card.tone-approved:hover { box-shadow: 0 16px 32px -10px rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.3); }
-.proposal-glass-card.tone-review:hover { box-shadow: 0 16px 32px -10px rgba(255, 107, 0, 0.22); border-color: rgba(255, 107, 0, 0.35); }
+.proposal-glass-card.tone-review:hover { box-shadow: 0 16px 32px -10px rgba(255, 133, 51, 0.22); border-color: rgba(255, 133, 51, 0.35); }
 .proposal-glass-card.tone-sent:hover { box-shadow: 0 16px 32px -10px rgba(0, 82, 255, 0.16); border-color: rgba(0, 82, 255, 0.3); }
 .proposal-glass-card.tone-draft:hover { box-shadow: 0 16px 32px -10px rgba(100, 116, 139, 0.16); border-color: rgba(148, 163, 184, 0.4); }
 
@@ -63,7 +63,7 @@
 }
 
 .proposal-glass-status-pill.approved { background: #ecfdf5; color: #059669; border-color: #a7f3d0; }
-.proposal-glass-status-pill.review { background: #fff7ed; color: #ea580c; border-color: #ffedd5; }
+.proposal-glass-status-pill.review { background: #fff7ed; color: #FF8A3A; border-color: #ffedd5; }
 .proposal-glass-status-pill.sent { background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }
 .proposal-glass-status-pill.draft { background: #f1f5f9; color: #475569; border-color: #cbd5e1; }
 
@@ -138,7 +138,7 @@
 .proposal-glass-industry {
   font-size: 0.7rem;
   font-weight: 800;
-  color: #ea580c;
+  color: #FF8A3A;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   white-space: nowrap;
@@ -221,15 +221,18 @@
 }
 
 .btn-proposal-view {
-  background: linear-gradient(135deg, #ff6b00 0%, #ff851b 100%);
+  background: linear-gradient(135deg, #ff822e 0%, #ffa259 100%);
   color: #ffffff;
-  border: none;
-  box-shadow: 0 3px 10px rgba(255, 107, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 3px 12px rgba(255, 130, 46, 0.28);
+  padding: 0 0.85rem;
+  overflow: hidden;
+  font-family: var(--font-family-primary);
 }
 
 .btn-proposal-view:hover {
-  background: linear-gradient(135deg, #e65c00 0%, #ff6b00 100%);
-  box-shadow: 0 6px 16px rgba(255, 107, 0, 0.35);
+  background: linear-gradient(135deg, #ff7820 0%, #ff984a 100%);
+  box-shadow: 0 6px 18px rgba(255, 130, 46, 0.38);
   transform: translateY(-1px);
 }
 

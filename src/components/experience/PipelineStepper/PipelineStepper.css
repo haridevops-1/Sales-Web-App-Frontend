@@ -50,7 +50,7 @@
   background-color: var(--spikra-orange-50);
   color: var(--spikra-orange);
   border-color: var(--spikra-orange-200);
-  box-shadow: 0 0 8px rgba(255, 107, 0, 0.35);
+  box-shadow: 0 0 8px rgba(255, 133, 51, 0.35);
   animation: plPulseStep 1.8s infinite ease-in-out;
 }
 

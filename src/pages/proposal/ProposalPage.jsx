@@ -4,6 +4,7 @@ import ProposalCard from '@/components/proposal/ProposalCard/ProposalCard';
 import CountUp from '@/reactbits/CountUp';
 import SpotlightCard from '@/reactbits/SpotlightCard';
 import SpinningBorderButton from '@/components/ui/spinning-border-button';
+import { ShinyButton } from '@/components/ui/shiny-button';
 import SpikraExperienceSearch from '@/components/ui/SpikraExperienceSearch';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Plus, FileText, FileEdit } from 'lucide-react';
@@ -59,10 +60,16 @@ export default function ProposalPage({
 
           <div className="archive-actions-header">
             <div className="archive-actions-top-row">
-              <SpinningBorderButton type="button" onClick={handleCreateProposal}>
-                <Plus size={16} />
-                <span>Create Proposal</span>
-              </SpinningBorderButton>
+              <ShinyButton
+                type="button"
+                onClick={handleCreateProposal}
+                className="btn-create-proposal-shiny"
+              >
+                <span className="inline-flex items-center justify-center gap-1.5 font-bold text-white normal-case text-sm">
+                  <Plus size={16} strokeWidth={2.5} />
+                  <span>Create Proposal</span>
+                </span>
+              </ShinyButton>
             </div>
 
             <div className="archive-search-container">
@@ -104,7 +111,7 @@ export default function ProposalPage({
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.4, ease: 'easeOut', delay: 0.08 }}
           >
-            <SpotlightCard className="stat-card" spotlightColor="rgba(255, 107, 0, 0.12)">
+            <SpotlightCard className="stat-card" spotlightColor="rgba(255, 133, 51, 0.12)">
               <div className="stat-icon orange">
                 <FileEdit size={16} strokeWidth={2.2} />
               </div>

@@ -34,6 +34,8 @@
   --green: #189a4d;
   --orange: #ef720c;
   --red: #e3474c;
+  --primary: 26 100% 58%;
+  --primary-foreground: 0 0% 100%;
   --ease-link: cubic-bezier(0.16, 1, 0.3, 1);
 }
 

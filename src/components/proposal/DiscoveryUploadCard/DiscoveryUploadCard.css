@@ -14,7 +14,7 @@
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, var(--spikra-orange) 0%, #ffa043 50%, var(--spikra-blue) 100%);
+  background: linear-gradient(90deg, var(--spikra-orange) 0%, #FFBE75 50%, var(--spikra-blue) 100%);
 }
 
 .discovery-upload-inner {
@@ -116,16 +116,16 @@
   border-radius: var(--radius-md);
   transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
   white-space: nowrap;
-  background: linear-gradient(180deg, #E65A00 0%, #C94600 100%);
+  background: linear-gradient(180deg, #FF8533 0%, #FF7820 100%);
   color: #ffffff;
   border: 1px solid var(--spikra-orange-dark);
-  box-shadow: 0 2px 6px rgba(201, 70, 0, 0.22);
+  box-shadow: 0 2px 6px rgba(255, 130, 46, 0.22);
   cursor: pointer;
 }
 
 .btn-open-workdrive:hover:not(:disabled) {
-  background: linear-gradient(180deg, #FF6B00 0%, #D95300 100%);
-  box-shadow: 0 4px 12px rgba(255, 107, 0, 0.3);
+  background: linear-gradient(135deg, #FF8533 0%, #FFA259 100%);
+  box-shadow: 0 4px 12px rgba(255, 133, 51, 0.3);
   transform: translateY(-1px);
 }
 
@@ -235,7 +235,7 @@
   outline: none;
   background: #ffffff;
   border-color: var(--spikra-orange);
-  box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.12);
+  box-shadow: 0 0 0 3px rgba(255, 133, 51, 0.12);
 }
 
 .discovery-field-input:disabled {
@@ -281,7 +281,7 @@
   justify-content: center;
   gap: 0.5rem;
   padding: 0.72rem 1.6rem;
-  background: linear-gradient(180deg, #E65A00 0%, #C94600 100%);
+  background: linear-gradient(180deg, #FF8533 0%, #FF7820 100%);
   color: #ffffff;
   border: none;
   border-radius: 10px;
@@ -290,14 +290,14 @@
   font-weight: 600;
   letter-spacing: 0.01em;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(201, 70, 0, 0.22);
+  box-shadow: 0 2px 6px rgba(255, 130, 46, 0.22);
   transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
   white-space: nowrap;
 }
 
 .btn-discovery-continue:hover:not(:disabled) {
-  background: linear-gradient(180deg, #FF6B00 0%, #D95300 100%);
-  box-shadow: 0 4px 12px rgba(255, 107, 0, 0.3);
+  background: linear-gradient(135deg, #FF8533 0%, #FFA259 100%);
+  box-shadow: 0 4px 12px rgba(255, 133, 51, 0.3);
   transform: translateY(-1px);
 }
 

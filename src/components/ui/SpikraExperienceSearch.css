@@ -16,16 +16,16 @@
 .spikra-search-beam.beam-energized,
 .spikra-search-wrapper:hover .spikra-search-beam {
   transform: translateY(-1.5px);
-  box-shadow: 0 0 0 1px rgba(255, 107, 0, 0.45), 0 8px 24px rgba(255, 107, 0, 0.24), 0 2px 8px rgba(11, 25, 44, 0.08);
+  box-shadow: 0 0 0 1px rgba(255, 133, 51, 0.45), 0 8px 24px rgba(255, 133, 51, 0.24), 0 2px 8px rgba(11, 25, 44, 0.08);
   animation: spikra-outline-pulse 2.4s ease-in-out infinite;
 }
 
 @keyframes spikra-outline-pulse {
   0%, 100% {
-    box-shadow: 0 0 0 1px rgba(255, 107, 0, 0.4), 0 6px 20px rgba(255, 107, 0, 0.2);
+    box-shadow: 0 0 0 1px rgba(255, 133, 51, 0.4), 0 6px 20px rgba(255, 133, 51, 0.2);
   }
   50% {
-    box-shadow: 0 0 0 1.8px rgba(255, 107, 0, 0.75), 0 8px 26px rgba(255, 107, 0, 0.35);
+    box-shadow: 0 0 0 1.8px rgba(255, 133, 51, 0.75), 0 8px 26px rgba(255, 133, 51, 0.35);
   }
 }
 
@@ -46,11 +46,11 @@
 
 .spikra-search-bar.is-hovered,
 .spikra-search-bar:hover {
-  box-shadow: inset 0 0 0 1px rgba(255, 107, 0, 0.5), 0 0 10px rgba(255, 107, 0, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(255, 133, 51, 0.5), 0 0 10px rgba(255, 133, 51, 0.12);
 }
 
 .spikra-search-bar.is-focused {
-  box-shadow: inset 0 0 0 1.5px #ff6b00, 0 0 14px rgba(255, 107, 0, 0.2);
+  box-shadow: inset 0 0 0 1.5px #FF8533, 0 0 14px rgba(255, 133, 51, 0.2);
 }
 
 .spikra-search-icon-box {
@@ -58,8 +58,8 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  color: #ff6b00;
-  filter: drop-shadow(0 0 6px rgba(255, 107, 0, 0.45));
+  color: #FF8533;
+  filter: drop-shadow(0 0 6px rgba(255, 133, 51, 0.45));
   transition: transform 0.2s ease;
 }
 
@@ -129,11 +129,11 @@
 
 .spikra-search-kbd-chip.chip-active,
 .spikra-search-kbd-chip:hover {
-  background: rgba(255, 107, 0, 0.12);
-  border-color: rgba(255, 107, 0, 0.4);
-  color: #ff6b00;
+  background: rgba(255, 133, 51, 0.12);
+  border-color: rgba(255, 133, 51, 0.4);
+  color: #FF8533;
   transform: scale(1.06);
-  box-shadow: 0 1px 4px rgba(255, 107, 0, 0.15);
+  box-shadow: 0 1px 4px rgba(255, 133, 51, 0.15);
 }
 
 /* Search Suffix (Count Tag & Clear Button) */
@@ -147,9 +147,9 @@
 .spikra-search-count-tag {
   font-size: 0.72rem;
   font-weight: 700;
-  color: #ea580c;
-  background: rgba(255, 107, 0, 0.14);
-  border: 1px solid rgba(255, 107, 0, 0.3);
+  color: #FF8A3A;
+  background: rgba(255, 133, 51, 0.14);
+  border: 1px solid rgba(255, 133, 51, 0.3);
   padding: 2px 8px;
   border-radius: 12px;
   white-space: nowrap;
@@ -173,8 +173,8 @@
 }
 
 .spikra-search-clear-btn:hover {
-  background: #ff6b00;
-  border-color: #ff6b00;
+  background: #FF8533;
+  border-color: #FF8533;
   color: #ffffff;
   transform: scale(1.08);
 }

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import './GeneratedExperiences.css';
 import { formatDate, copyToClipboard, formatProposalUrl } from '@/utils/helpers';
+import { ExternalLink } from 'lucide-react';
+import { ShinyButton } from '@/components/ui/shiny-button';
 
 export default function GeneratedExperiences({
   experiences = [],
@@ -237,19 +239,22 @@ export default function GeneratedExperiences({
 
                   {/* Actions Buttons */}
                   <div className="exp-card-actions">
-                    <button
+                    <ShinyButton
                       type="button"
-                      className="btn btn-primary btn-sm"
+                      className="btn btn-primary btn-sm flex items-center justify-center gap-1.5"
                       onClick={() => handleOpenExperience(generatedUrl)}
                       disabled={!isPublished || !generatedUrl}
                       title={
                         isPublished && generatedUrl
-                          ? 'Open live customer showcase in a new tab'
-                          : 'Live showcase URL is not available yet'
+                          ? 'Open live customer proposal in a new tab'
+                          : 'Live proposal URL is not available yet'
                       }
                     >
-                      <span>Open Showcase</span>
-                    </button>
+                      <span className="inline-flex items-center justify-center gap-1.5 font-bold">
+                        <ExternalLink size={13} />
+                        <span>View Proposal</span>
+                      </span>
+                    </ShinyButton>
 
                     <button
                       type="button"

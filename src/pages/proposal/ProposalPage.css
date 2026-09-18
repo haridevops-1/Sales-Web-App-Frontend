@@ -75,6 +75,28 @@
   gap: 0.75rem;
 }
 
+.btn-create-proposal-shiny {
+  height: 2.5rem;
+  padding: 0 1.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #ff822e 0%, #ffa259 100%);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 12px;
+  box-shadow: 0 4px 14px rgba(255, 130, 46, 0.28);
+  font-family: var(--font-family-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-create-proposal-shiny:hover {
+  background: linear-gradient(135deg, #ff7820 0%, #ff984a 100%);
+  box-shadow: 0 6px 20px rgba(255, 130, 46, 0.38);
+  transform: translateY(-1px);
+}
+
 .archive-search-container {
   display: flex;
   justify-content: flex-end;
@@ -89,7 +111,7 @@
   gap: 1rem;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
-  border-left: 3px solid var(--spikra-orange, #ff6b00);
+  border-left: 3px solid var(--spikra-orange, #FF8533);
   padding: 0.65rem 1.15rem;
   border-radius: 10px;
   font-size: 0.85rem;
@@ -100,7 +122,7 @@
 .archive-search-clear-link {
   background: none;
   border: none;
-  color: var(--spikra-orange, #ff6b00);
+  color: var(--spikra-orange, #FF8533);
   font-size: 0.8125rem;
   font-weight: 600;
   cursor: pointer;
@@ -111,7 +133,7 @@
 }
 
 .archive-search-clear-link:hover {
-  color: #cc4e00;
+  color: #E05A00;
 }
 
 .search-empty-state {

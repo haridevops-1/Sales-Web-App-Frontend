@@ -3,12 +3,12 @@ import './AllExperiences.css';
 import { formatDate, copyToClipboard, formatProposalUrl } from '@/utils/helpers';
 import CountUp from '../../reactbits/CountUp';
 import SpotlightCard from '../../reactbits/SpotlightCard';
-import SpinningBorderButton from '@/components/ui/spinning-border-button';
+import { ShinyButton } from '@/components/ui/shiny-button';
 import SpikraExperienceSearch from '../../components/ui/SpikraExperienceSearch';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Clock, Copy, Check, ExternalLink, FolderKanban, Plus, UploadCloud, ArrowLeft } from 'lucide-react';
+import { Clock, Copy, Check, ExternalLink, FolderKanban, Plus, ArrowLeft } from 'lucide-react';
 
 export default function AllExperiences({
   onNavigate,
@@ -100,13 +100,14 @@ export default function AllExperiences({
                 </button>
               )}
 
-              <SpinningBorderButton
+              <button
                 type="button"
+                className="btn-upload-simple"
                 onClick={() => onNavigate('generator')}
               >
-                <Plus size={16} />
+                <Plus size={15} strokeWidth={2.5} />
                 <span>Upload Document</span>
-              </SpinningBorderButton>
+              </button>
             </div>
 
             {/* Live Search Bar positioned directly under the Upload button */}
@@ -367,20 +368,22 @@ export default function AllExperiences({
 
                           {/* Action Buttons using shadcn Button */}
                           <div className="exp-glass-actions">
-                            <Button
-                              variant="default"
+                            <ShinyButton
+                              type="button"
                               className="exp-btn-open"
                               onClick={() => handleOpenExperience(generatedUrl, cardId)}
                               disabled={!isPublished || !generatedUrl}
                               title={
                                 isPublished && generatedUrl
-                                  ? 'Open live customer showcase in a new tab'
-                                  : 'Showcase URL is not published yet'
+                                  ? 'Open live customer proposal experience in a new tab'
+                                  : 'Proposal URL is not published yet'
                               }
                             >
-                              <ExternalLink size={14} />
-                              <span>Open Showcase</span>
-                            </Button>
+                              <span className="inline-flex items-center justify-center gap-1.5 font-bold">
+                                <ExternalLink size={14} />
+                                <span>View Proposal</span>
+                              </span>
+                            </ShinyButton>
 
                             <Button
                               variant="outline"
@@ -441,13 +444,14 @@ export default function AllExperiences({
               Uploaded documents will appear here after processing and publishing.
             </p>
             <div className="empty-action-group">
-              <SpinningBorderButton
+              <button
                 type="button"
+                className="btn-upload-simple"
                 onClick={() => onNavigate('generator')}
               >
-                <UploadCloud size={16} />
+                <Plus size={15} strokeWidth={2.5} />
                 <span>Upload Technical Document</span>
-              </SpinningBorderButton>
+              </button>
             </div>
           </div>
         )}

@@ -26,9 +26,9 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: rgba(255, 107, 0, 0.15);
-  color: var(--spikra-orange, #FF6B00);
-  border: 1px solid rgba(255, 107, 0, 0.3);
+  background: rgba(255, 133, 51, 0.15);
+  color: var(--spikra-orange, #FF8533);
+  border: 1px solid rgba(255, 133, 51, 0.3);
   font-size: 0.75rem;
   font-weight: 700;
   padding: 4px 10px;
@@ -55,7 +55,7 @@
 }
 
 .btn-open-live-top {
-  background: var(--spikra-orange, #FF6B00);
+  background: var(--spikra-orange, #FF8533);
   color: #ffffff;
   border: none;
   padding: 6px 14px;
@@ -111,7 +111,7 @@
 .exp-engine-tag {
   font-size: 0.82rem;
   font-weight: 600;
-  color: var(--spikra-orange, #FF6B00);
+  color: var(--spikra-orange, #FF8533);
 }
 
 .exp-client-badge {
@@ -180,7 +180,7 @@
 .exp-client-avatar {
   font-weight: 900;
   font-size: 1.1rem;
-  color: var(--spikra-orange, #FF6B00);
+  color: var(--spikra-orange, #FF8533);
 }
 
 .exp-brand-info {
@@ -216,7 +216,7 @@
   gap: 6px;
   font-size: 0.7rem;
   font-weight: 800;
-  color: var(--spikra-orange, #FF6B00);
+  color: var(--spikra-orange, #FF8533);
   letter-spacing: 0.06em;
   margin-bottom: 8px;
 }
@@ -225,7 +225,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--spikra-orange, #FF6B00);
+  background: var(--spikra-orange, #FF8533);
 }
 
 .exp-hero-heading {
@@ -275,7 +275,7 @@
   text-overflow: ellipsis;
 }
 
-.text-orange { color: var(--spikra-orange, #FF6B00); }
+.text-orange { color: var(--spikra-orange, #FF8533); }
 .text-emerald { color: #10B981; }
 
 /* Tabs Wrapper */
@@ -312,8 +312,8 @@
 }
 
 .exp-tab-btn.active {
-  color: var(--spikra-orange, #FF6B00);
-  border-bottom-color: var(--spikra-orange, #FF6B00);
+  color: var(--spikra-orange, #FF8533);
+  border-bottom-color: var(--spikra-orange, #FF8533);
 }
 
 /* Content Body & Panels */
@@ -328,7 +328,7 @@
 .exp-section-eyebrow {
   font-size: 0.7rem;
   font-weight: 800;
-  color: var(--spikra-orange, #FF6B00);
+  color: var(--spikra-orange, #FF8533);
   letter-spacing: 0.06em;
   display: block;
 }
@@ -343,7 +343,7 @@
 .exp-summary-card {
   background: #ffffff;
   border: 1px solid var(--spikra-border, #E2E8F0);
-  border-left: 4px solid var(--spikra-orange, #FF6B00);
+  border-left: 4px solid var(--spikra-orange, #FF8533);
   padding: 18px 20px;
   border-radius: 8px;
   margin-bottom: 24px;
@@ -457,7 +457,7 @@
 .exp-module-code {
   font-size: 0.7rem;
   font-weight: 800;
-  color: var(--spikra-orange, #FF6B00);
+  color: var(--spikra-orange, #FF8533);
   background: #FFF7ED;
   border: 1px solid #FFEDD5;
   padding: 2px 8px;
@@ -503,7 +503,7 @@
 .exp-step-card {
   background: #ffffff;
   border: 1px solid var(--spikra-border, #E2E8F0);
-  border-top: 3px solid var(--spikra-orange, #FF6B00);
+  border-top: 3px solid var(--spikra-orange, #FF8533);
   border-radius: 8px;
   padding: 18px;
 }
@@ -512,7 +512,7 @@
   display: inline-block;
   font-size: 0.72rem;
   font-weight: 800;
-  color: var(--spikra-orange, #FF6B00);
+  color: var(--spikra-orange, #FF8533);
   background: #FFF7ED;
   padding: 2px 8px;
   border-radius: 4px;
@@ -579,7 +579,7 @@
   border-radius: 50%;
 }
 .tech-dot.green { background: #10B981; }
-.tech-dot.orange { background: var(--spikra-orange, #FF6B00); }
+.tech-dot.orange { background: var(--spikra-orange, #FF8533); }
 
 /* Governance Accordions */
 .exp-governance-grid {
@@ -633,7 +633,7 @@
 /* Action Banner */
 .exp-action-card {
   background: linear-gradient(135deg, #050C16 0%, #0B192C 100%);
-  border-left: 6px solid var(--spikra-orange, #FF6B00);
+  border-left: 6px solid var(--spikra-orange, #FF8533);
   padding: 28px;
   color: #ffffff;
   display: flex;
@@ -645,7 +645,7 @@
 .exp-action-eyebrow {
   font-size: 0.7rem;
   font-weight: 700;
-  color: var(--spikra-orange, #FF6B00);
+  color: var(--spikra-orange, #FF8533);
   letter-spacing: 0.08em;
   display: block;
   margin-bottom: 4px;
@@ -671,7 +671,7 @@
 }
 
 .btn-exp-primary {
-  background: var(--spikra-orange, #FF6B00);
+  background: var(--spikra-orange, #FF8533);
   color: #ffffff;
   padding: 10px 18px;
   border-radius: 6px;
@@ -731,7 +731,7 @@
 }
 
 .exp-footer-tag {
-  color: var(--spikra-orange, #FF6B00);
+  color: var(--spikra-orange, #FF8533);
   font-weight: 700;
 }
 

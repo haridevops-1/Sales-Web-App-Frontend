@@ -53,7 +53,7 @@ export function Pattern({ className = "", theme = "spikra", onClose }: PatternPr
       {onClose && (
         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#FF6B00]" />
+            <span className="w-2 h-2 rounded-full bg-[#FF8533]" />
             <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200">
               Workspace Settings
             </span>
@@ -93,7 +93,7 @@ export function Pattern({ className = "", theme = "spikra", onClose }: PatternPr
                     layoutId="vcard-active-pill"
                     className={`absolute inset-0 rounded-lg -z-10 ${
                       isSpikra
-                        ? "bg-gradient-to-r from-[#FF6B00] to-[#E65A00] shadow-[0_2px_8px_rgba(255,107,0,0.3)]"
+                        ? "bg-gradient-to-r from-[#FF8533] to-[#FF8533] shadow-[0_2px_8px_rgba(255,133,51,0.3)]"
                         : "bg-primary"
                     }`}
                     transition={{ type: "spring", stiffness: 450, damping: 32 }}
@@ -138,7 +138,7 @@ export function Pattern({ className = "", theme = "spikra", onClose }: PatternPr
           <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end">
             <button
               type="button"
-              className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-[#FF6B00] hover:bg-orange-50 dark:hover:bg-orange-950/30 rounded transition-colors"
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-[#FF8533] hover:bg-orange-50 dark:hover:bg-orange-950/30 rounded transition-colors"
               onClick={() => {}}
             >
               <span>Configure</span>
