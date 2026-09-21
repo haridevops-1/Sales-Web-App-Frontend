@@ -7,6 +7,7 @@ import Toast from '@/components/shared/Toast/Toast';
 import WorkspaceHub from '@/pages/workspace/WorkspaceHub';
 import ProposalPage from '@/pages/proposal/ProposalPage';
 import CreateProposal from '@/pages/proposal/CreateProposal/CreateProposal';
+import ProposalDetails from '@/pages/proposal/ProposalDetails/ProposalDetails';
 import Dashboard from '@/pages/experience/Dashboard/Dashboard';
 import AllExperiences from '@/pages/experience/AllExperiences/AllExperiences';
 import { Pattern } from '@/components/ui/v-card-17';
@@ -56,81 +57,6 @@ const normalizeExperience = (exp) => {
   };
 };
 
-const INITIAL_MOCK_PROPOSALS = [
-  {
-    id: 'prop-101',
-    code: 'PROP-2026-001',
-    title: 'Proposal A — Enterprise Zoho CRM Plus Architecture',
-    customer: 'Customer A (Global Logistics Corp)',
-    industry: 'Supply Chain & Logistics',
-    value: 85000,
-    status: 'Draft',
-    date: '15 Sep 2026',
-    owner: 'Hariharan R',
-    description: 'Comprehensive CRM overhaul and automated logistics dispatch integration.'
-  },
-  {
-    id: 'prop-102',
-    code: 'PROP-2026-002',
-    title: 'Proposal B — Omnichannel CX & Service Desk Migration',
-    customer: 'Customer B (Apex Health Systems)',
-    industry: 'Healthcare & Life Sciences',
-    value: 120000,
-    status: 'Review',
-    date: '14 Sep 2026',
-    owner: 'Hariharan R',
-    description: 'HIPAA-compliant client service portal with automated ticket routing.'
-  },
-  {
-    id: 'prop-103',
-    code: 'PROP-2026-003',
-    title: 'Proposal C — Real Estate Lead Engine & ERP Sync',
-    customer: 'Customer C (Prestige Skyline Properties)',
-    industry: 'Real Estate & Infrastructure',
-    value: 65000,
-    status: 'Approved',
-    date: '12 Sep 2026',
-    owner: 'Hariharan R',
-    description: 'Full-funnel property inventory tracking and broker commission dashboard.'
-  },
-  {
-    id: 'prop-104',
-    code: 'PROP-2026-004',
-    title: 'Proposal D — Customer Analytics & Data Pipeline',
-    customer: 'Vertex Retail Network',
-    industry: 'Retail & Omnichannel E-commerce',
-    value: 95000,
-    status: 'Approved',
-    date: '10 Sep 2026',
-    owner: 'Hariharan R',
-    description: 'Predictive buyer scoring and automated replenishment engine.'
-  },
-  {
-    id: 'prop-105',
-    code: 'PROP-2026-005',
-    title: 'Proposal E — Financial Advisory Portal & Zoho Creator',
-    customer: 'Capital Crest Investments',
-    industry: 'Financial Services & FinTech',
-    value: 145000,
-    status: 'Review',
-    date: '08 Sep 2026',
-    owner: 'Hariharan R',
-    description: 'Custom wealth management client portal with real-time portfolio analytics.'
-  },
-  {
-    id: 'prop-106',
-    code: 'PROP-2026-006',
-    title: 'Proposal F — Smart Factory IoT & Maintenance Workflows',
-    customer: 'Titanium Industrial Works',
-    industry: 'Manufacturing & Industrial',
-    value: 110000,
-    status: 'Draft',
-    date: '05 Sep 2026',
-    owner: 'Hariharan R',
-    description: 'Predictive machine health alerts and field technician dispatch automation.'
-  }
-];
-
 export default function App() {
   // Navigation Routing State
   const [activeModule, setActiveModule] = useState('workspace'); // 'workspace' | 'proposal' | 'experience'
@@ -143,7 +69,9 @@ export default function App() {
   const [experiences, setExperiences] = useState([]);
   const [isLoadingExperiences, setIsLoadingExperiences] = useState(true);
   const [experiencesError, setExperiencesError] = useState(null);
-  const [proposals, setProposals] = useState(INITIAL_MOCK_PROPOSALS);
+  // Workspace 2 (Solution Proposals) owns its own proposal/package data via proposalApi -
+  // App.jsx only needs to remember which proposal_id to show on the details page.
+  const [selectedProposalId, setSelectedProposalId] = useState(null);
 
   // Authenticated user state
   const [currentUser] = useState({
@@ -226,11 +154,10 @@ export default function App() {
     loadExperiences({}, true);
   };
 
-  const handleProposalCreated = (newProp) => {
-    setProposals((prev) => [newProp, ...prev]);
-    if (newProp?.title) {
-      showToast(`Proposal "${newProp.title}" created successfully!`, 'success');
-    }
+  const handleViewProposal = (proposalId) => {
+    if (!proposalId) return;
+    setSelectedProposalId(proposalId);
+    handleNavigate('proposal', 'proposal-details');
   };
 
   // Unified router handler
@@ -276,7 +203,6 @@ export default function App() {
         onNavigateModule={handleNavigate}
         onOpenSettings={() => setIsSettingsOpen(true)}
         experiencesCount={experiences.length}
-        proposalsCount={6}
         currentUser={currentUser}
       />
 
@@ -306,16 +232,19 @@ export default function App() {
           activeSubPage === 'proposal-create' ? (
             <CreateProposal
               onNavigate={handleNavigate}
-              onProposalCreated={handleProposalCreated}
-              currentUser={currentUser}
-              totalProposals={proposals.length}
-              draftProposals={proposals.filter((p) => (p.status || '').toUpperCase() === 'DRAFT').length}
+              onViewProposal={handleViewProposal}
+              onToast={showToast}
+            />
+          ) : activeSubPage === 'proposal-details' ? (
+            <ProposalDetails
+              proposalId={selectedProposalId}
+              onNavigate={handleNavigate}
+              onToast={showToast}
             />
           ) : (
             <ProposalPage
-              proposals={proposals}
-              onProposalCreated={handleProposalCreated}
               onNavigate={handleNavigate}
+              onViewProposal={handleViewProposal}
               onToast={showToast}
             />
           )

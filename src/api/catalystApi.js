@@ -42,7 +42,7 @@ export function getCatalystBaseUrl() {
  * @param {string} [envOverride] - Optional env variable URL
  * @returns {string} The resolved URL
  */
-function resolveEndpointUrl(relativePath, envOverride) {
+export function resolveEndpointUrl(relativePath, envOverride) {
   // In local dev, always prefer the same-origin relative path so requests go through Vite's
   // proxy. Several backend functions (basicio type) rely on the project's CORS domain allowlist
   // rather than setting their own CORS headers, so a direct absolute-URL call from localhost is

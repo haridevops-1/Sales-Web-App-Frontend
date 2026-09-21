@@ -3,7 +3,9 @@ import {
   MAX_FILE_SIZE_BYTES,
   SUPPORTED_LOGO_EXTENSIONS,
   SUPPORTED_LOGO_MIME_TYPES,
-  MAX_LOGO_SIZE_BYTES
+  MAX_LOGO_SIZE_BYTES,
+  W2_SUPPORTED_FILE_EXTENSIONS,
+  W2_MAX_FILE_SIZE_BYTES
 } from './constants';
 
 
@@ -210,5 +212,35 @@ export function formatProposalUrl(rawUrl, experienceId = '') {
   } catch {
     return trimmed;
   }
+}
+
+/**
+ * Validate a WorkDrive file selection (Workspace 2 - Solution Proposals) before adding it
+ * to a discovery package. UX guard only - proposal-discovery/proposal-processor re-validate
+ * extension and actual downloaded size server-side regardless (frontend-reported size and
+ * type can't be trusted for authorization).
+ */
+export function validateWorkdriveFileSelection(file) {
+  if (!file || !file.file_name) {
+    return { valid: false, error: 'This item has no file name.' };
+  }
+
+  const extension = '.' + String(file.file_name).split('.').pop().toLowerCase();
+  if (!W2_SUPPORTED_FILE_EXTENSIONS.includes(extension)) {
+    return {
+      valid: false,
+      error: `'${file.file_name}' is not a supported file type. Supported: ${W2_SUPPORTED_FILE_EXTENSIONS.join(', ')}.`
+    };
+  }
+
+  const size = Number(file.file_size) || 0;
+  if (size > W2_MAX_FILE_SIZE_BYTES) {
+    return {
+      valid: false,
+      error: `'${file.file_name}' exceeds the ${formatBytes(W2_MAX_FILE_SIZE_BYTES)} limit (${formatBytes(size)}).`
+    };
+  }
+
+  return { valid: true, error: null };
 }
 

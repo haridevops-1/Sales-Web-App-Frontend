@@ -149,6 +149,16 @@
   margin-bottom: 1.75rem;
 }
 
+.archive-stats-row.proposal-stats-row-4 {
+  grid-template-columns: repeat(4, minmax(160px, 220px));
+}
+
+@media (max-width: 900px) {
+  .archive-stats-row.proposal-stats-row-4 {
+    grid-template-columns: repeat(2, minmax(160px, 1fr));
+  }
+}
+
 .stat-card {
   background-color: #ffffff;
   border: 1px solid #e2e8f0;
@@ -187,6 +197,37 @@
   background: var(--spikra-orange-50);
   color: var(--spikra-orange-hover);
   border: 1px solid var(--spikra-orange-200);
+}
+
+.stat-icon.warning {
+  background: var(--color-warning-bg);
+  color: #92640a;
+  border: 1px solid var(--color-warning-border);
+}
+
+.stat-icon.success {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+  border: 1px solid var(--color-success-border);
+}
+
+.proposals-loading-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.proposal-skeleton-card {
+  height: 220px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(90deg, var(--bg-surface-subtle) 25%, var(--bg-surface-muted) 37%, var(--bg-surface-subtle) 63%);
+  background-size: 400% 100%;
+  animation: proposal-skeleton-shimmer 1.4s ease infinite;
+}
+
+@keyframes proposal-skeleton-shimmer {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
 }
 
 .stat-text {

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import './ProposalCard.css';
 import { Building2, Calendar, ArrowUpRight, Copy, Check } from 'lucide-react';
-import { copyToClipboard } from '@/utils/helpers';
+import { copyToClipboard, formatDate } from '@/utils/helpers';
 import { ShinyButton } from '@/components/ui/shiny-button';
+import { W2_PROPOSAL_STATUS } from '@/utils/constants';
 
 export default function ProposalCard({
   proposal,
@@ -13,36 +14,36 @@ export default function ProposalCard({
   if (!proposal) return null;
 
   const {
-    title,
-    customer,
+    proposal_title: title,
+    customer_name: customer,
     industry,
-    status = 'Draft',
-    date,
-    value,
-    code = 'PROP-2026-001'
+    status = W2_PROPOSAL_STATUS.DRAFT,
+    created_at: createdAt,
+    deal_value: dealValue,
+    proposal_id: proposalId
   } = proposal;
 
   const getStatusMeta = (st) => {
-    const s = String(st).toLowerCase();
-    if (s === 'approved') return { label: 'Approved', className: 'approved', tone: 'tone-approved' };
-    if (s === 'review' || s === 'in review' || s === 'in_review') return { label: 'In Review', className: 'review', tone: 'tone-review' };
-    if (s === 'sent') return { label: 'Sent', className: 'sent', tone: 'tone-sent' };
+    if (st === W2_PROPOSAL_STATUS.APPROVED) return { label: 'Approved', className: 'approved', tone: 'tone-approved' };
+    if (st === W2_PROPOSAL_STATUS.IN_REVIEW) return { label: 'In Review', className: 'review', tone: 'tone-review' };
     return { label: 'Draft', className: 'draft', tone: 'tone-draft' };
   };
 
   const status_ = getStatusMeta(status);
 
-  const formattedValue = value ? new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0
-  }).format(value) : '$0';
+  // deal_value is real when present (never invented) - proposal-api always returns a
+  // number, defaulting to 0 when the Zia Agent didn't estimate one, so 0 means "not set"
+  // rather than a genuine $0 deal.
+  const hasDealValue = Number(dealValue) > 0;
+  const formattedValue = hasDealValue
+    ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(dealValue)
+    : null;
 
   const initials = (customer || 'NA').replace(/[()]/g, '').split(' ').filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
 
-  const handleCopyCode = async (e) => {
+  const handleCopyId = async (e) => {
     e.stopPropagation();
-    const ok = await copyToClipboard(code);
+    const ok = await copyToClipboard(proposalId);
     if (ok) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -57,10 +58,10 @@ export default function ProposalCard({
           <span className="status-dot-sm animate-pulse" />
           <span>{status_.label}</span>
         </span>
-        {date && (
+        {createdAt && (
           <span className="proposal-glass-date">
             <Calendar size={13} />
-            <span>{date}</span>
+            <span>{formatDate(createdAt)}</span>
           </span>
         )}
       </div>
@@ -78,11 +79,13 @@ export default function ProposalCard({
         </div>
       </div>
 
-      {/* Deal Value Box */}
-      <div className="proposal-glass-info-box">
-        <span className="proposal-info-label">Deal Value</span>
-        <span className="proposal-info-value">{formattedValue}</span>
-      </div>
+      {/* Deal Value Box - only shown when the backend actually returned one */}
+      {hasDealValue && (
+        <div className="proposal-glass-info-box">
+          <span className="proposal-info-label">Deal Value</span>
+          <span className="proposal-info-value">{formattedValue}</span>
+        </div>
+      )}
 
       {/* Actions */}
       <div className="proposal-glass-actions">
@@ -103,8 +106,8 @@ export default function ProposalCard({
         <button
           type="button"
           className="btn-proposal-copy"
-          onClick={handleCopyCode}
-          title="Copy proposal code"
+          onClick={handleCopyId}
+          title="Copy proposal ID"
         >
           {copied ? (
             <>
@@ -114,7 +117,7 @@ export default function ProposalCard({
           ) : (
             <>
               <Copy size={14} />
-              <span>{code}</span>
+              <span>{proposalId}</span>
             </>
           )}
         </button>

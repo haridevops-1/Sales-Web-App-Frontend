@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import './ProposalPage.css';
 import ProposalCard from '@/components/proposal/ProposalCard/ProposalCard';
 import CountUp from '@/reactbits/CountUp';
@@ -7,17 +7,44 @@ import SpinningBorderButton from '@/components/ui/spinning-border-button';
 import { ShinyButton } from '@/components/ui/shiny-button';
 import SpikraExperienceSearch from '@/components/ui/SpikraExperienceSearch';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Plus, FileText, FileEdit } from 'lucide-react';
+import { ArrowLeft, Plus, FileText, FileEdit, Eye, CheckCircle2, Loader2, AlertTriangle } from 'lucide-react';
+import { listProposals, getFriendlyErrorMessage } from '@/api/proposalApi';
+import { W2_PROPOSAL_STATUS } from '@/utils/constants';
 
 export default function ProposalPage({
-  proposals = [],
   onNavigate,
+  onViewProposal,
   onToast
 }) {
+  const [proposals, setProposals] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
 
+  const load = useCallback(async (signal) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await listProposals(null, signal);
+      setProposals(Array.isArray(res.proposals) ? res.proposals : []);
+    } catch (err) {
+      if (err.name === 'AbortError') return;
+      setError(err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    load(controller.signal);
+    return () => controller.abort();
+  }, [load]);
+
   const totalCount = proposals.length;
-  const draftCount = proposals.filter((p) => (p.status || '').toUpperCase() === 'DRAFT').length;
+  const draftCount = proposals.filter((p) => p.status === W2_PROPOSAL_STATUS.DRAFT).length;
+  const inReviewCount = proposals.filter((p) => p.status === W2_PROPOSAL_STATUS.IN_REVIEW).length;
+  const approvedCount = proposals.filter((p) => p.status === W2_PROPOSAL_STATUS.APPROVED).length;
 
   const filteredProposals = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -25,7 +52,7 @@ export default function ProposalPage({
     const tokens = query.split(/\s+/).filter(Boolean);
 
     return proposals.filter((p) => {
-      const searchableText = `${p.title} ${p.customer} ${p.code} ${p.industry} ${p.status} ${p.owner}`.toLowerCase();
+      const searchableText = `${p.proposal_title || ''} ${p.customer_name || ''} ${p.proposal_id || ''} ${p.industry || ''} ${p.status || ''}`.toLowerCase();
       return tokens.every((token) => searchableText.includes(token));
     });
   }, [proposals, searchQuery]);
@@ -35,8 +62,10 @@ export default function ProposalPage({
   };
 
   const handleSelectProposal = (proposal) => {
-    if (onToast) onToast(`Selected proposal: ${proposal.title}`, 'info', 3500);
+    if (onViewProposal) onViewProposal(proposal.proposal_id);
   };
+
+  const isUnauthorized = error?.status === 401;
 
   return (
     <div className="proposal-module-page animate-fade-in">
@@ -87,12 +116,8 @@ export default function ProposalPage({
         </div>
 
         {/* Stats Row */}
-        <div className="archive-stats-row">
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: 'easeOut' }}
-          >
+        <div className="archive-stats-row proposal-stats-row-4">
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: 'easeOut' }}>
             <SpotlightCard className="stat-card" spotlightColor="rgba(0, 82, 255, 0.12)">
               <div className="stat-icon blue">
                 <FileText size={16} strokeWidth={2.2} />
@@ -106,11 +131,7 @@ export default function ProposalPage({
             </SpotlightCard>
           </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, scale: 0.85 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4, ease: 'easeOut', delay: 0.08 }}
-          >
+          <motion.div initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, ease: 'easeOut', delay: 0.06 }}>
             <SpotlightCard className="stat-card" spotlightColor="rgba(255, 122, 26, 0.12)">
               <div className="stat-icon orange">
                 <FileEdit size={16} strokeWidth={2.2} />
@@ -123,10 +144,69 @@ export default function ProposalPage({
               </div>
             </SpotlightCard>
           </motion.div>
+
+          <motion.div initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, ease: 'easeOut', delay: 0.12 }}>
+            <SpotlightCard className="stat-card" spotlightColor="rgba(255, 176, 106, 0.16)">
+              <div className="stat-icon warning">
+                <Eye size={16} strokeWidth={2.2} />
+              </div>
+              <div className="stat-text">
+                <span className="stat-label">In Review</span>
+                <span className="stat-value">
+                  <CountUp to={inReviewCount} duration={1.1} separator="" />
+                </span>
+              </div>
+            </SpotlightCard>
+          </motion.div>
+
+          <motion.div initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, ease: 'easeOut', delay: 0.18 }}>
+            <SpotlightCard className="stat-card" spotlightColor="rgba(16, 185, 129, 0.14)">
+              <div className="stat-icon success">
+                <CheckCircle2 size={16} strokeWidth={2.2} />
+              </div>
+              <div className="stat-text">
+                <span className="stat-label">Approved</span>
+                <span className="stat-value">
+                  <CountUp to={approvedCount} duration={1.1} separator="" />
+                </span>
+              </div>
+            </SpotlightCard>
+          </motion.div>
         </div>
 
         {/* Body */}
-        {totalCount > 0 ? (
+        {isLoading ? (
+          <div className="proposals-loading-grid">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="proposal-skeleton-card" />
+            ))}
+          </div>
+        ) : error ? (
+          <div className="archive-empty-card animate-fade-in">
+            <div className="empty-symbol"><AlertTriangle size={28} /></div>
+            <h3 className="empty-heading">
+              {isUnauthorized ? 'Connect WorkDrive to view proposals' : 'Unable to load proposals'}
+            </h3>
+            <p className="empty-text">
+              {isUnauthorized
+                ? 'Your WorkDrive connection has expired or hasn’t been set up yet. Connect it from Create Proposal to continue.'
+                : getFriendlyErrorMessage(error)}
+            </p>
+            <div className="empty-action-group">
+              {isUnauthorized ? (
+                <SpinningBorderButton type="button" onClick={handleCreateProposal}>
+                  <Plus size={16} />
+                  <span>Create Proposal</span>
+                </SpinningBorderButton>
+              ) : (
+                <button type="button" className="btn btn-secondary" onClick={() => load()}>
+                  <Loader2 size={14} />
+                  <span>Try again</span>
+                </button>
+              )}
+            </div>
+          </div>
+        ) : totalCount > 0 ? (
           filteredProposals.length > 0 ? (
             <>
               {searchQuery.trim() && (
@@ -147,7 +227,7 @@ export default function ProposalPage({
               <div className="proposals-cards-grid animate-fade-in">
                 {filteredProposals.map((proposal, idx) => (
                   <motion.div
-                    key={proposal.id}
+                    key={proposal.proposal_id}
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: Math.min(idx * 0.04, 0.3) }}

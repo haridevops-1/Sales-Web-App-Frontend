@@ -71,83 +71,6 @@
   margin: 0 0 1.75rem 0;
 }
 
-/* Quick Stats */
-.proposal-quick-stats-row {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
-  max-width: 480px;
-  margin: 0 auto 2rem;
-}
-
-.proposal-stat-card {
-  display: flex;
-  align-items: center;
-  gap: 0.85rem;
-  background: #ffffff;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
-  padding: 1rem 1.25rem;
-  box-shadow: var(--shadow-xs);
-  transition: border-color 220ms ease, box-shadow 220ms ease, transform 220ms ease;
-}
-
-.proposal-stat-card:hover {
-  border-color: var(--border-medium);
-  box-shadow: var(--shadow-md);
-  transform: translateY(-3px);
-}
-
-.proposal-stat-card:hover .proposal-stat-icon {
-  transform: scale(1.1) rotate(-4deg);
-}
-
-.proposal-stat-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.proposal-stat-icon.blue {
-  background: var(--spikra-blue-50);
-  color: var(--spikra-blue);
-  border: 1px solid var(--border-blue);
-}
-
-.proposal-stat-icon.orange {
-  background: var(--spikra-orange-50);
-  color: var(--spikra-orange-hover);
-  border: 1px solid var(--spikra-orange-200);
-}
-
-.proposal-stat-text {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.proposal-stat-value {
-  font-family: var(--font-family-display);
-  font-size: 1.35rem;
-  font-weight: 800;
-  color: var(--spikra-navy);
-  line-height: 1.1;
-}
-
-.proposal-stat-label {
-  font-size: 0.725rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 .create-proposal-body {
   position: relative;
 }
@@ -198,67 +121,68 @@
   margin: 0;
 }
 
-.preparing-steps-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.preparing-elapsed-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.preparing-timeout-notice {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.7rem;
+  padding: 0.9rem 1rem;
+  background: var(--color-warning-bg);
+  border: 1px solid var(--color-warning-border);
+  border-radius: var(--radius-md);
 }
 
-.preparing-step-item {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: var(--text-muted);
-  transition: color 200ms ease;
-}
-
-.preparing-step-item.is-active {
-  color: var(--text-primary);
-  font-weight: 600;
-}
-
-.preparing-step-item.is-done {
+.preparing-timeout-notice p {
+  margin: 0;
+  font-size: 0.85rem;
   color: var(--text-secondary);
+  line-height: 1.5;
 }
 
-.preparing-step-marker {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
+.preparing-timeout-actions {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  background: var(--bg-surface-subtle);
-  border: 1.5px solid var(--border-subtle);
-  color: #ffffff;
-  transition: all 200ms ease;
+  gap: 0.6rem;
+  flex-wrap: wrap;
 }
 
-.preparing-step-item.is-active .preparing-step-marker {
-  border-color: var(--spikra-orange);
-  background: var(--spikra-orange-50);
-}
-
-.preparing-step-item.is-done .preparing-step-marker {
-  border-color: var(--color-success);
-  background: var(--color-success);
-}
-
-.preparing-step-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--border-medium);
-}
-
-.preparing-step-item.is-active .preparing-step-dot {
+.btn-keep-waiting {
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  border: none;
   background: var(--spikra-orange);
+  color: #fff;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-keep-waiting:hover {
+  filter: brightness(1.05);
+}
+
+.btn-back-to-proposals-inline {
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--border-medium);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-back-to-proposals-inline:hover {
+  border-color: var(--text-secondary);
+  color: var(--text-primary);
 }
 
 @media (max-width: 640px) {
@@ -267,9 +191,5 @@
   }
   .proposal-hero-section {
     padding-top: 0.5rem;
-  }
-  .proposal-quick-stats-row {
-    grid-template-columns: 1fr;
-    max-width: 320px;
   }
 }

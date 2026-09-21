@@ -98,4 +98,34 @@ export const PROCESS_STAGE_LABELS = {
   FAILED: 'Failed'
 };
 
+// =========================================================================
+// WORKSPACE 2 - SOLUTION PROPOSALS (Discovery package files via Zoho WorkDrive)
+// =========================================================================
+
+// Supported discovery document formats - matches proposal-discovery's own
+// SUPPORTED_FILE_EXTENSIONS exactly (backend re-validates regardless).
+export const W2_SUPPORTED_FILE_EXTENSIONS = ['.pdf', '.docx', '.doc', '.xlsx', '.xls', '.txt'];
+
+// Matches proposal-discovery's MAX_FILE_SIZE_BYTES (25MB) - frontend guard only.
+export const W2_MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024;
+
+// Real statuses returned by proposal-discovery for a W2_DISCOVERY_PACKAGES row.
+export const W2_PACKAGE_STATUS = {
+  CREATED: 'CREATED',
+  PROCESSING: 'PROCESSING',
+  PROCESSED: 'PROCESSED',
+  FAILED: 'FAILED'
+};
+
+// Real statuses returned by proposal-api for a W2_PROPOSALS row (services/proposal's
+// VALID_STATUSES). Draft -> In Review -> Approved; In Review can also return to Draft;
+// Approved is terminal. The backend is the source of truth for transitions.
+export const W2_PROPOSAL_STATUS = {
+  DRAFT: 'Draft',
+  IN_REVIEW: 'In Review',
+  APPROVED: 'Approved'
+};
+
+export const W2_PROPOSAL_STATUSES = [W2_PROPOSAL_STATUS.DRAFT, W2_PROPOSAL_STATUS.IN_REVIEW, W2_PROPOSAL_STATUS.APPROVED];
+
 

@@ -1,98 +1,187 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import './CreateProposal.css';
 import DiscoveryUploadCard from '@/components/proposal/DiscoveryUploadCard/DiscoveryUploadCard';
+import DiscoveryPackageReview from '@/components/proposal/DiscoveryPackageReview/DiscoveryPackageReview';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Check, FileStack, FileEdit } from 'lucide-react';
+import { ArrowLeft, Clock } from 'lucide-react';
 import BlurText from '@/reactbits/BlurText';
 import GradientText from '@/reactbits/GradientText';
-import CountUp from '@/reactbits/CountUp';
-import SpotlightCard from '@/reactbits/SpotlightCard';
+import { processDiscoveryPackage, getDiscoveryPackage, listProposals, getFriendlyErrorMessage } from '@/api/proposalApi';
 
-const PREP_STEPS = [
-  'Reading discovery package',
-  'Structuring proposal outline',
-  'Finalizing draft'
-];
+const POLL_INTERVAL_MS = 2500;
+const MAX_POLL_MS = 3 * 60 * 1000; // 3 minutes - a frontend polling timeout, never a proposal failure
 
-function PreparingProposalCard({ activeStepIndex }) {
+function ProcessingProposalCard({ elapsedSeconds, isTakingLong, onKeepWaiting, onBackToProposals }) {
+  const minutes = Math.floor(elapsedSeconds / 60);
+  const seconds = elapsedSeconds % 60;
+  const elapsedLabel = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+
   return (
     <div className="preparing-proposal-card animate-fade-in">
       <div className="preparing-header">
         <span className="preparing-spinner" aria-hidden="true" />
         <div>
-          <h3 className="preparing-title">Preparing your proposal…</h3>
-          <p className="preparing-subtitle">This will only take a moment.</p>
+          <h3 className="preparing-title">Processing Proposal…</h3>
+          <p className="preparing-subtitle">
+            Your discovery package is being analyzed and the proposal is being generated. This can take a while for larger packages.
+          </p>
         </div>
       </div>
 
-      <ul className="preparing-steps-list">
-        {PREP_STEPS.map((label, index) => {
-          const isDone = index < activeStepIndex;
-          const isActive = index === activeStepIndex;
-          return (
-            <li
-              key={label}
-              className={`preparing-step-item ${isDone ? 'is-done' : ''} ${isActive ? 'is-active' : ''}`}
-            >
-              <span className="preparing-step-marker">
-                {isDone ? <Check size={12} strokeWidth={3} /> : <span className="preparing-step-dot" />}
-              </span>
-              <span className="preparing-step-label">{label}</span>
-            </li>
-          );
-        })}
-      </ul>
+      <div className="preparing-elapsed-row">
+        <Clock size={14} />
+        <span>Elapsed: {elapsedLabel}</span>
+      </div>
+
+      {isTakingLong && (
+        <div className="preparing-timeout-notice animate-fade-in">
+          <p>Proposal generation is taking longer than expected. You can continue waiting or return to proposals.</p>
+          <div className="preparing-timeout-actions">
+            <button type="button" className="btn-keep-waiting" onClick={onKeepWaiting}>Keep waiting</button>
+            <button type="button" className="btn-back-to-proposals-inline" onClick={onBackToProposals}>Back to proposals</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 export default function CreateProposal({
   onNavigate,
-  onProposalCreated,
-  currentUser = { name: 'Hariharan R' },
-  totalProposals = 0,
-  draftProposals = 0
+  onViewProposal,
+  onToast
 }) {
-  const [step, setStep] = useState('upload'); // 'upload' | 'preparing'
-  const [activeStepIndex, setActiveStepIndex] = useState(0);
+  const [step, setStep] = useState('discovery'); // 'discovery' | 'review' | 'processing'
+  const [discoveryPackage, setDiscoveryPackage] = useState(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [isTakingLong, setIsTakingLong] = useState(false);
+
+  const pollAbortRef = useRef(null);
 
   useEffect(() => {
-    if (step !== 'preparing') return undefined;
-
-    const timers = PREP_STEPS.map((_, index) =>
-      setTimeout(() => setActiveStepIndex(index + 1), (index + 1) * 650)
-    );
-
-    return () => timers.forEach(clearTimeout);
-  }, [step]);
+    return () => {
+      // Stop any in-flight polling if the salesperson navigates away mid-generation.
+      if (pollAbortRef.current) pollAbortRef.current.abort();
+    };
+  }, []);
 
   const handleBackToProposals = () => {
+    if (pollAbortRef.current) pollAbortRef.current.abort();
     if (onNavigate) onNavigate('proposal', 'proposal-list');
   };
 
-  const handleContinue = (selection) => {
-    setActiveStepIndex(0);
-    setStep('preparing');
+  const handlePackageCreated = (pkg) => {
+    setDiscoveryPackage(pkg);
+    setStep('review');
+  };
 
-    const { businessName, customerName } = selection;
+  const handlePackageUpdated = (pkg) => {
+    setDiscoveryPackage(pkg);
+  };
 
-    setTimeout(() => {
-      const newProposal = {
-        id: `prop-${Date.now()}`,
-        code: `PROP-2026-${Math.floor(100 + Math.random() * 900)}`,
-        title: `${businessName} — Solution Proposal`,
-        customer: customerName,
-        industry: 'Unassigned',
-        value: 0,
-        status: 'Draft',
-        date: 'Just now',
-        owner: currentUser?.name || 'Hariharan R',
-        description: `Drafted from a Zoho WorkDrive discovery package for ${businessName}`
-      };
+  const pollForProposal = async (packageId, signal) => {
+    const start = Date.now();
 
-      if (onProposalCreated) onProposalCreated(newProposal);
-      if (onNavigate) onNavigate('proposal', 'proposal-list');
-    }, PREP_STEPS.length * 650 + 300);
+    while (!signal.aborted) {
+      const elapsed = Date.now() - start;
+      setElapsedSeconds(Math.floor(elapsed / 1000));
+
+      if (elapsed >= MAX_POLL_MS) {
+        setIsTakingLong(true);
+        return null;
+      }
+
+      let pkgRes;
+      try {
+        pkgRes = await getDiscoveryPackage(packageId, signal);
+      } catch (err) {
+        if (signal.aborted) return null;
+        throw err;
+      }
+
+      const pkgStatus = pkgRes.package?.status;
+      if (pkgStatus === 'FAILED') {
+        throw new Error('Discovery package processing failed.');
+      }
+
+      if (pkgStatus === 'PROCESSED') {
+        let proposalsRes;
+        try {
+          proposalsRes = await listProposals(packageId, signal);
+        } catch (err) {
+          if (signal.aborted) return null;
+          proposalsRes = null;
+        }
+        const proposal = proposalsRes?.proposals?.[0];
+        if (proposal) return proposal;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+    }
+
+    return null;
+  };
+
+  const handleGenerate = async () => {
+    const packageId = discoveryPackage.package_id;
+
+    try {
+      await processDiscoveryPackage(packageId);
+    } catch (err) {
+      const message = getFriendlyErrorMessage(err);
+      if (onToast) onToast(message, 'error', 6000);
+      throw err;
+    }
+
+    if (onToast) onToast('Proposal generation started.', 'success', 4000);
+    setStep('processing');
+    setElapsedSeconds(0);
+    setIsTakingLong(false);
+
+    const controller = new AbortController();
+    pollAbortRef.current = controller;
+
+    try {
+      const proposal = await pollForProposal(packageId, controller.signal);
+      if (controller.signal.aborted) return;
+
+      if (proposal) {
+        if (onToast) onToast('Proposal generated successfully.', 'success', 5000);
+        if (onViewProposal) onViewProposal(proposal.proposal_id);
+        else if (onNavigate) onNavigate('proposal', 'proposal-list');
+      }
+      // If proposal is null (timeout), isTakingLong is already shown - the salesperson
+      // chooses to keep waiting (loop restarts below) or go back.
+    } catch (err) {
+      if (!controller.signal.aborted) {
+        const message = getFriendlyErrorMessage(err);
+        if (onToast) onToast(message, 'error', 6000);
+        setStep('review');
+      }
+    }
+  };
+
+  const handleKeepWaiting = () => {
+    setIsTakingLong(false);
+    const packageId = discoveryPackage.package_id;
+    const controller = new AbortController();
+    pollAbortRef.current = controller;
+
+    pollForProposal(packageId, controller.signal)
+      .then((proposal) => {
+        if (controller.signal.aborted) return;
+        if (proposal) {
+          if (onToast) onToast('Proposal generated successfully.', 'success', 5000);
+          if (onViewProposal) onViewProposal(proposal.proposal_id);
+          else if (onNavigate) onNavigate('proposal', 'proposal-list');
+        }
+      })
+      .catch((err) => {
+        if (!controller.signal.aborted) {
+          if (onToast) onToast(getFriendlyErrorMessage(err), 'error', 6000);
+          setStep('review');
+        }
+      });
   };
 
   return (
@@ -123,59 +212,48 @@ export default function CreateProposal({
           </p>
         </section>
 
-        {/* Quick Stats */}
-        <div className="proposal-quick-stats-row">
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: 'easeOut' }}>
-            <SpotlightCard className="proposal-stat-card" spotlightColor="rgba(0, 82, 255, 0.12)">
-              <div className="proposal-stat-icon blue">
-                <FileStack size={18} strokeWidth={2.2} />
-              </div>
-              <div className="proposal-stat-text">
-                <span className="proposal-stat-value">
-                  <CountUp to={totalProposals} duration={1.1} separator="" />
-                </span>
-                <span className="proposal-stat-label">Total Proposals</span>
-              </div>
-            </SpotlightCard>
-          </motion.div>
-
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: 'easeOut', delay: 0.08 }}>
-            <SpotlightCard className="proposal-stat-card" spotlightColor="rgba(255, 122, 26, 0.12)">
-              <div className="proposal-stat-icon orange">
-                <FileEdit size={18} strokeWidth={2.2} />
-              </div>
-              <div className="proposal-stat-text">
-                <span className="proposal-stat-value">
-                  <CountUp to={draftProposals} duration={1.1} separator="" />
-                </span>
-                <span className="proposal-stat-label">Drafts In Progress</span>
-              </div>
-            </SpotlightCard>
-          </motion.div>
-        </div>
-
-        {/* Body: Upload -> Preparing */}
+        {/* Body: Discovery -> Review -> Processing */}
         <div className="create-proposal-body">
           <AnimatePresence mode="wait">
-            {step === 'upload' ? (
+            {step === 'discovery' ? (
               <motion.div
-                key="upload"
+                key="discovery"
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.22, ease: 'easeOut' }}
               >
-                <DiscoveryUploadCard onContinue={handleContinue} />
+                <DiscoveryUploadCard onContinue={handlePackageCreated} onToast={onToast} />
+              </motion.div>
+            ) : step === 'review' ? (
+              <motion.div
+                key="review"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.22, ease: 'easeOut' }}
+              >
+                <DiscoveryPackageReview
+                  discoveryPackage={discoveryPackage}
+                  onPackageUpdated={handlePackageUpdated}
+                  onGenerate={handleGenerate}
+                  onToast={onToast}
+                />
               </motion.div>
             ) : (
               <motion.div
-                key="preparing"
+                key="processing"
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.22, ease: 'easeOut' }}
               >
-                <PreparingProposalCard activeStepIndex={activeStepIndex} />
+                <ProcessingProposalCard
+                  elapsedSeconds={elapsedSeconds}
+                  isTakingLong={isTakingLong}
+                  onKeepWaiting={handleKeepWaiting}
+                  onBackToProposals={handleBackToProposals}
+                />
               </motion.div>
             )}
           </AnimatePresence>

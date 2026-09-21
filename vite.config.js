@@ -33,6 +33,13 @@ export default defineConfig(({ mode }) => {
           target: catalystTarget,
           changeOrigin: true,
           secure: false
+        },
+        // Workspace 2 (Solution Proposals) backend - same Catalyst project/domain as
+        // Workspace 1, just a different route prefix.
+        '/proposal': {
+          target: catalystTarget,
+          changeOrigin: true,
+          secure: false
         }
       }
     }
