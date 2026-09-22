@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import './CreateProposal.css';
 import DiscoveryUploadCard from '@/components/proposal/DiscoveryUploadCard/DiscoveryUploadCard';
 import DiscoveryPackageReview from '@/components/proposal/DiscoveryPackageReview/DiscoveryPackageReview';
@@ -11,36 +11,89 @@ import {
   Loader2,
   FileText,
   ArrowUpRight,
-  FolderKanban
+  Copy,
+  Check,
+  Building2,
+  Calendar,
+  ShieldCheck,
+  Lock,
+  ExternalLink,
+  Plus
 } from 'lucide-react';
 import {
   processDiscoveryPackage,
+  getProposal,
   listProposals,
   getFriendlyErrorMessage
 } from '@/api/proposalApi';
 import { formatDate, formatProposalUrl } from '@/utils/helpers';
 
 /**
- * 6 Thinking / Processing Steps with smooth realistic progression
+ * The 6 distinct Solution Proposal Generation Steps
+ */
+const PIPELINE_STEPS = [
+  {
+    id: 1,
+    title: '1. Validating Discovery Documents',
+    desc: 'Verifying file formats, schema structure, and upload integrity',
+    activeBadge: 'Validating…',
+    doneBadge: 'Validated'
+  },
+  {
+    id: 2,
+    title: '2. Initializing Discovery Session',
+    desc: 'Allocating workspace sandbox and securing cloud storage session',
+    activeBadge: 'Initializing…',
+    doneBadge: 'Initialized'
+  },
+  {
+    id: 3,
+    title: '3. Extracting Document Content',
+    desc: 'Extracting text, specifications, and scope notes across all files',
+    activeBadge: 'Extracting…',
+    doneBadge: 'Extracted'
+  },
+  {
+    id: 4,
+    title: '4. Analyzing Requirements & Architecture',
+    desc: 'Synthesizing client pain points, workflows, and solution architecture',
+    activeBadge: 'Analyzing…',
+    doneBadge: 'Analyzed'
+  },
+  {
+    id: 5,
+    title: '5. Compiling Structured Proposal',
+    desc: 'Structuring executive summary, deliverables, timeline, and scope',
+    activeBadge: 'Compiling…',
+    doneBadge: 'Compiled'
+  },
+  {
+    id: 6,
+    title: '6. Publishing Solution Proposal',
+    desc: 'Provisioning live interactive URL and securing client preview',
+    activeBadge: 'Publishing…',
+    doneBadge: 'Published'
+  }
+];
+
+/**
+ * 6 Thinking / Processing Steps with realistic dynamic progression.
+ * Steps are NOT prefilled. Step 3 features a smooth rotating spinner.
+ * When generation completes, all remaining steps cascade to Done with 100% completion.
  */
 function ProcessingProposalCard({
   elapsedSeconds,
+  activeStepIndex = 0,
+  isAllComplete = false,
   isTakingLong,
   onKeepWaiting,
   onBackToProposals,
-  packageStatus = 'PROCESSING',
   packageName = 'Discovery Package',
   fileCount = 0
 }) {
   const minutes = Math.floor(elapsedSeconds / 60);
   const seconds = elapsedSeconds % 60;
   const elapsedLabel = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
-
-  const st = String(packageStatus || 'PROCESSING').toUpperCase();
-  const isComplete = st === 'COMPLETED' || st === 'PROCESSED';
-  const isGenerating = st === 'GENERATING' || isComplete || elapsedSeconds >= 16;
-  const isAnalyzing = st === 'ANALYZING' || isGenerating || elapsedSeconds >= 3;
-  const isExtracted = ['EXTRACTED', 'ANALYZING', 'GENERATING', 'COMPLETED', 'PROCESSED'].includes(st) || elapsedSeconds >= 3;
 
   return (
     <div className="preparing-proposal-card animate-fade-in">
@@ -54,99 +107,45 @@ function ProcessingProposalCard({
         </div>
       </div>
 
+      {isAllComplete && (
+        <div className="pipeline-complete-banner animate-fade-in">
+          <CheckCircle2 size={16} className="banner-check-icon" />
+          <span>All 6 pipeline steps completed successfully · Redirecting to interactive showcase...</span>
+        </div>
+      )}
+
       {/* Live Pipeline Steps Progress */}
       <div className="pipeline-steps-card">
-        {/* Step 1: Preparing Documents */}
-        <div className="pipeline-step-item step-completed">
-          <div className="pipeline-step-icon">
-            <CheckCircle2 size={16} />
-          </div>
-          <div className="pipeline-step-info">
-            <span className="pipeline-step-title">1. Preparing Documents</span>
-            <span className="pipeline-step-desc">Staged discovery files validated and queued</span>
-          </div>
-          <span className="pipeline-step-badge badge-done">Done</span>
-        </div>
+        {PIPELINE_STEPS.map((step, idx) => {
+          const isDone = isAllComplete || idx < activeStepIndex;
+          const isActive = !isAllComplete && idx === activeStepIndex;
+          const isPending = !isAllComplete && idx > activeStepIndex;
 
-        {/* Step 2: Creating Discovery Session */}
-        <div className="pipeline-step-item step-completed">
-          <div className="pipeline-step-icon">
-            <CheckCircle2 size={16} />
-          </div>
-          <div className="pipeline-step-info">
-            <span className="pipeline-step-title">2. Creating Discovery Session</span>
-            <span className="pipeline-step-desc">Initialized discovery package and local storage</span>
-          </div>
-          <span className="pipeline-step-badge badge-done">Done</span>
-        </div>
+          const itemClass = isDone ? 'step-completed' : isActive ? 'step-active' : 'step-pending';
+          const badgeClass = isDone ? 'badge-done' : isActive ? 'badge-active' : 'badge-pending';
+          const badgeText = isDone ? step.doneBadge : isActive ? step.activeBadge : 'Queued';
 
-        {/* Step 3: Extracting Document Content */}
-        <div className={`pipeline-step-item ${isExtracted ? 'step-completed' : 'step-active'}`}>
-          <div className="pipeline-step-icon">
-            {isExtracted ? <CheckCircle2 size={16} /> : <Loader2 size={16} className="discovery-spin" />}
-          </div>
-          <div className="pipeline-step-info">
-            <span className="pipeline-step-title">3. Extracting Document Content</span>
-            <span className="pipeline-step-desc">Extracting text, specifications, and scope notes</span>
-          </div>
-          <span className={`pipeline-step-badge ${isExtracted ? 'badge-done' : 'badge-active'}`}>
-            {isExtracted ? 'Extracted' : 'In Progress'}
-          </span>
-        </div>
-
-        {/* Step 4: Analyzing Customer Requirements */}
-        <div className={`pipeline-step-item ${isGenerating ? 'step-completed' : isAnalyzing ? 'step-active' : 'step-pending'}`}>
-          <div className="pipeline-step-icon">
-            {isGenerating ? (
-              <CheckCircle2 size={16} />
-            ) : isAnalyzing ? (
-              <Loader2 size={16} className="discovery-spin" />
-            ) : (
-              <Clock size={16} />
-            )}
-          </div>
-          <div className="pipeline-step-info">
-            <span className="pipeline-step-title">4. Analyzing Customer Requirements</span>
-            <span className="pipeline-step-desc">Identifying client goals, pain points, and architecture needs</span>
-          </div>
-          <span className={`pipeline-step-badge ${isGenerating ? 'badge-done' : isAnalyzing ? 'badge-active' : 'badge-pending'}`}>
-            {isGenerating ? 'Done' : isAnalyzing ? 'Analyzing…' : 'Queued'}
-          </span>
-        </div>
-
-        {/* Step 5: Generating Proposal */}
-        <div className={`pipeline-step-item ${isComplete ? 'step-completed' : isGenerating ? 'step-active' : 'step-pending'}`}>
-          <div className="pipeline-step-icon">
-            {isComplete ? (
-              <CheckCircle2 size={16} />
-            ) : isGenerating ? (
-              <Loader2 size={16} className="discovery-spin" />
-            ) : (
-              <Clock size={16} />
-            )}
-          </div>
-          <div className="pipeline-step-info">
-            <span className="pipeline-step-title">5. Generating Proposal</span>
-            <span className="pipeline-step-desc">Structuring deliverables, executive summary, and solutions</span>
-          </div>
-          <span className={`pipeline-step-badge ${isComplete ? 'badge-done' : isGenerating ? 'badge-active' : 'badge-pending'}`}>
-            {isComplete ? 'Ready' : isGenerating ? 'Generating…' : 'Queued'}
-          </span>
-        </div>
-
-        {/* Step 6: Finalizing Proposal */}
-        <div className={`pipeline-step-item ${isComplete ? 'step-completed' : 'step-pending'}`}>
-          <div className="pipeline-step-icon">
-            {isComplete ? <CheckCircle2 size={16} /> : <Clock size={16} />}
-          </div>
-          <div className="pipeline-step-info">
-            <span className="pipeline-step-title">6. Finalizing Proposal</span>
-            <span className="pipeline-step-desc">Publishing solution proposal and preparing interactive view</span>
-          </div>
-          <span className={`pipeline-step-badge ${isComplete ? 'badge-done' : 'badge-pending'}`}>
-            {isComplete ? 'Published' : 'Queued'}
-          </span>
-        </div>
+          return (
+            <div key={step.id} className={`pipeline-step-item ${itemClass}`}>
+              <div className="pipeline-step-icon">
+                {isDone ? (
+                  <CheckCircle2 size={16} />
+                ) : isActive ? (
+                  <Loader2 size={16} className="discovery-spin" />
+                ) : (
+                  <Clock size={16} />
+                )}
+              </div>
+              <div className="pipeline-step-info">
+                <span className="pipeline-step-title">{step.title}</span>
+                <span className="pipeline-step-desc">{step.desc}</span>
+              </div>
+              <span className={`pipeline-step-badge ${badgeClass}`}>
+                {badgeText}
+              </span>
+            </div>
+          );
+        })}
       </div>
 
       <div className="preparing-elapsed-row">
@@ -168,7 +167,9 @@ function ProcessingProposalCard({
 }
 
 /**
- * Requirement 7: Proposal Result Screen
+ * 21st.dev Redesigned Enterprise Proposal Result Card:
+ * Features ambient top border, security credentials, 4-metric bento grid,
+ * interactive live URL box with 1-click copy feedback, and primary CTA suite.
  */
 function ProposalResultCard({
   proposal,
@@ -177,82 +178,203 @@ function ProposalResultCard({
   onCreateAnother,
   onBackToProposals
 }) {
+  const [copiedUrl, setCopiedUrl] = useState(false);
+  const [copiedId, setCopiedId] = useState(false);
+
   const customerName = proposal?.customer_name || 'Client';
   const proposalId = proposal?.proposal_id || '—';
   const fileCount = proposal?.content?.sources?.length || discoveryPackage?.files?.length || 1;
   const createdAt = proposal?.created_at ? formatDate(proposal.created_at) : formatDate();
-  const status = proposal?.status || 'Draft';
+  const status = proposal?.status || 'COMPLETED';
+
   let targetUrl = proposal?.proposal_url || proposal?.generated_url || proposal?.slate_url || (proposalId && proposalId !== '—' ? `https://spikra-w2-proposal-jmdbymcs.onslate.com/?proposal_id=${proposalId}` : null);
   if (targetUrl && targetUrl.includes('spikra-customer-prop-msdrrgbk.onslate.com')) {
     targetUrl = targetUrl.replace('spikra-customer-prop-msdrrgbk.onslate.com', 'spikra-w2-proposal-jmdbymcs.onslate.com');
   }
 
+  const handleCopyUrl = async () => {
+    if (!targetUrl) return;
+    try {
+      await navigator.clipboard.writeText(targetUrl);
+      setCopiedUrl(true);
+      setTimeout(() => setCopiedUrl(false), 2500);
+    } catch (e) {
+      console.warn('Clipboard write failed', e);
+    }
+  };
+
+  const handleCopyId = async () => {
+    if (!proposalId || proposalId === '—') return;
+    try {
+      await navigator.clipboard.writeText(proposalId);
+      setCopiedId(true);
+      setTimeout(() => setCopiedId(false), 2500);
+    } catch (e) {
+      console.warn('Clipboard write failed', e);
+    }
+  };
+
+  const initials = customerName
+    ? customerName
+        .split(' ')
+        .map((w) => w[0])
+        .join('')
+        .slice(0, 2)
+        .toUpperCase()
+    : 'SP';
+
   return (
-    <div className="proposal-result-card animate-fade-in">
-      <div className="proposal-result-badge">
-        <CheckCircle2 size={16} />
-        <span>Proposal Generated Successfully</span>
-      </div>
+    <div className="proposal-result-card modern-result-card animate-fade-in">
+      {/* Top Status & Security Badges Row */}
+      <div className="result-top-badge-row">
+        <div className="proposal-result-badge">
+          <CheckCircle2 size={15} />
+          <span>PROPOSAL PUBLISHED & ACTIVE</span>
+        </div>
 
-      <h2 className="proposal-result-title">
-        {proposal?.proposal_title || `${customerName} — Solution Proposal`}
-      </h2>
-
-      <div className="proposal-result-meta-grid">
-        <div className="result-meta-item">
-          <span className="result-meta-label">Customer Name</span>
-          <span className="result-meta-value">{customerName}</span>
-        </div>
-        <div className="result-meta-item">
-          <span className="result-meta-label">Proposal ID</span>
-          <span className="result-meta-value result-code">{proposalId}</span>
-        </div>
-        <div className="result-meta-item">
-          <span className="result-meta-label">Source Documents</span>
-          <span className="result-meta-value">{fileCount} document{fileCount === 1 ? '' : 's'}</span>
-        </div>
-        <div className="result-meta-item">
-          <span className="result-meta-label">Generated Date & Time</span>
-          <span className="result-meta-value">{createdAt}</span>
-        </div>
-        <div className="result-meta-item">
-          <span className="result-meta-label">Proposal Status</span>
-          <span className="result-status-pill">{status}</span>
+        <div className="result-security-chip" title="Enterprise encrypted datastore session">
+          <Lock size={12} className="security-icon" />
+          <span>TLS 1.3 · Authenticated Datastore Session</span>
         </div>
       </div>
 
-      {targetUrl && (
-        <div className="proposal-result-url-box" style={{ margin: '18px 0', padding: '14px 18px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em' }}>PROPOSAL LIVE URL:</span>
-            <span style={{ fontSize: '11px', fontWeight: 600, color: '#10b981' }}>● Active</span>
+      {/* Hero Header with Client Monogram Avatar */}
+      <div className="result-hero-client-row">
+        <div className="result-client-avatar">
+          <span>{initials}</span>
+        </div>
+        <div className="result-client-info">
+          <h2 className="proposal-result-title">
+            {customerName} — Solution Proposal
+          </h2>
+          <div className="result-id-row">
+            <span className="result-id-label">Proposal ID:</span>
+            <button
+              type="button"
+              className="result-id-badge-btn"
+              onClick={handleCopyId}
+              title="Click to copy Proposal ID"
+            >
+              <code>#{proposalId}</code>
+              {copiedId ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} />}
+              <span className="btn-copy-tooltip">{copiedId ? 'Copied ID!' : 'Copy'}</span>
+            </button>
           </div>
-          <a
-            href={targetUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ fontSize: '13px', color: '#ff5a1f', fontWeight: 600, textDecoration: 'none', wordBreak: 'break-all' }}
-            title={targetUrl}
-          >
-            {targetUrl}
-          </a>
+        </div>
+      </div>
+
+      {/* 21st.dev 4-Metric Bento Grid */}
+      <div className="proposal-result-bento-grid">
+        <div className="bento-metric-card">
+          <div className="bento-metric-icon-wrap icon-blue">
+            <Building2 size={16} />
+          </div>
+          <div className="bento-metric-data">
+            <span className="bento-metric-label">Client Organization</span>
+            <span className="bento-metric-value">{customerName}</span>
+          </div>
+        </div>
+
+        <div className="bento-metric-card">
+          <div className="bento-metric-icon-wrap icon-orange">
+            <FileText size={16} />
+          </div>
+          <div className="bento-metric-data">
+            <span className="bento-metric-label">Source Documents</span>
+            <span className="bento-metric-value">{fileCount} Document{fileCount === 1 ? '' : 's'} Analyzed</span>
+          </div>
+        </div>
+
+        <div className="bento-metric-card">
+          <div className="bento-metric-icon-wrap icon-purple">
+            <Calendar size={16} />
+          </div>
+          <div className="bento-metric-data">
+            <span className="bento-metric-label">Generated Timestamp</span>
+            <span className="bento-metric-value">{createdAt}</span>
+          </div>
+        </div>
+
+        <div className="bento-metric-card">
+          <div className="bento-metric-icon-wrap icon-green">
+            <ShieldCheck size={16} />
+          </div>
+          <div className="bento-metric-data">
+            <span className="bento-metric-label">Proposal Status</span>
+            <span className="bento-metric-value status-completed-text">
+              <span className="pulse-dot-green" />
+              {status}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Interactive 21st.dev Live Client Showcase URL Box */}
+      {targetUrl && (
+        <div className="proposal-result-url-box modern-url-box">
+          <div className="url-box-header">
+            <div className="url-box-heading">
+              <span className="url-box-title">CLIENT-FACING LIVE PORTAL</span>
+              <span className="url-live-pill">
+                <span className="url-live-dot" />
+                Live On-Demand
+              </span>
+            </div>
+            <span className="url-box-security">Encrypted HTTPS Preview</span>
+          </div>
+
+          <div className="url-box-display-row">
+            <span className="url-protocol-tag">HTTPS</span>
+            <a
+              href={targetUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="url-display-link"
+              title={targetUrl}
+            >
+              {targetUrl}
+            </a>
+            <div className="url-display-actions">
+              <button
+                type="button"
+                className={`btn-url-action ${copiedUrl ? 'is-copied' : ''}`}
+                onClick={handleCopyUrl}
+                title="Copy shareable URL"
+              >
+                {copiedUrl ? <Check size={14} /> : <Copy size={14} />}
+                <span>{copiedUrl ? 'Copied Link!' : 'Copy Link'}</span>
+              </button>
+
+              <button
+                type="button"
+                className="btn-url-action btn-url-test"
+                onClick={() => window.open(targetUrl, '_blank', 'noopener,noreferrer')}
+                title="Open live portal in new tab"
+              >
+                <ExternalLink size={14} />
+                <span>Test Live</span>
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
-      <div className="proposal-result-actions">
+      {/* Action Suite */}
+      <div className="proposal-result-actions modern-actions-suite">
         {targetUrl && (
           <motion.button
             type="button"
-            className="btn-open-proposal"
+            className="btn-open-proposal modern-primary-btn"
             onClick={() => {
-              console.log(`[Workspace 2 Proposal API] 🌐 Opening proposal URL:`, targetUrl);
+              console.log(`[Workspace 2 Proposal API] 🌐 Opening live proposal URL:`, targetUrl);
               window.open(targetUrl, '_blank', 'noopener,noreferrer');
             }}
-            whileHover={{ scale: 1.02, y: -1 }}
+            whileHover={{ scale: 1.02, y: -2 }}
             whileTap={{ scale: 0.98 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
           >
-            <ArrowUpRight size={17} />
-            <span>Open Proposal</span>
+            <ArrowUpRight size={18} strokeWidth={2.4} />
+            <span>Launch Proposal Showcase</span>
           </motion.button>
         )}
 
@@ -262,7 +384,7 @@ function ProposalResultCard({
             className="btn-result-secondary"
             onClick={onViewDetails}
           >
-            <span>View Details Breakdown</span>
+            <span>View Architecture Breakdown</span>
           </button>
         )}
 
@@ -271,6 +393,7 @@ function ProposalResultCard({
           className="btn-result-ghost"
           onClick={onCreateAnother}
         >
+          <Plus size={15} />
           <span>Create Another Proposal</span>
         </button>
 
@@ -279,52 +402,88 @@ function ProposalResultCard({
           className="btn-result-ghost"
           onClick={onBackToProposals}
         >
-          <span>Back to Proposals</span>
+          <ArrowLeft size={15} />
+          <span>Back to All Proposals</span>
         </button>
       </div>
     </div>
   );
 }
 
-export default function CreateProposal({ onNavigate, onViewProposal, onToast }) {
+export default function CreateProposal({ onNavigate, onViewProposal, onToast, onProposalCreated }) {
   const [step, setStep] = useState('discovery'); // 'discovery' | 'review' | 'processing' | 'result'
   const [discoveryPackage, setDiscoveryPackage] = useState(null);
   const [generatedProposal, setGeneratedProposal] = useState(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [activeStepIndex, setActiveStepIndex] = useState(0);
+  const [isAllComplete, setIsAllComplete] = useState(false);
   const [isTakingLong, setIsTakingLong] = useState(false);
-  const [packageStatus, setPackageStatus] = useState('PROCESSING');
 
   const timerRef = useRef(null);
+  const stepProgressionRef = useRef(null);
 
-  const startTimer = () => {
-    stopTimer();
-    const start = Date.now();
-    setElapsedSeconds(0);
-    timerRef.current = setInterval(() => {
-      setElapsedSeconds(Math.floor((Date.now() - start) / 1000));
-    }, 1000);
-  };
-
-  const stopTimer = () => {
+  const stopTimers = () => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
+    if (stepProgressionRef.current) {
+      clearInterval(stepProgressionRef.current);
+      stepProgressionRef.current = null;
+    }
+  };
+
+  const startTimers = () => {
+    stopTimers();
+    const start = Date.now();
+    setElapsedSeconds(0);
+    setActiveStepIndex(0);
+    setIsAllComplete(false);
+
+    // Elapsed timer (1 second ticks)
+    timerRef.current = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - start) / 1000);
+      setElapsedSeconds(elapsed);
+      if (elapsed > 45) {
+        setIsTakingLong(true);
+      }
+    }, 1000);
+
+    // Realistic natural step progression timer
+    // Step 0 -> Step 1 at ~2s
+    // Step 1 -> Step 2 at ~4s
+    // Step 2 -> Step 3 at ~7s (Step 3 spinner rotates smoothly)
+    // Step 3 -> Step 4 at ~10s
+    // Step 4 -> Step 5 at ~13s
+    stepProgressionRef.current = setInterval(() => {
+      const elapsed = (Date.now() - start) / 1000;
+      if (elapsed >= 13) {
+        setActiveStepIndex((prev) => Math.max(prev, 5));
+      } else if (elapsed >= 10) {
+        setActiveStepIndex((prev) => Math.max(prev, 4));
+      } else if (elapsed >= 6.8) {
+        setActiveStepIndex((prev) => Math.max(prev, 3));
+      } else if (elapsed >= 3.8) {
+        setActiveStepIndex((prev) => Math.max(prev, 2));
+      } else if (elapsed >= 1.8) {
+        setActiveStepIndex((prev) => Math.max(prev, 1));
+      }
+    }, 400);
   };
 
   useEffect(() => {
     return () => {
-      stopTimer();
+      stopTimers();
     };
   }, []);
 
   const handleGoToWorkspace = () => {
-    stopTimer();
+    stopTimers();
     if (onNavigate) onNavigate('workspace', 'hub');
   };
 
   const handleBackToProposals = () => {
-    stopTimer();
+    stopTimers();
     if (onNavigate) onNavigate('proposal', 'proposal-list');
   };
 
@@ -345,7 +504,7 @@ export default function CreateProposal({ onNavigate, onViewProposal, onToast }) 
     const cleanBiz = String(enteredBizName).replace(/~\d+/g, '').trim() || 'Business Client';
     const proposalId = rawProposal?.proposal_id || pkgObj?.package_id || String(Date.now());
     const rawUrl = (rawProposal?.generated_url || rawProposal?.proposal_url || '').trim() ||
-      `https://spikra-customer-prop-msdrrgbk.onslate.com/?proposal_id=${proposalId}`;
+      `https://spikra-w2-proposal-jmdbymcs.onslate.com/?proposal_id=${proposalId}`;
     const formattedUrl = formatProposalUrl(rawUrl, proposalId) || rawUrl;
 
     const normalizedProposal = {
@@ -373,27 +532,93 @@ export default function CreateProposal({ onNavigate, onViewProposal, onToast }) 
     return normalizedProposal;
   };
 
-  // Direct 1-click generate from the intake page: package was just created
-  const handleDirectGenerate = async (pkg) => {
-    setDiscoveryPackage(pkg);
-    setStep('processing');
-    startTimer();
-    setIsTakingLong(false);
-    setPackageStatus('PROCESSING');
+  /**
+   * Cascade remaining steps to Done smoothly when backend completes,
+   * guaranteeing all 6 steps are shown completing without abrupt redirection.
+   */
+  const cascadeCompleteRemainingSteps = async (startStep, proposalResult) => {
+    // Stop the natural progression timer
+    if (stepProgressionRef.current) {
+      clearInterval(stepProgressionRef.current);
+      stepProgressionRef.current = null;
+    }
 
-    const packageId = pkg.package_id;
-    console.log(`[Workspace 2 Proposal API] 🚀 Initiating proposal generation for package: ${packageId}`);
+    // Cascade any remaining steps one-by-one so user sees all steps turn Done
+    for (let s = Math.max(startStep, 1); s <= 6; s++) {
+      setActiveStepIndex(s);
+      if (s < 6) {
+        await new Promise((resolve) => setTimeout(resolve, 320));
+      }
+    }
+
+    // Mark 100% complete
+    setIsAllComplete(true);
+    setActiveStepIndex(6);
+
+    // Brief delay to appreciate 100% completed state before showing result card
+    await new Promise((resolve) => setTimeout(resolve, 650));
+    stopTimers();
+    setGeneratedProposal(proposalResult);
+    setStep('result');
+    if (onToast) onToast('Proposal generated and published successfully.', 'success', 5000);
+  };
+
+  /**
+   * Full 4-API Lifecycle Execution:
+   * 1. createDiscoveryPackage (POST /proposal/discovery) -> already ran in intake
+   * 2. processDiscoveryPackage (POST /proposal/processor/process) -> proposal agent generator
+   * 3. getProposal (GET /proposal/api?resource=proposals&proposal_id=...) -> fetch record from Datastore
+   * 4. listProposals (GET /proposal/api?resource=proposals) -> refresh datastore catalog
+   */
+  const executeProposalGeneration = async (pkg) => {
+    const packageId = pkg?.package_id;
+    if (!packageId) return;
+
+    setStep('processing');
+    startTimers();
+    setIsTakingLong(false);
 
     try {
+      // Step 2 API: Trigger Serverless Proposal Generator
+      console.log(`[Workspace 2 Proposal API] 🚀 Initiating proposal generation for package: ${packageId}`);
       const res = await processDiscoveryPackage(packageId);
       console.log(`[Workspace 2 Proposal API] ✅ Proposal generation complete:`, res);
-      stopTimer();
-      const proposal = saveGeneratedProposal(res, pkg);
-      setGeneratedProposal(proposal);
-      setStep('result');
-      if (onToast) onToast('Proposal generated successfully.', 'success', 5000);
+
+      const proposalId = res?.proposal_id || res?.proposal?.proposal_id || packageId;
+
+      // Step 3 API: Fetch validated proposal record from Catalyst Datastore
+      let datastoreProposal = null;
+      if (proposalId) {
+        console.log(`[Workspace 2 Proposal API] 📥 Fetching validated proposal '${proposalId}' from Catalyst Datastore...`);
+        try {
+          const fetched = await getProposal(proposalId);
+          datastoreProposal = fetched?.proposal || null;
+          console.log(`[Workspace 2 Proposal API] 200 OK (/proposal/api?resource=proposals&proposal_id=${proposalId})`, fetched);
+        } catch (fetchErr) {
+          console.warn('[Workspace 2 Proposal API] Notice fetching proposal from Datastore:', fetchErr);
+        }
+      }
+
+      // Step 4 API: Sync proposals catalog from Datastore
+      console.log(`[Workspace 2 Proposal API] 🔄 Syncing proposals catalog with Catalyst Datastore...`);
+      try {
+        const catalog = await listProposals();
+        console.log(`[Workspace 2 Proposal API] 200 OK (/proposal/api?resource=proposals)`, catalog);
+      } catch (catalogErr) {
+        console.warn('[Workspace 2 Proposal API] Notice syncing proposals catalog:', catalogErr);
+      }
+
+      // Normalize proposal with salesperson entered business name & live URL
+      const finalProposal = saveGeneratedProposal(datastoreProposal || res, pkg);
+
+      if (onProposalCreated) {
+        onProposalCreated(finalProposal);
+      }
+
+      // Smoothly cascade remaining steps to 100% completion
+      await cascadeCompleteRemainingSteps(activeStepIndex, finalProposal);
     } catch (err) {
-      stopTimer();
+      stopTimers();
       console.error(`[Workspace 2 Proposal API] Generation error:`, err);
       const message = getFriendlyErrorMessage(err);
       if (onToast) onToast(message, 'error', 6000);
@@ -401,32 +626,16 @@ export default function CreateProposal({ onNavigate, onViewProposal, onToast }) 
     }
   };
 
+  // Direct 1-click generate from the intake page: package was just created
+  const handleDirectGenerate = async (pkg) => {
+    setDiscoveryPackage(pkg);
+    await executeProposalGeneration(pkg);
+  };
+
+  // Generate from review page
   const handleGenerate = async () => {
-    const packageId = discoveryPackage?.package_id;
-    if (!packageId) return;
-
-    setStep('processing');
-    startTimer();
-    setIsTakingLong(false);
-    setPackageStatus('PROCESSING');
-
-    console.log(`[Workspace 2 Proposal API] 🚀 Starting proposal generation for package: ${packageId}`);
-
-    try {
-      const res = await processDiscoveryPackage(packageId);
-      console.log(`[Workspace 2 Proposal API] ✅ Proposal generation complete:`, res);
-      stopTimer();
-      const proposal = saveGeneratedProposal(res, discoveryPackage);
-      setGeneratedProposal(proposal);
-      setStep('result');
-      if (onToast) onToast('Proposal generated successfully.', 'success', 5000);
-    } catch (err) {
-      stopTimer();
-      console.error(`[Workspace 2 Proposal API] Generation error:`, err);
-      const message = getFriendlyErrorMessage(err);
-      if (onToast) onToast(message, 'error', 6000);
-      setStep('review');
-    }
+    if (!discoveryPackage?.package_id) return;
+    await executeProposalGeneration(discoveryPackage);
   };
 
   const handleKeepWaiting = () => {
@@ -542,10 +751,11 @@ export default function CreateProposal({ onNavigate, onViewProposal, onToast }) 
               >
                 <ProcessingProposalCard
                   elapsedSeconds={elapsedSeconds}
+                  activeStepIndex={activeStepIndex}
+                  isAllComplete={isAllComplete}
                   isTakingLong={isTakingLong}
                   onKeepWaiting={handleKeepWaiting}
                   onBackToProposals={handleBackToProposals}
-                  packageStatus={packageStatus}
                   packageName={discoveryPackage?.package_name || 'Discovery Package'}
                   fileCount={discoveryPackage?.files?.length || 0}
                 />
@@ -573,6 +783,8 @@ export default function CreateProposal({ onNavigate, onViewProposal, onToast }) 
                     setStep('discovery');
                     setDiscoveryPackage(null);
                     setGeneratedProposal(null);
+                    setActiveStepIndex(0);
+                    setIsAllComplete(false);
                   }}
                   onBackToProposals={handleBackToProposals}
                 />

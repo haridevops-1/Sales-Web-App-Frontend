@@ -5,7 +5,8 @@ import { ArrowRight } from 'lucide-react';
 
 export default function WorkspaceHub({
   onNavigate,
-  experiencesCount = 5
+  experiencesCount = 0,
+  proposalsCount = 0
 }) {
   return (
     <div className="workspace-hub-page animate-fade-in">
@@ -83,7 +84,7 @@ export default function WorkspaceHub({
                 <div className="module-card-status">
                   <span className="live-status-pill blue-pill">
                     <span className="status-dot-blue" />
-                    <span>Active Workspace</span>
+                    <span>{proposalsCount} Customer Proposals</span>
                   </span>
                 </div>
               </div>

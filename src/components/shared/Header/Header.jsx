@@ -14,6 +14,7 @@ export default function Header({
   onOpenSettings,
   isSidebarOpen = false,
   totalCount = 0,
+  proposalsCount = 0,
   currentUser = {
     name: "Hariharan R",
     designation: "Product Consultant"
@@ -91,19 +92,50 @@ export default function Header({
             )}
 
             {activeModule === 'proposal' && (
-              <button
-                type="button"
-                className={`nav-tab-btn ${activePage === 'proposal-list' || activePage === 'proposal-create' ? 'active' : ''}`}
-                onClick={() => onNavigate('proposal', 'proposal-list')}
-              >
-                <motion.span
-                  layoutId="nav-active-pill"
-                  className="nav-tab-pill proposal-pill"
-                  transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-                />
-                <span className="tab-icon">📄</span>
-                <span>Proposals</span>
-              </button>
+              <>
+                <button
+                  type="button"
+                  className={`nav-tab-btn ${activePage === 'proposal-create' ? 'active' : ''}`}
+                  onClick={() => onNavigate('proposal', 'proposal-create')}
+                >
+                  {activePage === 'proposal-create' && (
+                    <motion.span
+                      layoutId="nav-active-pill"
+                      className="nav-tab-pill proposal-pill"
+                      transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                    />
+                  )}
+                  <span className="tab-icon">⚡</span>
+                  <span>Create Proposal</span>
+                </button>
+
+                <button
+                  type="button"
+                  className={`nav-tab-btn ${activePage === 'proposal-list' || activePage === 'proposal-details' ? 'active' : ''}`}
+                  onClick={() => onNavigate('proposal', 'proposal-list')}
+                >
+                  {(activePage === 'proposal-list' || activePage === 'proposal-details') && (
+                    <motion.span
+                      layoutId="nav-active-pill"
+                      className="nav-tab-pill proposal-pill"
+                      transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                    />
+                  )}
+                  <span className="tab-icon">📁</span>
+                  <span>All Proposals</span>
+                  <AnimatePresence mode="popLayout">
+                    <motion.span
+                      key={proposalsCount}
+                      className="tab-badge"
+                      initial={{ scale: 0.6, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ type: 'spring', stiffness: 500, damping: 20 }}
+                    >
+                      <CountUp to={proposalsCount} duration={0.8} separator="" />
+                    </motion.span>
+                  </AnimatePresence>
+                </button>
+              </>
             )}
           </nav>
         )}

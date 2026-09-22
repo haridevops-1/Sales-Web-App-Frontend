@@ -12,10 +12,10 @@ export default function Footer({ onNavigate }) {
             <BrandLogo
               showSubtitle={true}
               theme="dark"
-              onClick={() => onNavigate && onNavigate('generator')}
+              onClick={() => onNavigate && onNavigate('workspace', 'hub')}
             />
             <p className="footer-business-desc">
-              Spikra is an AI-focused <strong>Zoho Premium Partner</strong>, helping businesses set up, automate, and grow with Zoho — across real estate, healthcare, retail, and more.
+              Spikra is an enterprise <strong>Zoho Premium Partner</strong>, helping businesses architect, automate, and scale with Zoho — across real estate, healthcare, retail, and manufacturing.
             </p>
           </div>
 
@@ -27,7 +27,7 @@ export default function Footer({ onNavigate }) {
                 <button
                   type="button"
                   className="footer-nav-btn"
-                  onClick={() => onNavigate && onNavigate('generator')}
+                  onClick={() => onNavigate && onNavigate('experience', 'generator')}
                 >
                   ⚡ Create Showcase
                 </button>
@@ -36,9 +36,27 @@ export default function Footer({ onNavigate }) {
                 <button
                   type="button"
                   className="footer-nav-btn"
-                  onClick={() => onNavigate && onNavigate('history')}
+                  onClick={() => onNavigate && onNavigate('experience', 'history')}
                 >
-                  📁 All Showcases Archive
+                  📁 All Showcases
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  className="footer-nav-btn"
+                  onClick={() => onNavigate && onNavigate('proposal', 'proposal-create')}
+                >
+                  ⚡ Create Proposal
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  className="footer-nav-btn"
+                  onClick={() => onNavigate && onNavigate('proposal', 'proposal-list')}
+                >
+                  📁 All Proposals
                 </button>
               </li>
               <li>
@@ -85,10 +103,10 @@ export default function Footer({ onNavigate }) {
         {/* Bottom Copyright Row */}
         <div className="footer-bottom-row">
           <span className="footer-copy">
-            © {new Date().getFullYear()} Spikra. All rights reserved.
+            © {new Date().getFullYear()} Spikra Pvt Ltd. All rights reserved.
           </span>
           <span className="footer-tagline">
-            AI-Focused Zoho Premium Partner • Global Implementations
+            Zoho Premium Partner • ISO 27001 Certified • Catalyst Enterprise Cloud
           </span>
         </div>
       </div>

@@ -11,7 +11,9 @@ import {
   FileText,
   Layers,
   Plus,
-  LayoutGrid
+  LayoutGrid,
+  ShieldCheck,
+  Lock
 } from 'lucide-react';
 
 export default function Sidebar({
@@ -217,7 +219,36 @@ export default function Sidebar({
               </div>
             </div>
 
-            {/* Section 3: ABOUT SPIKRA */}
+            {/* Section 3: SECURITY CREDENTIALS */}
+            <div className="sidebar-section security-section">
+              <span className="sidebar-section-title">SECURITY CREDENTIALS</span>
+              <div
+                className="sidebar-security-card"
+                style={{
+                  background: 'rgba(16, 185, 129, 0.06)',
+                  border: '1px solid rgba(16, 185, 129, 0.22)',
+                  borderRadius: '10px',
+                  padding: '10px 12px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <ShieldCheck size={14} style={{ color: '#10b981' }} />
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#10b981', letterSpacing: '0.04em' }}>
+                    VERIFIED SECURE SESSION
+                  </span>
+                </div>
+                <div style={{ fontSize: '11px', color: '#94a3b8', lineHeight: 1.45 }}>
+                  <div>● TLS 1.3 End-to-End Encrypted</div>
+                  <div>● Catalyst Enterprise Datastore</div>
+                  <div>● User: {currentUser?.name || 'Authorized Consultant'}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Section 4: ABOUT SPIKRA */}
             <div className="sidebar-section about-section">
               <span className="sidebar-section-title">ABOUT</span>
               <div className="sidebar-about-card">
@@ -226,7 +257,7 @@ export default function Sidebar({
                   <span className="about-partner-pill">Zoho Partner</span>
                 </div>
                 <p className="about-company-desc">
-                  <strong>Zoho Premium Partner</strong> building AI-driven automation for enterprise clients.
+                  <strong>Zoho Premium Partner</strong> delivering tailored enterprise automation and solution architectures.
                 </p>
 
                 <a

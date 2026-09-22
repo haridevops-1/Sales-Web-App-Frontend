@@ -15,6 +15,7 @@ import { Pattern } from '@/components/ui/v-card-17';
 import { SpotlightCursor } from '@/components/ui/spotlight-cursor';
 import { AnimatePresence, motion } from 'framer-motion';
 import { getCustomerExperiences } from '@/api/catalystApi';
+import { listProposals } from '@/api/proposalApi';
 import { formatProposalUrl } from '@/utils/helpers';
 
 // Helper component to extract URL proposal ID param
@@ -95,6 +96,7 @@ export default function App() {
   const [experiences, setExperiences] = useState([]);
   const [isLoadingExperiences, setIsLoadingExperiences] = useState(true);
   const [experiencesError, setExperiencesError] = useState(null);
+  const [proposals, setProposals] = useState([]);
   const [selectedProposalId, setSelectedProposalId] = useState(null);
 
   // Authenticated user state
@@ -107,7 +109,7 @@ export default function App() {
     setToast({ message, type, duration });
   };
 
-  // Function 7 Backend Loader
+  // Function 7 Backend Loader (Workspace 1)
   const loadExperiences = useCallback(async (filters = {}, isSilent = false) => {
     if (!isSilent) {
       setIsLoadingExperiences(true);
@@ -138,13 +140,58 @@ export default function App() {
     }
   }, []);
 
-  // Fetch experiences from Function 7 on initial mount
+  // Proposal Backend Loader (Workspace 2)
+  const loadProposals = useCallback(async () => {
+    try {
+      // First read cached proposals for instant count
+      try {
+        const local = JSON.parse(localStorage.getItem('spikra_proposals') || '[]');
+        if (Array.isArray(local) && local.length > 0) {
+          setProposals(local);
+        }
+      } catch (e) {}
+
+      const res = await listProposals();
+      const backendList = Array.isArray(res?.proposals) ? res.proposals : [];
+      if (backendList.length === 0) {
+        setProposals([]);
+        try {
+          localStorage.removeItem('spikra_proposals');
+        } catch (e) {}
+      } else {
+        setProposals(backendList);
+        try {
+          localStorage.setItem('spikra_proposals', JSON.stringify(backendList));
+        } catch (e) {}
+      }
+    } catch (err) {
+      console.warn('[App] Could not load proposals:', err);
+    }
+  }, []);
+
+  // Fetch experiences and proposals on initial mount
   const hasLoadedRef = useRef(false);
   useEffect(() => {
     if (hasLoadedRef.current) return;
     hasLoadedRef.current = true;
     loadExperiences();
-  }, [loadExperiences]);
+    loadProposals();
+  }, [loadExperiences, loadProposals]);
+
+  // Handle newly created proposal
+  const handleProposalCreated = (newProp) => {
+    if (!newProp) return;
+    setProposals((prev) => {
+      const id = newProp.proposal_id || newProp.id;
+      const filtered = prev.filter((p) => (p.proposal_id || p.id) !== id);
+      const updated = [newProp, ...filtered];
+      try {
+        localStorage.setItem('spikra_proposals', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
+    loadProposals();
+  };
 
   // Handle newly created or published experience
   const handleExperienceCreated = (expData) => {
@@ -239,6 +286,7 @@ export default function App() {
         onNavigateModule={handleNavigate}
         onOpenSettings={() => setIsSettingsOpen(true)}
         experiencesCount={experiences.length}
+        proposalsCount={proposals.length}
         currentUser={currentUser}
       />
 
@@ -251,6 +299,7 @@ export default function App() {
         onOpenSettings={() => setIsSettingsOpen(true)}
         isSidebarOpen={isSidebarOpen}
         totalCount={experiences.length}
+        proposalsCount={proposals.length}
         currentUser={currentUser}
       />
 
@@ -264,6 +313,7 @@ export default function App() {
               <WorkspaceHub
                 onNavigate={handleNavigate}
                 experiencesCount={experiences.length}
+                proposalsCount={proposals.length}
                 currentUser={currentUser}
               />
             }
@@ -275,6 +325,7 @@ export default function App() {
                 onNavigate={handleNavigate}
                 onViewProposal={handleViewProposal}
                 onToast={showToast}
+                onProposalsUpdated={loadProposals}
               />
             }
           />
@@ -285,6 +336,7 @@ export default function App() {
                 onNavigate={handleNavigate}
                 onViewProposal={handleViewProposal}
                 onToast={showToast}
+                onProposalCreated={handleProposalCreated}
               />
             }
           />
