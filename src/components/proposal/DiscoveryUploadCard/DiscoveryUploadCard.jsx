@@ -13,7 +13,6 @@ import {
   Trash2,
   Folder,
   CheckCircle2,
-  Sparkles,
   Info
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -246,7 +245,7 @@ export default function DiscoveryUploadCard({ onContinue, onGenerate, disabled =
         {/* Card Header */}
         <div className="discovery-section-heading">
           <div className="discovery-heading-tag">
-            <Sparkles size={13} className="sparkle-icon" />
+            <FolderOpen size={13} />
             <span>Document Intake</span>
           </div>
           <h2 className="discovery-dropzone-title">Upload Discovery Documents</h2>
@@ -455,6 +454,8 @@ export default function DiscoveryUploadCard({ onContinue, onGenerate, disabled =
                             <span className="selected-file-size">{formatBytes(file.size)}</span>
                           )}
 
+                          <span className="selected-file-status status-ready">Ready</span>
+
                           <button
                             type="button"
                             className="btn-remove-selected-file"
@@ -554,17 +555,16 @@ export default function DiscoveryUploadCard({ onContinue, onGenerate, disabled =
             {isCreating ? (
               <>
                 <Loader2 size={16} className="discovery-spin" />
-                <span>Creating Proposal with Zia AI…</span>
+                <span>Generating Proposal…</span>
               </>
             ) : (
               <>
-                <Sparkles size={16} className="btn-sparkle-icon" />
                 <span>
                   {selectedFiles.length > 0
-                    ? `Create Proposal (${selectedFiles.length} document${selectedFiles.length === 1 ? '' : 's'})`
-                    : 'Create Proposal'}
+                    ? `Generate Proposal (${selectedFiles.length} document${selectedFiles.length === 1 ? '' : 's'})`
+                    : 'Generate Proposal'}
                 </span>
-                <ArrowRight size={16} strokeWidth={2.4} className="btn-arrow-icon" />
+                <ArrowRight size={16} strokeWidth={2.2} className="btn-arrow-icon" />
               </>
             )}
           </motion.button>

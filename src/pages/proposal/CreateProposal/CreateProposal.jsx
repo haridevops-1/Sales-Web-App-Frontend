@@ -2,27 +2,29 @@ import React, { useEffect, useState, useRef } from 'react';
 import './CreateProposal.css';
 import DiscoveryUploadCard from '@/components/proposal/DiscoveryUploadCard/DiscoveryUploadCard';
 import DiscoveryPackageReview from '@/components/proposal/DiscoveryPackageReview/DiscoveryPackageReview';
-import SpotlightCard from '@/reactbits/SpotlightCard';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft,
   Clock,
-  Sparkles,
   CheckCircle2,
   Loader2,
-  Database,
   FileText,
-  Layers,
-  ShieldCheck,
-  Zap,
-  ArrowRight,
-  FileSpreadsheet
+  ArrowUpRight
 } from 'lucide-react';
-import { processDiscoveryPackage, getDiscoveryPackage, listProposals, getFriendlyErrorMessage } from '@/api/proposalApi';
+import {
+  processDiscoveryPackage,
+  getDiscoveryPackage,
+  listProposals,
+  getFriendlyErrorMessage
+} from '@/api/proposalApi';
+import { formatDate } from '@/utils/helpers';
 
-const POLL_INTERVAL_MS = 2500;
-const MAX_POLL_MS = 3 * 60 * 1000; // 3 minutes - a frontend polling timeout, never a proposal failure
+const POLL_INTERVAL_MS = 2000;
+const MAX_POLL_MS = 3 * 60 * 1000; // 3 minutes polling timeout
 
+/**
+ * 5 Simplified Thinking / Processing Steps
+ */
 function ProcessingProposalCard({
   elapsedSeconds,
   isTakingLong,
@@ -37,62 +39,111 @@ function ProcessingProposalCard({
   const elapsedLabel = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
 
   const isExtractionDone = packageStatus === 'GENERATING' || packageStatus === 'PROCESSED';
-  const isSynthesisActive = packageStatus === 'GENERATING' || packageStatus === 'PROCESSING';
+  const isGenerationDone = packageStatus === 'PROCESSED';
 
   return (
     <div className="preparing-proposal-card animate-fade-in">
       <div className="preparing-header">
         <span className="preparing-spinner" aria-hidden="true" />
         <div>
-          <h3 className="preparing-title">Synthesizing Proposal with Zia AI…</h3>
+          <h3 className="preparing-title">Generating Solution Proposal…</h3>
           <p className="preparing-subtitle">
-            Analyzing <strong>{packageName}</strong> ({fileCount > 0 ? `${fileCount} documents` : 'documents'}). Zia AI is extracting key requirements, goals, and structuring client-ready proposal sections.
+            Analyzing <strong>{packageName}</strong> ({fileCount > 0 ? `${fileCount} documents` : 'documents'}). Processing requirements, solution specifications, and compiling structured proposal sections.
           </p>
         </div>
       </div>
 
       {/* Live Pipeline Steps Progress */}
       <div className="pipeline-steps-card">
+        {/* Step 1: Preparing Documents */}
         <div className="pipeline-step-item step-completed">
           <div className="pipeline-step-icon">
             <CheckCircle2 size={16} />
           </div>
           <div className="pipeline-step-info">
-            <span className="pipeline-step-title">1. Stratus Storage & Records</span>
-            <span className="pipeline-step-desc">All files stored securely in Stratus bucket & registered in table</span>
+            <span className="pipeline-step-title">1. Preparing Documents</span>
+            <span className="pipeline-step-desc">Staged discovery files validated and queued</span>
           </div>
           <span className="pipeline-step-badge badge-done">Done</span>
         </div>
 
+        {/* Step 2: Creating Discovery Session */}
+        <div className="pipeline-step-item step-completed">
+          <div className="pipeline-step-icon">
+            <CheckCircle2 size={16} />
+          </div>
+          <div className="pipeline-step-info">
+            <span className="pipeline-step-title">2. Creating Discovery Session</span>
+            <span className="pipeline-step-desc">Initialized discovery package and local storage</span>
+          </div>
+          <span className="pipeline-step-badge badge-done">Done</span>
+        </div>
+
+        {/* Step 3: Extracting Document Content */}
         <div className={`pipeline-step-item ${isExtractionDone ? 'step-completed' : 'step-active'}`}>
           <div className="pipeline-step-icon">
             {isExtractionDone ? <CheckCircle2 size={16} /> : <Loader2 size={16} className="discovery-spin" />}
           </div>
           <div className="pipeline-step-info">
-            <span className="pipeline-step-title">2. Text & Document Extraction</span>
-            <span className="pipeline-step-desc">Extracting content from PDF, DOCX, XLSX, and notes</span>
+            <span className="pipeline-step-title">3. Extracting Document Content</span>
+            <span className="pipeline-step-desc">Extracting text, specifications, and scope notes</span>
           </div>
           <span className={`pipeline-step-badge ${isExtractionDone ? 'badge-done' : 'badge-active'}`}>
-            {isExtractionDone ? 'Extracted' : 'In progress'}
+            {isExtractionDone ? 'Extracted' : 'In Progress'}
           </span>
         </div>
 
-        <div className={`pipeline-step-item ${packageStatus === 'GENERATING' ? 'step-active' : packageStatus === 'PROCESSED' ? 'step-completed' : 'step-pending'}`}>
+        {/* Step 4: Analyzing Customer Requirements */}
+        <div className={`pipeline-step-item ${isExtractionDone ? (isGenerationDone ? 'step-completed' : 'step-active') : 'step-pending'}`}>
           <div className="pipeline-step-icon">
-            {packageStatus === 'PROCESSED' ? (
+            {isGenerationDone ? (
               <CheckCircle2 size={16} />
-            ) : packageStatus === 'GENERATING' ? (
-              <Sparkles size={16} className="step-sparkle-spin" />
+            ) : isExtractionDone ? (
+              <Loader2 size={16} className="discovery-spin" />
             ) : (
               <Clock size={16} />
             )}
           </div>
           <div className="pipeline-step-info">
-            <span className="pipeline-step-title">3. Zia AI Agent Reasoning & Generation</span>
-            <span className="pipeline-step-desc">Synthesizing executive summary, requirements, solutions & deliverables</span>
+            <span className="pipeline-step-title">4. Analyzing Customer Requirements</span>
+            <span className="pipeline-step-desc">Identifying client goals, pain points, and architecture needs</span>
           </div>
-          <span className={`pipeline-step-badge ${packageStatus === 'PROCESSED' ? 'badge-done' : packageStatus === 'GENERATING' ? 'badge-active' : 'badge-pending'}`}>
-            {packageStatus === 'PROCESSED' ? 'Ready' : packageStatus === 'GENERATING' ? 'Synthesizing…' : 'Queued'}
+          <span className={`pipeline-step-badge ${isGenerationDone ? 'badge-done' : isExtractionDone ? 'badge-active' : 'badge-pending'}`}>
+            {isGenerationDone ? 'Done' : isExtractionDone ? 'Analyzing…' : 'Queued'}
+          </span>
+        </div>
+
+        {/* Step 5: Generating Proposal */}
+        <div className={`pipeline-step-item ${packageStatus === 'GENERATING' ? 'step-active' : isGenerationDone ? 'step-completed' : 'step-pending'}`}>
+          <div className="pipeline-step-icon">
+            {isGenerationDone ? (
+              <CheckCircle2 size={16} />
+            ) : packageStatus === 'GENERATING' ? (
+              <Loader2 size={16} className="discovery-spin" />
+            ) : (
+              <Clock size={16} />
+            )}
+          </div>
+          <div className="pipeline-step-info">
+            <span className="pipeline-step-title">5. Generating Proposal</span>
+            <span className="pipeline-step-desc">Structuring deliverables, executive summary, and solutions</span>
+          </div>
+          <span className={`pipeline-step-badge ${isGenerationDone ? 'badge-done' : packageStatus === 'GENERATING' ? 'badge-active' : 'badge-pending'}`}>
+            {isGenerationDone ? 'Ready' : packageStatus === 'GENERATING' ? 'Generating…' : 'Queued'}
+          </span>
+        </div>
+
+        {/* Step 6: Finalizing Proposal */}
+        <div className={`pipeline-step-item ${isGenerationDone ? 'step-completed' : 'step-pending'}`}>
+          <div className="pipeline-step-icon">
+            {isGenerationDone ? <CheckCircle2 size={16} /> : <Clock size={16} />}
+          </div>
+          <div className="pipeline-step-info">
+            <span className="pipeline-step-title">6. Finalizing Proposal</span>
+            <span className="pipeline-step-desc">Publishing solution proposal and preparing interactive view</span>
+          </div>
+          <span className={`pipeline-step-badge ${isGenerationDone ? 'badge-done' : 'badge-pending'}`}>
+            {isGenerationDone ? 'Published' : 'Queued'}
           </span>
         </div>
       </div>
@@ -115,27 +166,143 @@ function ProcessingProposalCard({
   );
 }
 
+/**
+ * Requirement 7: Proposal Result Screen
+ */
+function ProposalResultCard({
+  proposal,
+  discoveryPackage,
+  onViewDetails,
+  onCreateAnother,
+  onBackToProposals
+}) {
+  const customerName = proposal?.customer_name || 'Client';
+  const proposalId = proposal?.proposal_id || '—';
+  const fileCount = proposal?.content?.sources?.length || discoveryPackage?.files?.length || 1;
+  const createdAt = proposal?.created_at ? formatDate(proposal.created_at) : formatDate();
+  const status = proposal?.status || 'Draft';
+  const targetUrl = proposal?.generated_url || proposal?.slate_url || `https://spikra-ai-proposal-698386704.development.catalystserverless.com/proposal/api?resource=view&proposal_id=${proposalId}`;
+
+  return (
+    <div className="proposal-result-card animate-fade-in">
+      <div className="proposal-result-badge">
+        <CheckCircle2 size={16} />
+        <span>Proposal Generated Successfully</span>
+      </div>
+
+      <h2 className="proposal-result-title">
+        {proposal?.proposal_title || `${customerName} — Solution Proposal`}
+      </h2>
+
+      <div className="proposal-result-meta-grid">
+        <div className="result-meta-item">
+          <span className="result-meta-label">Customer Name</span>
+          <span className="result-meta-value">{customerName}</span>
+        </div>
+        <div className="result-meta-item">
+          <span className="result-meta-label">Proposal ID</span>
+          <span className="result-meta-value result-code">{proposalId}</span>
+        </div>
+        <div className="result-meta-item">
+          <span className="result-meta-label">Source Documents</span>
+          <span className="result-meta-value">{fileCount} document{fileCount === 1 ? '' : 's'}</span>
+        </div>
+        <div className="result-meta-item">
+          <span className="result-meta-label">Generated Date & Time</span>
+          <span className="result-meta-value">{createdAt}</span>
+        </div>
+        <div className="result-meta-item">
+          <span className="result-meta-label">Proposal Status</span>
+          <span className="result-status-pill">{status}</span>
+        </div>
+      </div>
+
+      <div className="proposal-result-actions">
+        <motion.button
+          type="button"
+          className="btn-open-proposal"
+          onClick={() => {
+            console.log(`[Workspace 2 Proposal API] 🌐 Opening proposal URL:`, targetUrl);
+            window.open(targetUrl, '_blank', 'noopener,noreferrer');
+          }}
+          whileHover={{ scale: 1.02, y: -1 }}
+          whileTap={{ scale: 0.98 }}
+        >
+          <ArrowUpRight size={17} />
+          <span>Open Proposal</span>
+        </motion.button>
+
+        {onViewDetails && (
+          <button
+            type="button"
+            className="btn-result-secondary"
+            onClick={onViewDetails}
+          >
+            <span>View Details Breakdown</span>
+          </button>
+        )}
+
+        <button
+          type="button"
+          className="btn-result-ghost"
+          onClick={onCreateAnother}
+        >
+          <span>Create Another Proposal</span>
+        </button>
+
+        <button
+          type="button"
+          className="btn-result-ghost"
+          onClick={onBackToProposals}
+        >
+          <span>Back to Proposals</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function CreateProposal({
   onNavigate,
   onViewProposal,
   onToast
 }) {
-  const [step, setStep] = useState('discovery'); // 'discovery' | 'review' | 'processing'
+  const [step, setStep] = useState('discovery'); // 'discovery' | 'review' | 'processing' | 'result'
   const [discoveryPackage, setDiscoveryPackage] = useState(null);
+  const [generatedProposal, setGeneratedProposal] = useState(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [isTakingLong, setIsTakingLong] = useState(false);
   const [packageStatus, setPackageStatus] = useState('PROCESSING');
 
   const pollAbortRef = useRef(null);
+  const timerRef = useRef(null);
+
+  const startTimer = () => {
+    stopTimer();
+    const start = Date.now();
+    setElapsedSeconds(0);
+    timerRef.current = setInterval(() => {
+      setElapsedSeconds(Math.floor((Date.now() - start) / 1000));
+    }, 1000);
+  };
+
+  const stopTimer = () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  };
 
   useEffect(() => {
     return () => {
+      stopTimer();
       // Stop any in-flight polling if the salesperson navigates away mid-generation.
       if (pollAbortRef.current) pollAbortRef.current.abort();
     };
   }, []);
 
   const handleBackToProposals = () => {
+    stopTimer();
     if (pollAbortRef.current) pollAbortRef.current.abort();
     if (onNavigate) onNavigate('proposal', 'proposal-list');
   };
@@ -153,32 +320,34 @@ export default function CreateProposal({
     const start = Date.now();
 
     while (!signal.aborted) {
-      const elapsed = Date.now() - start;
-      setElapsedSeconds(Math.floor(elapsed / 1000));
+      const elapsed = Math.floor((Date.now() - start) / 1000);
 
-      if (elapsed >= MAX_POLL_MS) {
+      if (elapsed >= MAX_POLL_MS / 1000) {
         setIsTakingLong(true);
-        return null;
       }
 
+      console.log(`[Workspace 2 Proposal API] 📡 Polling status (elapsed ${elapsed}s): GET /proposal/discovery?package_id=${packageId}`);
       let pkgRes;
       try {
         pkgRes = await getDiscoveryPackage(packageId, signal);
       } catch (err) {
         if (signal.aborted) return null;
-        throw err;
+        console.warn(`[Workspace 2 Proposal API] Polling warning:`, err.message);
       }
 
-      const pkgStatus = pkgRes.package?.status;
+      const pkgStatus = pkgRes?.package?.status;
       if (pkgStatus) {
+        console.log(`[Workspace 2 Proposal API] 📊 Backend status: ${pkgStatus}`);
         setPackageStatus(pkgStatus);
       }
 
       if (pkgStatus === 'FAILED') {
+        stopTimer();
         throw new Error('Discovery package processing failed.');
       }
 
       if (pkgStatus === 'PROCESSED') {
+        console.log(`[Workspace 2 Proposal API] 🔍 Package is PROCESSED! Fetching generated proposal: GET /proposal/api?resource=proposals&package_id=${packageId}`);
         let proposalsRes;
         try {
           proposalsRes = await listProposals(packageId, signal);
@@ -187,7 +356,14 @@ export default function CreateProposal({
           proposalsRes = null;
         }
         const proposal = proposalsRes?.proposals?.[0];
-        if (proposal) return proposal;
+        if (proposal) {
+          console.log(`[Workspace 2 Proposal API] 🎉 Proposal ready!`, proposal);
+          stopTimer();
+          setGeneratedProposal(proposal);
+          setStep('result');
+          if (onToast) onToast('Proposal generated successfully.', 'success', 5000);
+          return proposal;
+        }
       }
 
       await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
@@ -200,34 +376,28 @@ export default function CreateProposal({
   const handleDirectGenerate = async (pkg) => {
     setDiscoveryPackage(pkg);
     setStep('processing');
-    setElapsedSeconds(0);
+    startTimer();
     setIsTakingLong(false);
     setPackageStatus('PROCESSING');
 
     const packageId = pkg.package_id;
+    console.log(`[Workspace 2 Proposal API] 🚀 Initiating proposal generation for package: ${packageId}`);
 
-    try {
-      await processDiscoveryPackage(packageId);
-    } catch (err) {
-      const message = getFriendlyErrorMessage(err);
-      if (onToast) onToast(message, 'error', 6000);
-      setStep('discovery');
-      return;
-    }
+    processDiscoveryPackage(packageId)
+      .then((res) => {
+        console.log(`[Workspace 2 Proposal API] ✅ Process trigger acknowledged:`, res);
+      })
+      .catch((err) => {
+        console.warn(`[Workspace 2 Proposal API] Process call background notice (polling active):`, err.message);
+      });
 
     const controller = new AbortController();
     pollAbortRef.current = controller;
 
     try {
-      const proposal = await pollForProposal(packageId, controller.signal);
-      if (controller.signal.aborted) return;
-
-      if (proposal) {
-        if (onToast) onToast('Proposal generated successfully.', 'success', 5000);
-        if (onViewProposal) onViewProposal(proposal.proposal_id);
-        else if (onNavigate) onNavigate('proposal', 'proposal-list');
-      }
+      await pollForProposal(packageId, controller.signal);
     } catch (err) {
+      stopTimer();
       if (!controller.signal.aborted) {
         const message = getFriendlyErrorMessage(err);
         if (onToast) onToast(message, 'error', 6000);
@@ -238,34 +408,28 @@ export default function CreateProposal({
 
   const handleGenerate = async () => {
     const packageId = discoveryPackage.package_id;
-
-    try {
-      await processDiscoveryPackage(packageId);
-    } catch (err) {
-      const message = getFriendlyErrorMessage(err);
-      if (onToast) onToast(message, 'error', 6000);
-      throw err;
-    }
-
-    if (onToast) onToast('Proposal generation started.', 'success', 4000);
     setStep('processing');
-    setElapsedSeconds(0);
+    startTimer();
     setIsTakingLong(false);
     setPackageStatus('PROCESSING');
+
+    console.log(`[Workspace 2 Proposal API] 🚀 Starting proposal generation for package: ${packageId}`);
+
+    processDiscoveryPackage(packageId)
+      .then((res) => {
+        console.log(`[Workspace 2 Proposal API] ✅ Process trigger acknowledged:`, res);
+      })
+      .catch((err) => {
+        console.warn(`[Workspace 2 Proposal API] Process call background notice (polling active):`, err.message);
+      });
 
     const controller = new AbortController();
     pollAbortRef.current = controller;
 
     try {
-      const proposal = await pollForProposal(packageId, controller.signal);
-      if (controller.signal.aborted) return;
-
-      if (proposal) {
-        if (onToast) onToast('Proposal generated successfully.', 'success', 5000);
-        if (onViewProposal) onViewProposal(proposal.proposal_id);
-        else if (onNavigate) onNavigate('proposal', 'proposal-list');
-      }
+      await pollForProposal(packageId, controller.signal);
     } catch (err) {
+      stopTimer();
       if (!controller.signal.aborted) {
         const message = getFriendlyErrorMessage(err);
         if (onToast) onToast(message, 'error', 6000);
@@ -282,21 +446,13 @@ export default function CreateProposal({
     const controller = new AbortController();
     pollAbortRef.current = controller;
 
-    pollForProposal(packageId, controller.signal)
-      .then((proposal) => {
-        if (controller.signal.aborted) return;
-        if (proposal) {
-          if (onToast) onToast('Proposal generated successfully.', 'success', 5000);
-          if (onViewProposal) onViewProposal(proposal.proposal_id);
-          else if (onNavigate) onNavigate('proposal', 'proposal-list');
-        }
-      })
-      .catch((err) => {
-        if (!controller.signal.aborted) {
-          if (onToast) onToast(getFriendlyErrorMessage(err), 'error', 6000);
-          setStep('review');
-        }
-      });
+    pollForProposal(packageId, controller.signal).catch((err) => {
+      stopTimer();
+      if (!controller.signal.aborted) {
+        if (onToast) onToast(getFriendlyErrorMessage(err), 'error', 6000);
+        setStep('review');
+      }
+    });
   };
 
   return (
@@ -316,10 +472,8 @@ export default function CreateProposal({
           </motion.button>
 
           <div className="nav-engine-pill">
-            <span className="engine-ping-ring">
-              <span className="engine-ping-dot" />
-            </span>
-            <span>Workspace 2 • Zia AI Engine Ready</span>
+            <span className="engine-ping-dot" />
+            <span>Workspace 2 • Solution Architecture</span>
           </div>
         </div>
 
@@ -331,8 +485,8 @@ export default function CreateProposal({
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35, ease: 'easeOut' }}
           >
-            <Sparkles size={13} className="hero-badge-sparkle" />
-            <span>AI Solution Studio • Workspace 2</span>
+            <FileText size={13} className="hero-badge-icon" />
+            <span>Workspace 2 • Solution Proposal</span>
           </motion.div>
 
           <motion.h1
@@ -342,10 +496,7 @@ export default function CreateProposal({
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, ease: 'easeOut', delay: 0.05 }}
           >
-            Turn Discovery Notes Into{' '}
-            <span className="proposal-hero-gradient-text">
-              Structured Proposals
-            </span>
+            Solution Proposal
           </motion.h1>
 
           <motion.p
@@ -354,141 +505,32 @@ export default function CreateProposal({
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, ease: 'easeOut', delay: 0.1 }}
           >
-            Upload customer discovery documents, MOMs, or RFPs. Zia AI analyzes requirements and generates a comprehensive, client-ready solution proposal.
+            Upload customer discovery documents and materials to generate a structured, client-ready solution proposal.
           </motion.p>
         </section>
 
-        {/* Body: Discovery Studio -> Review -> Processing */}
+        {/* Body: Discovery -> Review -> Processing -> Result */}
         <div className="create-proposal-body">
           <AnimatePresence mode="wait">
             {step === 'discovery' ? (
               <motion.div
                 key="discovery"
-                className="proposal-studio-grid"
+                className="proposal-card-single"
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
                 transition={{ duration: 0.24, ease: 'easeOut' }}
               >
-                {/* Left Column: Intake Studio */}
-                <div className="proposal-studio-main">
-                  <DiscoveryUploadCard
-                    onContinue={handlePackageCreated}
-                    onGenerate={handleDirectGenerate}
-                    onToast={onToast}
-                  />
-                </div>
-
-                {/* Right Column: 21st.dev Bento Intelligence Sidebar */}
-                <aside className="proposal-studio-sidebar" aria-label="Proposal synthesis features">
-                  {/* Bento Card 1: What Zia Synthesizes */}
-                  <SpotlightCard className="studio-bento-card bento-card-synthesis" spotlightColor="rgba(255, 122, 26, 0.12)">
-                    <div className="bento-card-header">
-                      <div className="bento-icon-wrap icon-wrap-orange">
-                        <Sparkles size={17} />
-                      </div>
-                      <div className="bento-header-text">
-                        <span className="bento-pill-tag">ZIA AI AGENT</span>
-                        <h3 className="bento-card-title">Proposal Synthesis</h3>
-                      </div>
-                    </div>
-                    <p className="bento-card-desc">
-                      Uploaded discovery content is analyzed and structured into 5 client-ready executive sections:
-                    </p>
-                    <ul className="bento-pillars-list">
-                      <li className="bento-pillar-item">
-                        <span className="pillar-dot dot-orange" />
-                        <div className="pillar-content">
-                          <span className="pillar-title">Executive Summary & Context</span>
-                          <span className="pillar-sub">Strategic goals & problem statement</span>
-                        </div>
-                      </li>
-                      <li className="bento-pillar-item">
-                        <span className="pillar-dot dot-blue" />
-                        <div className="pillar-content">
-                          <span className="pillar-title">Objectives & Gap Analysis</span>
-                          <span className="pillar-sub">Operational challenges mapped to outcomes</span>
-                        </div>
-                      </li>
-                      <li className="bento-pillar-item">
-                        <span className="pillar-dot dot-purple" />
-                        <div className="pillar-content">
-                          <span className="pillar-title">Zoho Solution Architecture</span>
-                          <span className="pillar-sub">Target apps, workflows & data sync</span>
-                        </div>
-                      </li>
-                      <li className="bento-pillar-item">
-                        <span className="pillar-dot dot-emerald" />
-                        <div className="pillar-content">
-                          <span className="pillar-title">Implementation Phasing</span>
-                          <span className="pillar-sub">Sprint milestones & deliverables roadmap</span>
-                        </div>
-                      </li>
-                      <li className="bento-pillar-item">
-                        <span className="pillar-dot dot-amber" />
-                        <div className="pillar-content">
-                          <span className="pillar-title">Commercials & Projected ROI</span>
-                          <span className="pillar-sub">Investment estimates & value metrics</span>
-                        </div>
-                      </li>
-                    </ul>
-                  </SpotlightCard>
-
-                  {/* Bento Card 2: Formats & Multi-file */}
-                  <SpotlightCard className="studio-bento-card bento-card-formats" spotlightColor="rgba(0, 82, 255, 0.08)">
-                    <div className="bento-card-header">
-                      <div className="bento-icon-wrap icon-wrap-blue">
-                        <Layers size={17} />
-                      </div>
-                      <div className="bento-header-text">
-                        <span className="bento-pill-tag tag-blue">SMART EXTRACTION</span>
-                        <h3 className="bento-card-title">Supported Inputs</h3>
-                      </div>
-                    </div>
-                    <p className="bento-card-desc">
-                      Upload individual files or full folders. Zia parses text, multi-sheet spreadsheets, and notes:
-                    </p>
-                    <div className="bento-format-chips">
-                      <div className="bento-chip">
-                        <span className="chip-badge badge-pdf">PDF</span>
-                        <span>RFPs & Specs</span>
-                      </div>
-                      <div className="bento-chip">
-                        <span className="chip-badge badge-doc">DOCX</span>
-                        <span>MOMs & Notes</span>
-                      </div>
-                      <div className="bento-chip">
-                        <span className="chip-badge badge-sheet">XLSX</span>
-                        <span>Sheets & Pricing</span>
-                      </div>
-                      <div className="bento-chip">
-                        <span className="chip-badge badge-text">TXT</span>
-                        <span>Transcripts</span>
-                      </div>
-                    </div>
-                  </SpotlightCard>
-
-                  {/* Bento Card 3: Stratus Security */}
-                  <SpotlightCard className="studio-bento-card bento-card-security" spotlightColor="rgba(16, 185, 129, 0.08)">
-                    <div className="bento-card-header">
-                      <div className="bento-icon-wrap icon-wrap-emerald">
-                        <ShieldCheck size={17} />
-                      </div>
-                      <div className="bento-header-text">
-                        <span className="bento-pill-tag tag-emerald">CATALYST STRATUS</span>
-                        <h3 className="bento-card-title">Secure & Instant</h3>
-                      </div>
-                    </div>
-                    <p className="bento-card-desc">
-                      Files are encrypted in Catalyst Stratus. Generated proposals are instantly published as interactive web views & exportable PDFs.
-                    </p>
-                  </SpotlightCard>
-                </aside>
+                <DiscoveryUploadCard
+                  onContinue={handlePackageCreated}
+                  onGenerate={handleDirectGenerate}
+                  onToast={onToast}
+                />
               </motion.div>
             ) : step === 'review' ? (
               <motion.div
                 key="review"
-                className="proposal-studio-single"
+                className="proposal-card-single"
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
@@ -501,10 +543,10 @@ export default function CreateProposal({
                   onToast={onToast}
                 />
               </motion.div>
-            ) : (
+            ) : step === 'processing' ? (
               <motion.div
                 key="processing"
-                className="proposal-studio-single"
+                className="proposal-card-single"
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
@@ -518,6 +560,33 @@ export default function CreateProposal({
                   packageStatus={packageStatus}
                   packageName={discoveryPackage?.package_name || 'Discovery Package'}
                   fileCount={discoveryPackage?.files?.length || 0}
+                />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="result"
+                className="proposal-card-single"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.24, ease: 'easeOut' }}
+              >
+                <ProposalResultCard
+                  proposal={generatedProposal}
+                  discoveryPackage={discoveryPackage}
+                  onViewDetails={() => {
+                    if (onViewProposal && generatedProposal?.proposal_id) {
+                      onViewProposal(generatedProposal.proposal_id);
+                    } else if (onNavigate) {
+                      onNavigate('proposal', 'proposal-details');
+                    }
+                  }}
+                  onCreateAnother={() => {
+                    setStep('discovery');
+                    setDiscoveryPackage(null);
+                    setGeneratedProposal(null);
+                  }}
+                  onBackToProposals={handleBackToProposals}
                 />
               </motion.div>
             )}

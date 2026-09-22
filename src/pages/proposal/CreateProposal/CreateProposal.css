@@ -11,7 +11,7 @@
 }
 
 .create-proposal-container {
-  max-width: 1240px;
+  max-width: 880px;
   margin: 0 auto;
   padding: 0 1.5rem;
 }
@@ -28,51 +28,24 @@
 .nav-engine-pill {
   display: inline-flex;
   align-items: center;
-  gap: 0.55rem;
-  padding: 0.4rem 0.95rem;
+  gap: 0.5rem;
+  padding: 0.38rem 0.85rem;
   border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(226, 232, 240, 0.95);
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
   font-family: var(--font-family-display, 'Poppins', sans-serif);
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   font-weight: 600;
-  color: #334155;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
-  backdrop-filter: blur(8px);
-}
-
-.engine-ping-ring {
-  position: relative;
-  display: inline-flex;
-  width: 8px;
-  height: 8px;
+  color: #475569;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
 .engine-ping-dot {
-  position: absolute;
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background: #16A34A;
-}
-
-.engine-ping-ring::before {
-  content: '';
-  position: absolute;
-  top: -2px;
-  left: -2px;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: rgba(22, 163, 74, 0.35);
-  animation: pingGlow 2.2s cubic-bezier(0, 0, 0.2, 1) infinite;
-}
-
-@keyframes pingGlow {
-  75%, 100% {
-    transform: scale(2.2);
-    opacity: 0;
-  }
+  flex-shrink: 0;
 }
 
 .btn-back-to-proposals {
@@ -113,19 +86,19 @@
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
-  padding: 0.3rem 0.9rem;
+  padding: 0.28rem 0.85rem;
   border-radius: 9999px;
-  background: linear-gradient(135deg, rgba(255, 122, 26, 0.08) 0%, rgba(0, 82, 255, 0.04) 100%);
-  border: 1px solid rgba(255, 122, 26, 0.22);
-  font-size: 0.76rem;
-  font-weight: 700;
-  color: #C2410C;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #475569;
   margin-bottom: 0.85rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
-  letter-spacing: 0.02em;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+  letter-spacing: 0.01em;
 }
 
-.hero-badge-sparkle {
+.hero-badge-icon {
   color: #FF7A1A;
 }
 
@@ -162,260 +135,9 @@
   position: relative;
 }
 
-/* Studio 2-Column Grid Layout */
-.proposal-studio-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 370px;
-  gap: 1.75rem;
-  align-items: start;
-}
-
-.proposal-studio-main {
-  min-width: 0;
-}
-
-.proposal-studio-sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-  min-width: 0;
-}
-
-.proposal-studio-single {
-  max-width: 860px;
+.proposal-card-single {
+  max-width: 880px;
   margin: 0 auto;
-}
-
-/* ==========================================================================
-   21st.dev Style Bento Intelligence Cards
-   ========================================================================== */
-
-.studio-bento-card {
-  background: #FFFFFF;
-  border: 1px solid rgba(226, 232, 240, 0.85);
-  border-radius: 18px;
-  box-shadow: 0 10px 30px -10px rgba(11, 25, 44, 0.06), 0 0 0 1px rgba(226, 232, 240, 0.4);
-  padding: 1.45rem;
-  position: relative;
-  overflow: hidden;
-  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
-}
-
-.studio-bento-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 16px 36px -12px rgba(11, 25, 44, 0.1), 0 0 0 1px rgba(255, 122, 26, 0.25);
-  border-color: rgba(255, 122, 26, 0.3);
-}
-
-.bento-card-header {
-  display: flex;
-  align-items: center;
-  gap: 0.85rem;
-  margin-bottom: 0.85rem;
-}
-
-.bento-icon-wrap {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-}
-
-.icon-wrap-orange {
-  background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%);
-  border: 1.5px solid #FED7AA;
-  color: #EA580C;
-}
-
-.icon-wrap-blue {
-  background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
-  border: 1.5px solid #BFDBFE;
-  color: #2563EB;
-}
-
-.icon-wrap-emerald {
-  background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
-  border: 1.5px solid #BBF7D0;
-  color: #16A34A;
-}
-
-.bento-header-text {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  min-width: 0;
-}
-
-.bento-pill-tag {
-  font-family: var(--font-family-display, 'Poppins', sans-serif);
-  font-size: 0.66rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #EA580C;
-}
-
-.bento-pill-tag.tag-blue {
-  color: #2563EB;
-}
-
-.bento-pill-tag.tag-emerald {
-  color: #16A34A;
-}
-
-.bento-card-title {
-  font-family: var(--font-family-display, 'Poppins', sans-serif);
-  font-size: 1.02rem;
-  font-weight: 700;
-  color: #0F172A;
-  margin: 0;
-  letter-spacing: -0.015em;
-}
-
-.bento-card-desc {
-  font-size: 0.835rem;
-  color: #64748B;
-  line-height: 1.55;
-  margin: 0 0 1rem 0;
-}
-
-/* Bento Pillars List */
-.bento-pillars-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.65rem;
-}
-
-.bento-pillar-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  padding: 0.5rem 0.65rem;
-  border-radius: 10px;
-  background: #F8FAFC;
-  border: 1px solid #F1F5F9;
-  transition: all 0.15s ease;
-}
-
-.bento-pillar-item:hover {
-  background: #F1F5F9;
-  border-color: #E2E8F0;
-  transform: translateX(2px);
-}
-
-.pillar-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  margin-top: 0.35rem;
-  flex-shrink: 0;
-}
-
-.dot-orange {
-  background: #FF7A1A;
-  box-shadow: 0 0 6px rgba(255, 122, 26, 0.5);
-}
-
-.dot-blue {
-  background: #0052FF;
-  box-shadow: 0 0 6px rgba(0, 82, 255, 0.45);
-}
-
-.dot-purple {
-  background: #8B5CF6;
-  box-shadow: 0 0 6px rgba(139, 92, 246, 0.45);
-}
-
-.dot-emerald {
-  background: #10B981;
-  box-shadow: 0 0 6px rgba(16, 185, 129, 0.45);
-}
-
-.dot-amber {
-  background: #F59E0B;
-  box-shadow: 0 0 6px rgba(245, 158, 11, 0.45);
-}
-
-.pillar-content {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-  min-width: 0;
-}
-
-.pillar-title {
-  font-family: var(--font-family-display, 'Poppins', sans-serif);
-  font-size: 0.81rem;
-  font-weight: 700;
-  color: #1E293B;
-  line-height: 1.35;
-}
-
-.pillar-sub {
-  font-size: 0.74rem;
-  color: #64748B;
-  line-height: 1.35;
-}
-
-/* Bento Format Chips */
-.bento-format-chips {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.6rem;
-}
-
-.bento-chip {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  background: #F8FAFC;
-  border: 1px solid #E2E8F0;
-  border-radius: 9px;
-  padding: 0.45rem 0.6rem;
-  font-size: 0.74rem;
-  font-weight: 600;
-  color: #334155;
-}
-
-.chip-badge {
-  font-size: 0.64rem;
-  font-weight: 800;
-  padding: 0.15rem 0.4rem;
-  border-radius: 4px;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  flex-shrink: 0;
-}
-
-.chip-badge.badge-pdf {
-  background: #FEE2E2;
-  color: #DC2626;
-  border: 1px solid #FECACA;
-}
-
-.chip-badge.badge-doc {
-  background: #DBEAFE;
-  color: #2563EB;
-  border: 1px solid #BFDBFE;
-}
-
-.chip-badge.badge-sheet {
-  background: #DCFCE7;
-  color: #16A34A;
-  border: 1px solid #BBF7D0;
-}
-
-.chip-badge.badge-text {
-  background: #F1F5F9;
-  color: #475569;
-  border: 1px solid #CBD5E1;
 }
 
 /* ==========================================================================
@@ -548,15 +270,6 @@
   color: #94A3B8;
 }
 
-.step-sparkle-spin {
-  animation: sparklePulse 1.8s ease-in-out infinite;
-}
-
-@keyframes sparklePulse {
-  0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.9; }
-  50% { transform: scale(1.15) rotate(15deg); opacity: 1; color: #FF7A1A; }
-}
-
 .pipeline-step-info {
   flex: 1;
   display: flex;
@@ -686,31 +399,195 @@
 }
 
 /* ==========================================================================
-   Responsive
+   Proposal Result State Card
    ========================================================================== */
 
-@media (max-width: 1100px) {
-  .proposal-studio-grid {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-  }
-
-  .proposal-studio-sidebar {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 1.25rem;
-  }
+.proposal-result-card {
+  background: #FFFFFF;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 20px;
+  box-shadow: 0 20px 40px -15px rgba(11, 25, 44, 0.08), 0 0 0 1px rgba(226, 232, 240, 0.5);
+  padding: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  position: relative;
+  overflow: hidden;
 }
+
+.proposal-result-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #10B981, #0052FF, #FF7A1A);
+}
+
+.proposal-result-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.95rem;
+  border-radius: 9999px;
+  background: #DCFCE7;
+  color: #15803D;
+  font-family: var(--font-family-display, 'Poppins', sans-serif);
+  font-size: 0.82rem;
+  font-weight: 700;
+  width: fit-content;
+  box-shadow: 0 1px 2px rgba(21, 128, 61, 0.08);
+}
+
+.proposal-result-title {
+  font-family: var(--font-family-display, 'Poppins', sans-serif);
+  font-size: 1.55rem;
+  font-weight: 800;
+  color: #0B192C;
+  line-height: 1.3;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.proposal-result-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 14px;
+  padding: 1.25rem;
+}
+
+.result-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.result-meta-label {
+  font-family: var(--font-family-body, 'Inter', sans-serif);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #64748B;
+}
+
+.result-meta-value {
+  font-family: var(--font-family-display, 'Poppins', sans-serif);
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #0F172A;
+}
+
+.result-code {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.82rem;
+  font-weight: 600;
+  background: #FFFFFF;
+  padding: 0.15rem 0.45rem;
+  border-radius: 6px;
+  border: 1px solid #E2E8F0;
+  color: #334155;
+  width: fit-content;
+}
+
+.result-status-pill {
+  display: inline-block;
+  padding: 0.2rem 0.65rem;
+  border-radius: 9999px;
+  background: #DCFCE7;
+  color: #15803D;
+  font-size: 0.78rem;
+  font-weight: 700;
+  width: fit-content;
+}
+
+.proposal-result-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+  padding-top: 0.5rem;
+}
+
+.btn-open-proposal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  padding: 0.78rem 1.75rem;
+  background: linear-gradient(135deg, #FF7A1A 0%, #E65A00 100%);
+  color: #FFFFFF;
+  font-family: var(--font-family-display, 'Poppins', sans-serif);
+  font-size: 0.95rem;
+  font-weight: 700;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(255, 122, 26, 0.35);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-open-proposal:hover {
+  background: linear-gradient(135deg, #FF8C38 0%, #F06A0A 100%);
+  box-shadow: 0 6px 20px rgba(255, 122, 26, 0.45);
+}
+
+.btn-result-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.4rem;
+  background: #F1F5F9;
+  border: 1px solid #CBD5E1;
+  color: #334155;
+  font-family: var(--font-family-display, 'Poppins', sans-serif);
+  font-size: 0.88rem;
+  font-weight: 600;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-result-secondary:hover {
+  background: #E2E8F0;
+  color: #0F172A;
+}
+
+.btn-result-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.15rem;
+  background: transparent;
+  border: 1px solid transparent;
+  color: #64748B;
+  font-family: var(--font-family-display, 'Poppins', sans-serif);
+  font-size: 0.88rem;
+  font-weight: 600;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-result-ghost:hover {
+  background: #F8FAFC;
+  border-color: #E2E8F0;
+  color: #0F172A;
+}
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
 
 @media (max-width: 768px) {
   .create-proposal-nav-bar {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.75rem;
-  }
-
-  .proposal-studio-sidebar {
-    grid-template-columns: 1fr;
   }
 }
 

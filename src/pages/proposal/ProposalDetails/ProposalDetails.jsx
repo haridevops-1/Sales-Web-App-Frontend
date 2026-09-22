@@ -8,7 +8,7 @@ import {
   AlertTriangle,
   Workflow,
   Lightbulb,
-  Sparkles,
+  Layers,
   TrendingUp,
   Loader2
 } from 'lucide-react';
@@ -223,7 +223,7 @@ export default function ProposalDetails({ proposalId, onNavigate, onToast }) {
             <BulletList items={content.proposed_solution} />
           </Section>
 
-          <Section icon={Sparkles} title="Zoho Solutions">
+          <Section icon={Layers} title="Zoho Solutions">
             <BulletList items={content.zoho_solutions} />
           </Section>
 

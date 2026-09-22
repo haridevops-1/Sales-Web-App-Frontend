@@ -64,6 +64,8 @@ async function requestJson(path, { method = 'GET', body, timeoutMs = 45000, sign
     headers['Content-Type'] = 'application/json';
   }
 
+  console.log(`[Workspace 2 Proposal API] ${method} ${url}`, body !== undefined ? body : '');
+
   let response;
   try {
     response = await fetch(url, {
@@ -74,6 +76,7 @@ async function requestJson(path, { method = 'GET', body, timeoutMs = 45000, sign
     });
   } catch (fetchErr) {
     clearTimeout(timeoutId);
+    console.error(`[Workspace 2 Proposal API] Network Error on ${method} ${path}:`, fetchErr);
     if (fetchErr.name === 'AbortError') {
       throw new ProposalApiError('The request timed out. Please try again.', { status: 408 });
     }
@@ -92,12 +95,14 @@ async function requestJson(path, { method = 'GET', body, timeoutMs = 45000, sign
   if (!response.ok || data.success === false) {
     const code = data?.error?.code || null;
     const message = data?.error?.message || `Request failed with status ${response.status}.`;
+    console.error(`[Workspace 2 Proposal API] ${response.status} Error on ${path}:`, data);
     if (response.status === 401) {
       clearSessionToken();
     }
     throw new ProposalApiError(message, { status: response.status, code, requestId: data?.request_id });
   }
 
+  console.log(`[Workspace 2 Proposal API] 200 OK (${path}):`, data);
   return data;
 }
 
@@ -117,6 +122,8 @@ async function requestFormData(path, formData, { signal: externalSignal, timeout
   }
   // Browser will automatically set multipart/form-data and boundary
 
+  console.log(`[Workspace 2 Proposal API] POST (multipart) ${url}`);
+
   let response;
   try {
     response = await fetch(url, {
@@ -127,6 +134,7 @@ async function requestFormData(path, formData, { signal: externalSignal, timeout
     });
   } catch (fetchErr) {
     clearTimeout(timeoutId);
+    console.error(`[Workspace 2 Proposal API] Upload Error on ${path}:`, fetchErr);
     if (fetchErr.name === 'AbortError') {
       throw new ProposalApiError('Upload timed out. Please try with smaller files or retry.', { status: 408 });
     }
@@ -145,9 +153,11 @@ async function requestFormData(path, formData, { signal: externalSignal, timeout
   if (!response.ok || data.success === false) {
     const code = data?.error?.code || null;
     const message = data?.error?.message || `Upload failed with status ${response.status}.`;
+    console.error(`[Workspace 2 Proposal API] Upload Failed (${response.status}) on ${path}:`, data);
     throw new ProposalApiError(message, { status: response.status, code, requestId: data?.request_id });
   }
 
+  console.log(`[Workspace 2 Proposal API] 200 OK Upload (${path}):`, data);
   return data;
 }
 

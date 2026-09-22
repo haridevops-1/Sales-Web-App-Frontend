@@ -54,16 +54,6 @@
   width: fit-content;
 }
 
-.sparkle-icon {
-  color: #FF7A1A;
-  animation: sparkleTwinkle 2s ease-in-out infinite;
-}
-
-@keyframes sparkleTwinkle {
-  0%, 100% { transform: scale(1) rotate(0deg); opacity: 1; }
-  50% { transform: scale(1.15) rotate(10deg); opacity: 0.8; }
-}
-
 .discovery-dropzone-title {
   font-family: var(--font-family-display, 'Poppins', sans-serif);
   font-size: 1.35rem;
@@ -577,6 +567,24 @@
   font-variant-numeric: tabular-nums;
 }
 
+.selected-file-status {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+  background: #F1F5F9;
+  color: #475569;
+  border: 1px solid #E2E8F0;
+  letter-spacing: 0.02em;
+}
+
+.selected-file-status.status-ready {
+  background: #DCFCE7;
+  color: #15803D;
+  border-color: #BBF7D0;
+}
+
 .btn-remove-selected-file {
   width: 26px;
   height: 26px;
@@ -770,11 +778,6 @@
   transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.btn-sparkle-icon {
-  flex-shrink: 0;
-  color: #FFE4B5;
-}
-
 .btn-discovery-continue:disabled {
   opacity: 0.55;
   cursor: not-allowed;
@@ -786,10 +789,6 @@
 
 .btn-discovery-continue:disabled::after {
   display: none;
-}
-
-.btn-discovery-continue:disabled .btn-sparkle-icon {
-  color: #94A3B8;
 }
 
 .btn-discovery-secondary {

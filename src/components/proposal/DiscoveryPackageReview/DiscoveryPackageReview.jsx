@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import './DiscoveryPackageReview.css';
-import { FileText, X as XIcon, FileUp, FolderUp, Sparkles, Loader2 } from 'lucide-react';
+import { FileText, X as XIcon, FileUp, FolderUp, ArrowRight, Loader2 } from 'lucide-react';
 import SpotlightCard from '@/reactbits/SpotlightCard';
 import { addFilesToPackage, removeFileFromPackage, getFriendlyErrorMessage } from '@/api/proposalApi';
 import { formatBytes } from '@/utils/helpers';
@@ -184,8 +184,9 @@ export default function DiscoveryPackageReview({ discoveryPackage, onPackageUpda
             onClick={handleGenerate}
             disabled={files.length === 0 || isGenerating}
           >
-            {isGenerating ? <Loader2 size={16} className="discovery-review-spin" /> : <Sparkles size={16} />}
+            {isGenerating ? <Loader2 size={16} className="discovery-review-spin" /> : null}
             <span>{isGenerating ? 'Starting Generation…' : 'Generate Proposal'}</span>
+            {!isGenerating && <ArrowRight size={16} />}
           </button>
         </div>
       </div>
