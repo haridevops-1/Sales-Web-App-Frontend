@@ -323,17 +323,23 @@ export default function DiscoveryUploadCard({ onContinue, onGenerate, disabled =
             </div>
           </div>
 
+          <div className="dropzone-divider-row" onClick={(e) => e.stopPropagation()}>
+            <span className="dropzone-divider-line" />
+            <span className="dropzone-divider-text">OR CHOOSE BELOW</span>
+            <span className="dropzone-divider-line" />
+          </div>
+
           <div className="dropzone-actions-group" onClick={(e) => e.stopPropagation()}>
             <motion.button
               type="button"
               className="btn-dropzone-action btn-files-picker"
               onClick={() => fileInputRef.current?.click()}
               disabled={disabled || isCreating}
-              whileHover={{ scale: 1.02 }}
+              whileHover={{ scale: 1.02, y: -1 }}
               whileTap={{ scale: 0.98 }}
             >
               <FileUp size={16} className="btn-icon-accent" />
-              <span>Choose Files</span>
+              <span>Browse Files</span>
             </motion.button>
 
             <motion.button
@@ -341,7 +347,7 @@ export default function DiscoveryUploadCard({ onContinue, onGenerate, disabled =
               className="btn-dropzone-action btn-folder-picker"
               onClick={() => folderInputRef.current?.click()}
               disabled={disabled || isCreating}
-              whileHover={{ scale: 1.02 }}
+              whileHover={{ scale: 1.02, y: -1 }}
               whileTap={{ scale: 0.98 }}
             >
               <FolderUp size={16} className="btn-icon-accent" />
@@ -548,15 +554,15 @@ export default function DiscoveryUploadCard({ onContinue, onGenerate, disabled =
             {isCreating ? (
               <>
                 <Loader2 size={16} className="discovery-spin" />
-                <span>Uploading & Starting Generation…</span>
+                <span>Creating Proposal with Zia AI…</span>
               </>
             ) : (
               <>
                 <Sparkles size={16} className="btn-sparkle-icon" />
                 <span>
                   {selectedFiles.length > 0
-                    ? `Generate Solution Proposal (${selectedFiles.length} file${selectedFiles.length === 1 ? '' : 's'})`
-                    : 'Select files or folder to generate'}
+                    ? `Create Proposal (${selectedFiles.length} document${selectedFiles.length === 1 ? '' : 's'})`
+                    : 'Create Proposal'}
                 </span>
                 <ArrowRight size={16} strokeWidth={2.4} className="btn-arrow-icon" />
               </>

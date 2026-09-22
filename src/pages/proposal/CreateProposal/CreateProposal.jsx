@@ -2,8 +2,22 @@ import React, { useEffect, useState, useRef } from 'react';
 import './CreateProposal.css';
 import DiscoveryUploadCard from '@/components/proposal/DiscoveryUploadCard/DiscoveryUploadCard';
 import DiscoveryPackageReview from '@/components/proposal/DiscoveryPackageReview/DiscoveryPackageReview';
+import SpotlightCard from '@/reactbits/SpotlightCard';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Clock, Sparkles, CheckCircle2, Loader2, Database, FileText } from 'lucide-react';
+import {
+  ArrowLeft,
+  Clock,
+  Sparkles,
+  CheckCircle2,
+  Loader2,
+  Database,
+  FileText,
+  Layers,
+  ShieldCheck,
+  Zap,
+  ArrowRight,
+  FileSpreadsheet
+} from 'lucide-react';
 import { processDiscoveryPackage, getDiscoveryPackage, listProposals, getFriendlyErrorMessage } from '@/api/proposalApi';
 
 const POLL_INTERVAL_MS = 2500;
@@ -300,6 +314,13 @@ export default function CreateProposal({
             <ArrowLeft size={15} />
             <span>Back to Proposals</span>
           </motion.button>
+
+          <div className="nav-engine-pill">
+            <span className="engine-ping-ring">
+              <span className="engine-ping-dot" />
+            </span>
+            <span>Workspace 2 • Zia AI Engine Ready</span>
+          </div>
         </div>
 
         {/* Hero Header */}
@@ -311,7 +332,7 @@ export default function CreateProposal({
             transition={{ duration: 0.35, ease: 'easeOut' }}
           >
             <Sparkles size={13} className="hero-badge-sparkle" />
-            <span>Workspace 2 • AI Solution Proposals</span>
+            <span>AI Solution Studio • Workspace 2</span>
           </motion.div>
 
           <motion.h1
@@ -337,26 +358,137 @@ export default function CreateProposal({
           </motion.p>
         </section>
 
-        {/* Body: Discovery -> Review -> Processing */}
+        {/* Body: Discovery Studio -> Review -> Processing */}
         <div className="create-proposal-body">
           <AnimatePresence mode="wait">
             {step === 'discovery' ? (
               <motion.div
                 key="discovery"
+                className="proposal-studio-grid"
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
                 transition={{ duration: 0.24, ease: 'easeOut' }}
               >
-                <DiscoveryUploadCard
-                  onContinue={handlePackageCreated}
-                  onGenerate={handleDirectGenerate}
-                  onToast={onToast}
-                />
+                {/* Left Column: Intake Studio */}
+                <div className="proposal-studio-main">
+                  <DiscoveryUploadCard
+                    onContinue={handlePackageCreated}
+                    onGenerate={handleDirectGenerate}
+                    onToast={onToast}
+                  />
+                </div>
+
+                {/* Right Column: 21st.dev Bento Intelligence Sidebar */}
+                <aside className="proposal-studio-sidebar" aria-label="Proposal synthesis features">
+                  {/* Bento Card 1: What Zia Synthesizes */}
+                  <SpotlightCard className="studio-bento-card bento-card-synthesis" spotlightColor="rgba(255, 122, 26, 0.12)">
+                    <div className="bento-card-header">
+                      <div className="bento-icon-wrap icon-wrap-orange">
+                        <Sparkles size={17} />
+                      </div>
+                      <div className="bento-header-text">
+                        <span className="bento-pill-tag">ZIA AI AGENT</span>
+                        <h3 className="bento-card-title">Proposal Synthesis</h3>
+                      </div>
+                    </div>
+                    <p className="bento-card-desc">
+                      Uploaded discovery content is analyzed and structured into 5 client-ready executive sections:
+                    </p>
+                    <ul className="bento-pillars-list">
+                      <li className="bento-pillar-item">
+                        <span className="pillar-dot dot-orange" />
+                        <div className="pillar-content">
+                          <span className="pillar-title">Executive Summary & Context</span>
+                          <span className="pillar-sub">Strategic goals & problem statement</span>
+                        </div>
+                      </li>
+                      <li className="bento-pillar-item">
+                        <span className="pillar-dot dot-blue" />
+                        <div className="pillar-content">
+                          <span className="pillar-title">Objectives & Gap Analysis</span>
+                          <span className="pillar-sub">Operational challenges mapped to outcomes</span>
+                        </div>
+                      </li>
+                      <li className="bento-pillar-item">
+                        <span className="pillar-dot dot-purple" />
+                        <div className="pillar-content">
+                          <span className="pillar-title">Zoho Solution Architecture</span>
+                          <span className="pillar-sub">Target apps, workflows & data sync</span>
+                        </div>
+                      </li>
+                      <li className="bento-pillar-item">
+                        <span className="pillar-dot dot-emerald" />
+                        <div className="pillar-content">
+                          <span className="pillar-title">Implementation Phasing</span>
+                          <span className="pillar-sub">Sprint milestones & deliverables roadmap</span>
+                        </div>
+                      </li>
+                      <li className="bento-pillar-item">
+                        <span className="pillar-dot dot-amber" />
+                        <div className="pillar-content">
+                          <span className="pillar-title">Commercials & Projected ROI</span>
+                          <span className="pillar-sub">Investment estimates & value metrics</span>
+                        </div>
+                      </li>
+                    </ul>
+                  </SpotlightCard>
+
+                  {/* Bento Card 2: Formats & Multi-file */}
+                  <SpotlightCard className="studio-bento-card bento-card-formats" spotlightColor="rgba(0, 82, 255, 0.08)">
+                    <div className="bento-card-header">
+                      <div className="bento-icon-wrap icon-wrap-blue">
+                        <Layers size={17} />
+                      </div>
+                      <div className="bento-header-text">
+                        <span className="bento-pill-tag tag-blue">SMART EXTRACTION</span>
+                        <h3 className="bento-card-title">Supported Inputs</h3>
+                      </div>
+                    </div>
+                    <p className="bento-card-desc">
+                      Upload individual files or full folders. Zia parses text, multi-sheet spreadsheets, and notes:
+                    </p>
+                    <div className="bento-format-chips">
+                      <div className="bento-chip">
+                        <span className="chip-badge badge-pdf">PDF</span>
+                        <span>RFPs & Specs</span>
+                      </div>
+                      <div className="bento-chip">
+                        <span className="chip-badge badge-doc">DOCX</span>
+                        <span>MOMs & Notes</span>
+                      </div>
+                      <div className="bento-chip">
+                        <span className="chip-badge badge-sheet">XLSX</span>
+                        <span>Sheets & Pricing</span>
+                      </div>
+                      <div className="bento-chip">
+                        <span className="chip-badge badge-text">TXT</span>
+                        <span>Transcripts</span>
+                      </div>
+                    </div>
+                  </SpotlightCard>
+
+                  {/* Bento Card 3: Stratus Security */}
+                  <SpotlightCard className="studio-bento-card bento-card-security" spotlightColor="rgba(16, 185, 129, 0.08)">
+                    <div className="bento-card-header">
+                      <div className="bento-icon-wrap icon-wrap-emerald">
+                        <ShieldCheck size={17} />
+                      </div>
+                      <div className="bento-header-text">
+                        <span className="bento-pill-tag tag-emerald">CATALYST STRATUS</span>
+                        <h3 className="bento-card-title">Secure & Instant</h3>
+                      </div>
+                    </div>
+                    <p className="bento-card-desc">
+                      Files are encrypted in Catalyst Stratus. Generated proposals are instantly published as interactive web views & exportable PDFs.
+                    </p>
+                  </SpotlightCard>
+                </aside>
               </motion.div>
             ) : step === 'review' ? (
               <motion.div
                 key="review"
+                className="proposal-studio-single"
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
@@ -372,6 +504,7 @@ export default function CreateProposal({
             ) : (
               <motion.div
                 key="processing"
+                className="proposal-studio-single"
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
