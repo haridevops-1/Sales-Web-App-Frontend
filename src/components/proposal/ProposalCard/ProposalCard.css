@@ -1,101 +1,299 @@
-/* Clean minimal card styling for Workspace 2 Proposals
-   Displays: Business Name, One Detail, View Proposal Link */
+/* =========================================================================
+   Glassmorphism Profile Card Styling with Spikra Theme (Workspace 2 Proposals)
+   Identical to Workspace 1 All Experiences Showcase Cards (Image 2)
+   ========================================================================= */
 
-.proposal-clean-card {
+.experience-glass-wrapper {
   position: relative;
   width: 100%;
-  border-radius: 18px !important;
-  background: rgba(255, 255, 255, 0.92) !important;
-  backdrop-filter: blur(14px) !important;
-  -webkit-backdrop-filter: blur(14px) !important;
-  border: 1px solid rgba(226, 232, 240, 0.9) !important;
-  box-shadow: 0 4px 18px -4px rgba(11, 25, 44, 0.07) !important;
-  padding: 1.5rem !important;
-  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  min-height: 165px;
-  overflow: hidden;
 }
 
-.proposal-clean-card::before {
-  content: "";
+/* Glassmorphism Card Element */
+.experience-glass-card {
+  position: relative;
+  width: 100%;
+  border-radius: 20px !important;
+  background: rgba(255, 255, 255, 0.88) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(226, 232, 240, 0.9) !important;
+  box-shadow: 0 8px 20px -8px rgba(11, 25, 44, 0.08) !important;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.22s ease !important;
+  overflow: hidden !important;
+}
+
+.experience-glass-card:hover {
+  transform: translateY(-3px);
+}
+
+.experience-glass-card.tone-orange:hover {
+  box-shadow: 0 16px 32px -10px rgba(255, 122, 26, 0.22) !important;
+  border-color: rgba(255, 122, 26, 0.35) !important;
+}
+
+.experience-glass-card.tone-blue:hover {
+  box-shadow: 0 16px 32px -10px rgba(0, 82, 255, 0.16) !important;
+  border-color: rgba(0, 82, 255, 0.3) !important;
+}
+
+/* Thin top accent strip, colored by status */
+.experience-glass-card::before {
+  content: '';
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  height: 3px;
+  height: 3.5px;
+  z-index: 1;
+}
+
+.experience-glass-card.tone-orange::before {
   background: linear-gradient(90deg, #FF7A1A, #FF9240);
-  opacity: 0.85;
 }
 
-.proposal-clean-card:hover {
-  transform: translateY(-3px) !important;
-  border-color: rgba(255, 122, 26, 0.4) !important;
-  box-shadow: 0 14px 30px -8px rgba(255, 122, 26, 0.18) !important;
+.experience-glass-card.tone-blue::before {
+  background: linear-gradient(90deg, #0052ff, #4d8bff);
 }
 
-.proposal-clean-content {
+.experience-glass-content {
+  padding: 1.4rem !important;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  height: 100%;
-  gap: 1.25rem;
+  gap: 1.1rem;
 }
 
-.proposal-clean-header {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.proposal-clean-business {
-  font-size: 1.12rem;
-  font-weight: 800;
-  color: #0f172a;
-  margin: 0;
-  line-height: 1.35;
-  letter-spacing: -0.015em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.proposal-clean-detail {
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: #64748b;
-  margin: 0;
-  line-height: 1.4;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.proposal-clean-actions {
+/* Top Meta Row */
+.exp-glass-top-row {
   display: flex;
   align-items: center;
-  margin-top: auto;
+  justify-content: space-between;
+  gap: 0.5rem;
 }
 
-.proposal-clean-actions .btn-proposal-view {
-  width: 100%;
-  height: 2.55rem;
+.exp-glass-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  background: #fff7ed;
+  color: #E86A00;
+  border: 1px solid #ffedd5;
+}
+
+.exp-glass-status-pill.published {
+  background: #ecfdf5;
+  color: #059669;
+  border-color: #a7f3d0;
+}
+
+.exp-glass-status-pill.draft {
+  background: #f1f5f9;
+  color: #475569;
+  border-color: #cbd5e1;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.exp-glass-time {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* Identity & Brand Row */
+.exp-glass-identity-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+}
+
+.exp-glass-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #0b192c 0%, #1e2e45 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  flex-shrink: 0;
+  box-shadow: 0 4px 10px rgba(11, 25, 44, 0.2);
+  border: 1.5px solid rgba(255, 255, 255, 0.3);
+  overflow: hidden;
+}
+
+.exp-glass-titles {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.exp-glass-biz {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #D05E00;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 0.15rem;
+}
+
+.exp-glass-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.35;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.exp-glass-proj-row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.3rem;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.exp-glass-proj-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Body / URL Box */
+.exp-glass-body-box {
+  min-height: 52px;
+}
+
+.exp-url-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.78rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.exp-url-box.published {
+  background: rgba(236, 253, 245, 0.7);
+  border-color: #a7f3d0;
+}
+
+.exp-url-box.muted {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.exp-url-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.exp-url-live-tag {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #059669;
+}
+
+.exp-url-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.exp-url-link {
+  color: #2563eb;
+  font-family: var(--font-family-mono, monospace);
+  font-size: 0.74rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-decoration: none;
+  display: block;
+}
+
+.exp-url-link:hover {
+  text-decoration: underline;
+  color: #1d4ed8;
+}
+
+/* Action Buttons */
+.exp-glass-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.exp-btn-open {
+  flex: 1;
+  height: 2.6rem;
   background: linear-gradient(135deg, #FF7A1A 0%, #FF9240 100%) !important;
   color: #ffffff !important;
   border-radius: 10px !important;
-  box-shadow: 0 3px 12px rgba(255, 122, 26, 0.25) !important;
-  font-size: 0.85rem !important;
+  box-shadow: 0 3px 12px rgba(255, 122, 26, 0.28) !important;
+  padding: 0 0.95rem !important;
+  font-size: 0.82rem !important;
   font-weight: 700 !important;
   cursor: pointer;
-  transition: all 0.2s ease !important;
-  border: none !important;
+  transition: all 0.2s ease;
 }
 
-.proposal-clean-actions .btn-proposal-view:hover {
+.exp-btn-open:hover:not(:disabled) {
   background: linear-gradient(135deg, #E86A00 0%, #FF7A1A 100%) !important;
-  box-shadow: 0 6px 18px rgba(255, 122, 26, 0.35) !important;
-  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 18px rgba(255, 122, 26, 0.38) !important;
+  transform: translateY(-1px);
+}
+
+.exp-btn-copy {
+  height: 2.6rem;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0 1rem;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  color: #475569;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.exp-btn-copy:hover:not(:disabled) {
+  border-color: #94a3b8;
+  color: #0f172a;
+  background: #f8fafc;
 }

@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import './ProposalPage.css';
 import ProposalCard from '@/components/proposal/ProposalCard/ProposalCard';
-import SpinningBorderButton from '@/components/ui/spinning-border-button';
+import CountUp from '@/reactbits/CountUp';
+import SpotlightCard from '@/reactbits/SpotlightCard';
 import { ShinyButton } from '@/components/ui/shiny-button';
 import SpikraExperienceSearch from '@/components/ui/SpikraExperienceSearch';
 import { motion } from 'framer-motion';
@@ -39,6 +40,7 @@ export default function ProposalPage({
   }, [load]);
 
   const totalCount = proposals.length;
+  const failedCount = proposals.filter((p) => (p.status || p.proposal_status || '').toUpperCase() === 'FAILED').length;
 
   const filteredProposals = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -46,7 +48,14 @@ export default function ProposalPage({
     const tokens = query.split(/\s+/).filter(Boolean);
 
     return proposals.filter((p) => {
-      const searchableText = `${p.customer_name || ''} ${p.business_name || ''} ${p.package_name || ''} ${p.proposal_title || ''} ${p.proposal_id || ''} ${p.industry || ''}`.toLowerCase();
+      const rawBiz = p.customer_name || p.business_name || p.package_name || '';
+      const cleanBiz = rawBiz.replace(/~\d+/g, '').trim();
+      const title = p.proposal_title || '';
+      const id = p.proposal_id ? `Proposal #${p.proposal_id}` : '';
+      const url = p.generated_url || p.proposal_url || '';
+      const status = p.status || p.proposal_status || '';
+
+      const searchableText = `${rawBiz} ${cleanBiz} ${title} ${id} ${url} ${status}`.toLowerCase();
       return tokens.every((token) => searchableText.includes(token));
     });
   }, [proposals, searchQuery]);
@@ -62,7 +71,7 @@ export default function ProposalPage({
   return (
     <div className="proposal-module-page animate-fade-in">
       <div className="container">
-        {/* Page Top Header Bar */}
+        {/* Page Top Header Bar (Matching Image 2) */}
         <div className="archive-top-bar">
           <div className="archive-heading-group">
             <button
@@ -73,33 +82,42 @@ export default function ProposalPage({
               <ArrowLeft size={15} className="btn-back-arrow" />
               <span>Back to Sales Workspace</span>
             </button>
-            <h1 className="archive-main-title">All Proposals</h1>
+            <h1 className="archive-main-title">All Customer Proposals</h1>
             <p className="archive-subtitle">
-              Structured proposals generated from customer discovery packages.
+              Structured proposal showcases generated from customer discovery documents.
             </p>
           </div>
 
           <div className="archive-actions-header">
             <div className="archive-actions-top-row">
-              <ShinyButton
+              <button
                 type="button"
-                onClick={handleCreateProposal}
-                className="btn-create-proposal-shiny"
+                className="btn btn-secondary"
+                onClick={() => load()}
+                disabled={isLoading}
+                title="Refresh customer proposals from Catalyst backend"
               >
-                <span className="inline-flex items-center justify-center gap-1.5 font-bold text-white normal-case text-sm">
-                  <Plus size={16} strokeWidth={2.5} />
-                  <span>Create Proposal</span>
-                </span>
-              </ShinyButton>
+                <span className={isLoading ? 'spinning' : ''}>↻</span>
+                <span>{isLoading ? 'Refreshing...' : 'Refresh'}</span>
+              </button>
+
+              <button
+                type="button"
+                className="btn-upload-simple"
+                onClick={handleCreateProposal}
+              >
+                <Plus size={15} strokeWidth={2.5} />
+                <span>Create Proposal</span>
+              </button>
             </div>
 
+            {/* Live Search Bar positioned directly under the buttons */}
             <div className="archive-search-container">
               <SpikraExperienceSearch
                 value={searchQuery}
                 onChange={setSearchQuery}
                 onClear={() => setSearchQuery('')}
-                placeholder="Search proposals or clients..."
-                ariaLabel="Search proposals by title, client, or status"
+                placeholder="Search business, proposal, or project..."
                 totalCount={totalCount}
                 filteredCount={filteredProposals.length}
               />
@@ -107,18 +125,66 @@ export default function ProposalPage({
           </div>
         </div>
 
+        {/* Dynamic Metrics Bar (Matching Image 2) */}
+        <div className="archive-stats-row">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: 'easeOut' }}
+          >
+            <SpotlightCard className="stat-card" spotlightColor="rgba(0, 82, 255, 0.12)">
+              <div className="stat-icon blue">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                </svg>
+              </div>
+              <div className="stat-text">
+                <span className="stat-label">Total Proposals</span>
+                <span className="stat-value">
+                  <CountUp to={totalCount} duration={1.1} separator="" />
+                </span>
+              </div>
+            </SpotlightCard>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.85 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4, ease: 'easeOut', delay: 0.08 }}
+          >
+            <SpotlightCard className="stat-card" spotlightColor="rgba(239, 68, 68, 0.12)">
+              <div className="stat-icon red">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+              </div>
+              <div className="stat-text">
+                <span className="stat-label">Failed</span>
+                <span className="stat-value text-danger">
+                  <CountUp to={failedCount} duration={1.1} separator="" />
+                </span>
+              </div>
+            </SpotlightCard>
+          </motion.div>
+        </div>
+
         {/* Proposals Grid or Empty States */}
-        {isLoading ? (
-          <div className="proposals-loading-grid">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="proposal-skeleton-card" />
-            ))}
+        {isLoading && totalCount === 0 ? (
+          <div className="archive-empty-card animate-fade-in">
+            <div className="gen-exp-spinner" style={{ margin: '0 auto 1rem' }} />
+            <h3 className="empty-heading">Loading customer proposals...</h3>
+            <p className="empty-text">
+              Retrieving live proposals from Zoho Catalyst serverless backend...
+            </p>
           </div>
         ) : error ? (
-          <div className="archive-empty-card animate-fade-in">
-            <div className="empty-symbol"><AlertTriangle size={28} /></div>
-            <h3 className="empty-heading">Unable to load proposals</h3>
-            <p className="empty-text">{getFriendlyErrorMessage(error)}</p>
+          <div className="archive-empty-card animate-fade-in" style={{ borderColor: '#fed7d7', background: '#fff5f5' }}>
+            <div className="empty-symbol">⚠️</div>
+            <h3 className="empty-heading" style={{ color: '#c53030' }}>Unable to load proposals</h3>
+            <p className="empty-text" style={{ color: '#742a2a' }}>{getFriendlyErrorMessage(error)}</p>
             <div className="empty-action-group">
               <button type="button" className="btn btn-secondary" onClick={() => load()}>
                 <Loader2 size={14} />
@@ -144,13 +210,14 @@ export default function ProposalPage({
                 </div>
               )}
 
-              <div className="proposals-cards-grid animate-fade-in">
+              <div className="experiences-cards-grid animate-fade-in">
                 {filteredProposals.map((proposal, idx) => (
                   <motion.div
                     key={proposal.proposal_id}
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: Math.min(idx * 0.04, 0.3) }}
+                    transition={{ duration: 0.35, ease: 'easeOut', delay: Math.min(idx * 0.04, 0.3) }}
+                    className="experience-glass-wrapper"
                   >
                     <ProposalCard proposal={proposal} onSelect={handleSelectProposal} />
                   </motion.div>
@@ -160,9 +227,9 @@ export default function ProposalPage({
           ) : (
             <div className="archive-empty-card animate-fade-in search-empty-state">
               <div className="empty-symbol">🔍</div>
-              <h3 className="empty-heading">No matching proposals</h3>
+              <h3 className="empty-heading">No matching customer proposals</h3>
               <p className="empty-text">
-                No proposals found matching <strong>"{searchQuery}"</strong>.
+                No proposals found matching <strong>"{searchQuery}"</strong>. Try checking the business name or clear the search filter.
               </p>
               <div className="empty-action-group">
                 <button type="button" className="btn btn-secondary" onClick={() => setSearchQuery('')}>
@@ -179,10 +246,10 @@ export default function ProposalPage({
               Create your first solution proposal from a customer discovery package.
             </p>
             <div className="empty-action-group">
-              <SpinningBorderButton type="button" onClick={handleCreateProposal}>
-                <Plus size={16} />
+              <button type="button" className="btn-upload-simple" onClick={handleCreateProposal}>
+                <Plus size={15} strokeWidth={2.5} />
                 <span>Create Proposal</span>
-              </SpinningBorderButton>
+              </button>
             </div>
           </div>
         )}
