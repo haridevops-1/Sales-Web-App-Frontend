@@ -64,7 +64,7 @@ async function requestJson(path, { method = 'GET', body, timeoutMs = 45000, sign
     headers['Content-Type'] = 'application/json';
   }
 
-  console.log(`[Workspace 2 Proposal API] ${method} ${url}`, body !== undefined ? body : '');
+  console.log('[Workspace 2] ' + method + ' ' + url, body !== undefined ? body : '');
 
   let response;
   try {
@@ -76,7 +76,7 @@ async function requestJson(path, { method = 'GET', body, timeoutMs = 45000, sign
     });
   } catch (fetchErr) {
     clearTimeout(timeoutId);
-    console.error(`[Workspace 2 Proposal API] Network Error on ${method} ${path}:`, fetchErr);
+    console.error('[Workspace 2] Network error on ' + method + ' ' + path + ':', fetchErr);
     if (fetchErr.name === 'AbortError') {
       throw new ProposalApiError('The request timed out. Please try again.', { status: 408 });
     }
@@ -94,15 +94,15 @@ async function requestJson(path, { method = 'GET', body, timeoutMs = 45000, sign
 
   if (!response.ok || data.success === false) {
     const code = data?.error?.code || null;
-    const message = data?.error?.message || `Request failed with status ${response.status}.`;
-    console.error(`[Workspace 2 Proposal API] ${response.status} Error on ${path}:`, data);
+    const message = data?.error?.message || ('Request failed with status ' + response.status + '.');
+    console.error('[Workspace 2] ' + response.status + ' error on ' + path + ':', data);
     if (response.status === 401) {
       clearSessionToken();
     }
     throw new ProposalApiError(message, { status: response.status, code, requestId: data?.request_id });
   }
 
-  console.log(`[Workspace 2 Proposal API] 200 OK (${path})`, data);
+  console.log('[Workspace 2] 200 OK ' + path, data);
   return data;
 }
 
@@ -122,7 +122,7 @@ async function requestFormData(path, formData, { signal: externalSignal, timeout
   }
   // Browser will automatically set multipart/form-data and boundary
 
-  console.log(`[Workspace 2 Proposal API] POST (multipart) ${url}`);
+  console.log('[Workspace 2] POST (multipart/form-data) ' + url);
 
   let response;
   try {
@@ -134,7 +134,7 @@ async function requestFormData(path, formData, { signal: externalSignal, timeout
     });
   } catch (fetchErr) {
     clearTimeout(timeoutId);
-    console.error(`[Workspace 2 Proposal API] Upload Error on ${path}:`, fetchErr);
+    console.error('[Workspace 2] Upload error on ' + path + ':', fetchErr);
     if (fetchErr.name === 'AbortError') {
       throw new ProposalApiError('Upload timed out. Please try with smaller files or retry.', { status: 408 });
     }
@@ -152,12 +152,12 @@ async function requestFormData(path, formData, { signal: externalSignal, timeout
 
   if (!response.ok || data.success === false) {
     const code = data?.error?.code || null;
-    const message = data?.error?.message || `Upload failed with status ${response.status}.`;
-    console.error(`[Workspace 2 Proposal API] Upload Failed (${response.status}) on ${path}:`, data);
+    const message = data?.error?.message || ('Upload failed with status ' + response.status + '.');
+    console.error('[Workspace 2] Upload failed (' + response.status + ') on ' + path + ':', data);
     throw new ProposalApiError(message, { status: response.status, code, requestId: data?.request_id });
   }
 
-  console.log(`[Workspace 2 Proposal API] 200 OK Upload (${path})`, data);
+  console.log('[Workspace 2] 200 OK upload ' + path, data);
   return data;
 }
 
@@ -195,7 +195,7 @@ export function getWorkdriveFile() {
 // ---------------------------------------------------------------------------
 
 export function createDiscoveryPackage(packageName, files) {
-  console.log(`[Workspace 2 API] Uploading discovery package '${packageName}' to Stratus storage...`);
+  console.log('[Workspace 2] Creating discovery package: ' + packageName);
   if (files instanceof FormData) {
     if (packageName && !files.has('package_name')) {
       files.append('package_name', packageName);
@@ -262,8 +262,40 @@ export function removeFileFromPackage(packageId, fileId) {
 // ---------------------------------------------------------------------------
 
 export function processDiscoveryPackage(packageId) {
-  console.log(`[Workspace 2 API] Triggering Customer Proposal Generation Agent & Pipeline for package '${packageId}'...`);
-  return requestJson(`/proposal/processor/process?package_id=${encodeURIComponent(packageId)}`, {
+  console.log('[Workspace 2] POST /proposal/processor/process — package_id: ' + packageId);
+  return requestJson('/proposal/processor/process?package_id=' + encodeURIComponent(packageId), {
+    method: 'POST',
+    timeoutMs: 180000
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Discovery Session (proposal-discovery-session-post-api)
+// ---------------------------------------------------------------------------
+
+export function createDiscoverySession(packageId, sessionData = {}) {
+  console.log('[Workspace 2] POST /proposal/session — package_id: ' + packageId);
+  return requestJson('/proposal/session', {
+    method: 'POST',
+    body: { package_id: packageId, ...sessionData }
+  });
+}
+
+export function getDiscoverySession(sessionId, signal) {
+  console.log('[Workspace 2] GET /proposal/session — session_id: ' + sessionId);
+  return requestJson('/proposal/session?session_id=' + encodeURIComponent(sessionId), { signal });
+}
+
+// ---------------------------------------------------------------------------
+// Proposal Agent (proposal-agent-api)
+// ---------------------------------------------------------------------------
+
+export function runProposalAgent(packageId, sessionId) {
+  const qs = sessionId
+    ? 'package_id=' + encodeURIComponent(packageId) + '&session_id=' + encodeURIComponent(sessionId)
+    : 'package_id=' + encodeURIComponent(packageId);
+  console.log('[Workspace 2] POST /proposal/agent — ' + qs);
+  return requestJson('/proposal/agent?' + qs, {
     method: 'POST',
     timeoutMs: 180000
   });
@@ -274,9 +306,9 @@ export function processDiscoveryPackage(packageId) {
 // ---------------------------------------------------------------------------
 
 export function listProposals(packageId, signal) {
-  const qs = packageId ? `&package_id=${encodeURIComponent(packageId)}` : '';
-  console.log(`[Workspace 2 API] Fetching customer proposals from Catalyst Datastore...`);
-  return requestJson(`/proposal/api?resource=proposals${qs}`, { signal }).then((res) => {
+  const qs = packageId ? '&package_id=' + encodeURIComponent(packageId) : '';
+  console.log('[Workspace 2] GET /proposal/api?resource=proposals' + qs);
+  return requestJson('/proposal/api?resource=proposals' + qs, { signal }).then((res) => {
     if (res && Array.isArray(res.proposals)) {
       res.proposals = res.proposals.map(sanitizeProposalObj);
     }
@@ -299,7 +331,8 @@ function sanitizeProposalObj(p) {
 }
 
 export function getProposal(proposalId, signal) {
-  return requestJson(`/proposal/api?resource=proposals&proposal_id=${encodeURIComponent(proposalId)}`, { signal });
+  console.log('[Workspace 2] GET /proposal/api?resource=proposals&proposal_id=' + proposalId);
+  return requestJson('/proposal/api?resource=proposals&proposal_id=' + encodeURIComponent(proposalId), { signal });
 }
 
 export function updateProposalStatus(proposalId, status) {

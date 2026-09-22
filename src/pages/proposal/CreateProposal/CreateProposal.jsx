@@ -16,12 +16,13 @@ import {
   Building2,
   Calendar,
   ShieldCheck,
-  Lock,
   ExternalLink,
   Plus
 } from 'lucide-react';
 import {
   processDiscoveryPackage,
+  createDiscoverySession,
+  runProposalAgent,
   getProposal,
   listProposals,
   getFriendlyErrorMessage
@@ -34,44 +35,44 @@ import { formatDate, formatProposalUrl } from '@/utils/helpers';
 const PIPELINE_STEPS = [
   {
     id: 1,
-    title: '1. Validating Discovery Documents',
-    desc: 'Verifying file formats, schema structure, and upload integrity',
-    activeBadge: 'Validating…',
+    title: 'Validating Documents',
+    desc: 'Checking file formats and upload integrity',
+    activeBadge: 'Validating...',
     doneBadge: 'Validated'
   },
   {
     id: 2,
-    title: '2. Initializing Discovery Session',
-    desc: 'Allocating workspace sandbox and securing cloud storage session',
-    activeBadge: 'Initializing…',
-    doneBadge: 'Initialized'
+    title: 'Creating Session',
+    desc: 'Setting up a secure workspace session',
+    activeBadge: 'Initializing...',
+    doneBadge: 'Ready'
   },
   {
     id: 3,
-    title: '3. Extracting Document Content',
-    desc: 'Extracting text, specifications, and scope notes across all files',
-    activeBadge: 'Extracting…',
+    title: 'Extracting Content',
+    desc: 'Reading text and key information from documents',
+    activeBadge: 'Extracting...',
     doneBadge: 'Extracted'
   },
   {
     id: 4,
-    title: '4. Analyzing Requirements & Architecture',
-    desc: 'Synthesizing client pain points, workflows, and solution architecture',
-    activeBadge: 'Analyzing…',
+    title: 'Analyzing Requirements',
+    desc: 'Understanding client needs and solution fit',
+    activeBadge: 'Analyzing...',
     doneBadge: 'Analyzed'
   },
   {
     id: 5,
-    title: '5. Compiling Structured Proposal',
-    desc: 'Structuring executive summary, deliverables, timeline, and scope',
-    activeBadge: 'Compiling…',
-    doneBadge: 'Compiled'
+    title: 'Building Proposal',
+    desc: 'Writing the proposal sections and structure',
+    activeBadge: 'Building...',
+    doneBadge: 'Built'
   },
   {
     id: 6,
-    title: '6. Publishing Solution Proposal',
-    desc: 'Provisioning live interactive URL and securing client preview',
-    activeBadge: 'Publishing…',
+    title: 'Publishing',
+    desc: 'Creating a shareable client link',
+    activeBadge: 'Publishing...',
     doneBadge: 'Published'
   }
 ];
@@ -100,9 +101,9 @@ function ProcessingProposalCard({
       <div className="preparing-header">
         <span className="preparing-spinner" aria-hidden="true" />
         <div>
-          <h3 className="preparing-title">Generating Solution Proposal…</h3>
+          <h3 className="preparing-title">Generating Solution Proposal...</h3>
           <p className="preparing-subtitle">
-            Analyzing <strong>{packageName}</strong> ({fileCount > 0 ? `${fileCount} documents` : 'documents'}). Processing requirements, solution specifications, and compiling structured proposal sections.
+            Processing <strong>{packageName}</strong>{fileCount > 0 ? ` (${fileCount} document${fileCount === 1 ? '' : 's'})` : ''}. This may take a minute.
           </p>
         </div>
       </div>
@@ -110,7 +111,7 @@ function ProcessingProposalCard({
       {isAllComplete && (
         <div className="pipeline-complete-banner animate-fade-in">
           <CheckCircle2 size={16} className="banner-check-icon" />
-          <span>All 6 pipeline steps completed successfully · Redirecting to interactive showcase...</span>
+          <span>All steps completed — redirecting...</span>
         </div>
       )}
 
@@ -155,7 +156,7 @@ function ProcessingProposalCard({
 
       {isTakingLong && (
         <div className="preparing-timeout-notice animate-fade-in">
-          <p>Proposal generation is taking a little longer than usual. You can continue waiting or return to the proposals list.</p>
+          <p>This is taking longer than usual. You can keep waiting or go back.</p>
           <div className="preparing-timeout-actions">
             <button type="button" className="btn-keep-waiting" onClick={onKeepWaiting}>Keep waiting</button>
             <button type="button" className="btn-back-to-proposals-inline" onClick={onBackToProposals}>Back to proposals</button>
@@ -174,18 +175,15 @@ function ProcessingProposalCard({
 function ProposalResultCard({
   proposal,
   discoveryPackage,
-  onViewDetails,
   onCreateAnother,
   onBackToProposals
 }) {
   const [copiedUrl, setCopiedUrl] = useState(false);
-  const [copiedId, setCopiedId] = useState(false);
 
   const customerName = proposal?.customer_name || 'Client';
   const proposalId = proposal?.proposal_id || '—';
   const fileCount = proposal?.content?.sources?.length || discoveryPackage?.files?.length || 1;
   const createdAt = proposal?.created_at ? formatDate(proposal.created_at) : formatDate();
-  const status = proposal?.status || 'COMPLETED';
 
   let targetUrl = proposal?.proposal_url || proposal?.generated_url || proposal?.slate_url || (proposalId && proposalId !== '—' ? `https://spikra-w2-proposal-jmdbymcs.onslate.com/?proposal_id=${proposalId}` : null);
   if (targetUrl && targetUrl.includes('spikra-customer-prop-msdrrgbk.onslate.com')) {
@@ -203,42 +201,21 @@ function ProposalResultCard({
     }
   };
 
-  const handleCopyId = async () => {
-    if (!proposalId || proposalId === '—') return;
-    try {
-      await navigator.clipboard.writeText(proposalId);
-      setCopiedId(true);
-      setTimeout(() => setCopiedId(false), 2500);
-    } catch (e) {
-      console.warn('Clipboard write failed', e);
-    }
-  };
-
   const initials = customerName
-    ? customerName
-        .split(' ')
-        .map((w) => w[0])
-        .join('')
-        .slice(0, 2)
-        .toUpperCase()
+    ? customerName.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()
     : 'SP';
 
   return (
     <div className="proposal-result-card modern-result-card animate-fade-in">
-      {/* Top Status & Security Badges Row */}
+      {/* Status Badge */}
       <div className="result-top-badge-row">
         <div className="proposal-result-badge">
           <CheckCircle2 size={15} />
-          <span>PROPOSAL PUBLISHED & ACTIVE</span>
-        </div>
-
-        <div className="result-security-chip" title="Enterprise encrypted datastore session">
-          <Lock size={12} className="security-icon" />
-          <span>TLS 1.3 · Authenticated Datastore Session</span>
+          <span>PROPOSAL READY</span>
         </div>
       </div>
 
-      {/* Hero Header with Client Monogram Avatar */}
+      {/* Client Identity */}
       <div className="result-hero-client-row">
         <div className="result-client-avatar">
           <span>{initials}</span>
@@ -248,29 +225,20 @@ function ProposalResultCard({
             {customerName} — Solution Proposal
           </h2>
           <div className="result-id-row">
-            <span className="result-id-label">Proposal ID:</span>
-            <button
-              type="button"
-              className="result-id-badge-btn"
-              onClick={handleCopyId}
-              title="Click to copy Proposal ID"
-            >
-              <code>#{proposalId}</code>
-              {copiedId ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} />}
-              <span className="btn-copy-tooltip">{copiedId ? 'Copied ID!' : 'Copy'}</span>
-            </button>
+            <span className="result-id-label">Reference:</span>
+            <code className="result-id-code">#{proposalId}</code>
           </div>
         </div>
       </div>
 
-      {/* 21st.dev 4-Metric Bento Grid */}
+      {/* Metrics Grid */}
       <div className="proposal-result-bento-grid">
         <div className="bento-metric-card">
           <div className="bento-metric-icon-wrap icon-blue">
             <Building2 size={16} />
           </div>
           <div className="bento-metric-data">
-            <span className="bento-metric-label">Client Organization</span>
+            <span className="bento-metric-label">Client</span>
             <span className="bento-metric-value">{customerName}</span>
           </div>
         </div>
@@ -280,8 +248,8 @@ function ProposalResultCard({
             <FileText size={16} />
           </div>
           <div className="bento-metric-data">
-            <span className="bento-metric-label">Source Documents</span>
-            <span className="bento-metric-value">{fileCount} Document{fileCount === 1 ? '' : 's'} Analyzed</span>
+            <span className="bento-metric-label">Documents</span>
+            <span className="bento-metric-value">{fileCount} Analyzed</span>
           </div>
         </div>
 
@@ -290,7 +258,7 @@ function ProposalResultCard({
             <Calendar size={16} />
           </div>
           <div className="bento-metric-data">
-            <span className="bento-metric-label">Generated Timestamp</span>
+            <span className="bento-metric-label">Generated</span>
             <span className="bento-metric-value">{createdAt}</span>
           </div>
         </div>
@@ -300,27 +268,26 @@ function ProposalResultCard({
             <ShieldCheck size={16} />
           </div>
           <div className="bento-metric-data">
-            <span className="bento-metric-label">Proposal Status</span>
+            <span className="bento-metric-label">Status</span>
             <span className="bento-metric-value status-completed-text">
               <span className="pulse-dot-green" />
-              {status}
+              Published
             </span>
           </div>
         </div>
       </div>
 
-      {/* Interactive 21st.dev Live Client Showcase URL Box */}
+      {/* Live URL Box */}
       {targetUrl && (
         <div className="proposal-result-url-box modern-url-box">
           <div className="url-box-header">
             <div className="url-box-heading">
-              <span className="url-box-title">CLIENT-FACING LIVE PORTAL</span>
+              <span className="url-box-title">CLIENT PROPOSAL LINK</span>
               <span className="url-live-pill">
                 <span className="url-live-dot" />
-                Live On-Demand
+                Live
               </span>
             </div>
-            <span className="url-box-security">Encrypted HTTPS Preview</span>
           </div>
 
           <div className="url-box-display-row">
@@ -342,50 +309,37 @@ function ProposalResultCard({
                 title="Copy shareable URL"
               >
                 {copiedUrl ? <Check size={14} /> : <Copy size={14} />}
-                <span>{copiedUrl ? 'Copied Link!' : 'Copy Link'}</span>
+                <span>{copiedUrl ? 'Copied!' : 'Copy Link'}</span>
               </button>
 
               <button
                 type="button"
                 className="btn-url-action btn-url-test"
                 onClick={() => window.open(targetUrl, '_blank', 'noopener,noreferrer')}
-                title="Open live portal in new tab"
+                title="Open in new tab"
               >
                 <ExternalLink size={14} />
-                <span>Test Live</span>
+                <span>Open</span>
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Action Suite */}
+      {/* Actions */}
       <div className="proposal-result-actions modern-actions-suite">
         {targetUrl && (
           <motion.button
             type="button"
             className="btn-open-proposal modern-primary-btn"
-            onClick={() => {
-              console.log(`[Workspace 2 Proposal API] 🌐 Opening live proposal URL:`, targetUrl);
-              window.open(targetUrl, '_blank', 'noopener,noreferrer');
-            }}
+            onClick={() => window.open(targetUrl, '_blank', 'noopener,noreferrer')}
             whileHover={{ scale: 1.02, y: -2 }}
             whileTap={{ scale: 0.98 }}
             transition={{ type: 'spring', stiffness: 400, damping: 25 }}
           >
             <ArrowUpRight size={18} strokeWidth={2.4} />
-            <span>Launch Proposal Showcase</span>
+            <span>Open Proposal</span>
           </motion.button>
-        )}
-
-        {onViewDetails && (
-          <button
-            type="button"
-            className="btn-result-secondary"
-            onClick={onViewDetails}
-          >
-            <span>View Architecture Breakdown</span>
-          </button>
         )}
 
         <button
@@ -394,7 +348,7 @@ function ProposalResultCard({
           onClick={onCreateAnother}
         >
           <Plus size={15} />
-          <span>Create Another Proposal</span>
+          <span>Create Another</span>
         </button>
 
         <button
@@ -403,7 +357,7 @@ function ProposalResultCard({
           onClick={onBackToProposals}
         >
           <ArrowLeft size={15} />
-          <span>Back to All Proposals</span>
+          <span>All Proposals</span>
         </button>
       </div>
     </div>
@@ -579,47 +533,69 @@ export default function CreateProposal({ onNavigate, onViewProposal, onToast, on
     setIsTakingLong(false);
 
     try {
-      // Step 2 API: Trigger Serverless Proposal Generator
-      console.log(`[Workspace 2 Proposal API] 🚀 Initiating proposal generation for package: ${packageId}`);
+      // Step 1-2: Create a discovery session (proposal-discovery-session-post-api)
+      console.log('[Workspace 2] Creating discovery session for package:', packageId);
+      let sessionId = null;
+      try {
+        const sessionRes = await createDiscoverySession(packageId, {
+          customer_name: pkg?.customer_name || pkg?.package_name || ''
+        });
+        sessionId = sessionRes?.session_id || sessionRes?.data?.session_id || null;
+        console.log('[Workspace 2] Discovery session created. session_id:', sessionId);
+      } catch (sessionErr) {
+        console.warn('[Workspace 2] Session creation notice (non-blocking):', sessionErr?.message);
+      }
+
+      // Step 3-4: Run proposal agent (proposal-agent-api)
+      console.log('[Workspace 2] Running proposal agent for package:', packageId);
+      let agentResult = null;
+      try {
+        agentResult = await runProposalAgent(packageId, sessionId);
+        console.log('[Workspace 2] Proposal agent completed:', agentResult);
+      } catch (agentErr) {
+        console.warn('[Workspace 2] Agent notice (non-blocking):', agentErr?.message);
+      }
+
+      // Step 5: Process via proposal processor (proposal-processor-api)
+      console.log('[Workspace 2] Processing discovery package via processor:', packageId);
       const res = await processDiscoveryPackage(packageId);
-      console.log(`[Workspace 2 Proposal API] ✅ Proposal generation complete:`, res);
+      console.log('[Workspace 2] Processor completed:', res);
 
-      const proposalId = res?.proposal_id || res?.proposal?.proposal_id || packageId;
+      const proposalId = res?.proposal_id || res?.proposal?.proposal_id || agentResult?.proposal_id || packageId;
 
-      // Step 3 API: Fetch validated proposal record from Catalyst Datastore
+      // Step 6: Fetch proposal record from datastore (proposal-api-get-api)
       let datastoreProposal = null;
       if (proposalId) {
-        console.log(`[Workspace 2 Proposal API] 📥 Fetching validated proposal '${proposalId}' from Catalyst Datastore...`);
+        console.log('[Workspace 2] Fetching proposal record from datastore:', proposalId);
         try {
           const fetched = await getProposal(proposalId);
           datastoreProposal = fetched?.proposal || null;
-          console.log(`[Workspace 2 Proposal API] 200 OK (/proposal/api?resource=proposals&proposal_id=${proposalId})`, fetched);
+          console.log('[Workspace 2] Proposal record fetched:', fetched);
         } catch (fetchErr) {
-          console.warn('[Workspace 2 Proposal API] Notice fetching proposal from Datastore:', fetchErr);
+          console.warn('[Workspace 2] Datastore fetch notice:', fetchErr?.message);
         }
       }
 
-      // Step 4 API: Sync proposals catalog from Datastore
-      console.log(`[Workspace 2 Proposal API] 🔄 Syncing proposals catalog with Catalyst Datastore...`);
+      // Sync proposals catalog
+      console.log('[Workspace 2] Syncing proposals catalog...');
       try {
         const catalog = await listProposals();
-        console.log(`[Workspace 2 Proposal API] 200 OK (/proposal/api?resource=proposals)`, catalog);
+        console.log('[Workspace 2] Catalog synced. Count:', catalog?.proposals?.length ?? 0);
       } catch (catalogErr) {
-        console.warn('[Workspace 2 Proposal API] Notice syncing proposals catalog:', catalogErr);
+        console.warn('[Workspace 2] Catalog sync notice:', catalogErr?.message);
       }
 
-      // Normalize proposal with salesperson entered business name & live URL
+      // Normalize and save
       const finalProposal = saveGeneratedProposal(datastoreProposal || res, pkg);
 
       if (onProposalCreated) {
         onProposalCreated(finalProposal);
       }
 
-      // Smoothly cascade remaining steps to 100% completion
       await cascadeCompleteRemainingSteps(activeStepIndex, finalProposal);
     } catch (err) {
       stopTimers();
-      console.error(`[Workspace 2 Proposal API] Generation error:`, err);
+      console.error('[Workspace 2] Generation error:', err);
       const message = getFriendlyErrorMessage(err);
       if (onToast) onToast(message, 'error', 6000);
       setStep('review');
@@ -772,13 +748,6 @@ export default function CreateProposal({ onNavigate, onViewProposal, onToast, on
                 <ProposalResultCard
                   proposal={generatedProposal}
                   discoveryPackage={discoveryPackage}
-                  onViewDetails={() => {
-                    if (onViewProposal && generatedProposal?.proposal_id) {
-                      onViewProposal(generatedProposal.proposal_id);
-                    } else if (onNavigate) {
-                      onNavigate('proposal', 'proposal-details');
-                    }
-                  }}
                   onCreateAnother={() => {
                     setStep('discovery');
                     setDiscoveryPackage(null);
