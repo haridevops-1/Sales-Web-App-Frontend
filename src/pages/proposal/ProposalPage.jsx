@@ -185,12 +185,10 @@ export default function ProposalPage({
           <div className="archive-empty-card animate-fade-in">
             <div className="empty-symbol"><AlertTriangle size={28} /></div>
             <h3 className="empty-heading">
-              {isUnauthorized ? 'Connect WorkDrive to view proposals' : 'Unable to load proposals'}
+              Unable to load proposals
             </h3>
             <p className="empty-text">
-              {isUnauthorized
-                ? 'Your WorkDrive connection has expired or hasn’t been set up yet. Connect it from Create Proposal to continue.'
-                : getFriendlyErrorMessage(error)}
+              {getFriendlyErrorMessage(error)}
             </p>
             <div className="empty-action-group">
               {isUnauthorized ? (

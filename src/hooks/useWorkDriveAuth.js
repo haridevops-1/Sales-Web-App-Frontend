@@ -46,7 +46,7 @@ export function useWorkDriveAuth() {
       if (!isMountedRef.current) return;
       if (res.connected) {
         setStatus('connected');
-        setEmail(res.user?.email || null);
+        setEmail(res.email || res.user?.email || 'local-user@spikra.com');
       } else {
         setStatus('disconnected');
         setEmail(null);

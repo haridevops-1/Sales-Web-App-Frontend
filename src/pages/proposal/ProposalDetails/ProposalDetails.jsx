@@ -116,7 +116,7 @@ export default function ProposalDetails({ proposalId, onNavigate, onToast }) {
       <div className="proposal-details-page animate-fade-in">
         <div className="container proposal-details-state is-error">
           <AlertTriangle size={22} />
-          <p>{isUnauthorized ? 'Your session has expired. Please reconnect WorkDrive.' : getFriendlyErrorMessage(error)}</p>
+          <p>{getFriendlyErrorMessage(error)}</p>
           <div className="proposal-details-state-actions">
             <button type="button" className="btn-back-to-proposals" onClick={handleBack}>
               <ArrowLeft size={14} />

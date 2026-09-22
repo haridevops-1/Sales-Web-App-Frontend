@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import './DiscoveryPackageReview.css';
-import { FileText, X as XIcon, Plus, Sparkles, Loader2 } from 'lucide-react';
+import { FileText, X as XIcon, FileUp, FolderUp, Sparkles, Loader2 } from 'lucide-react';
 import SpotlightCard from '@/reactbits/SpotlightCard';
-import WorkDriveBrowser from '@/components/proposal/WorkDriveBrowser/WorkDriveBrowser';
 import { addFilesToPackage, removeFileFromPackage, getFriendlyErrorMessage } from '@/api/proposalApi';
 import { formatBytes } from '@/utils/helpers';
 
@@ -13,29 +12,43 @@ const STATUS_LABEL = {
   UNSUPPORTED: 'Unsupported'
 };
 
+const SUPPORTED_EXTENSIONS = ['.pdf', '.docx', '.doc', '.xlsx', '.xls', '.txt', '.csv', '.md'];
+
+function isSupportedFile(file) {
+  const name = file.name.toLowerCase();
+  return SUPPORTED_EXTENSIONS.some((ext) => name.endsWith(ext));
+}
+
 /**
- * Create Proposal - Step 2: review the created discovery package (real backend package,
- * never a fake frontend one), add/remove files, then start generation.
+ * Create Proposal - Step 2: review the created discovery package,
+ * add/remove local files or folders, then start generation.
  */
 export default function DiscoveryPackageReview({ discoveryPackage, onPackageUpdated, onGenerate, onToast }) {
-  const [isBrowserOpen, setIsBrowserOpen] = useState(false);
   const [busyFileId, setBusyFileId] = useState(null);
   const [isAdding, setIsAdding] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState(null);
 
+  const fileInputRef = useRef(null);
+  const folderInputRef = useRef(null);
+
   const files = discoveryPackage?.files || [];
   const packageId = discoveryPackage?.package_id;
 
-  const handleAddFiles = async (newFiles) => {
-    setIsBrowserOpen(false);
-    if (!newFiles.length) return;
+  const handleAddFiles = async (fileList) => {
+    if (!fileList || fileList.length === 0) return;
+    const validFiles = Array.from(fileList).filter(isSupportedFile);
+    if (validFiles.length === 0) {
+      if (onToast) onToast('Please select supported documents (.pdf, .docx, .doc, .xlsx, .xls, .txt).', 'warning', 4500);
+      return;
+    }
+
     setIsAdding(true);
     setError(null);
     try {
-      const res = await addFilesToPackage(packageId, newFiles);
+      const res = await addFilesToPackage(packageId, validFiles);
       onPackageUpdated(res.package);
-      if (onToast) onToast('Files added to the discovery package.', 'success', 3500);
+      if (onToast) onToast(`Added ${validFiles.length} file${validFiles.length === 1 ? '' : 's'} to discovery package.`, 'success', 3500);
     } catch (err) {
       const message = getFriendlyErrorMessage(err);
       setError(message);
@@ -45,12 +58,27 @@ export default function DiscoveryPackageReview({ discoveryPackage, onPackageUpda
     }
   };
 
+  const handleFileSelect = (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      handleAddFiles(e.target.files);
+      e.target.value = '';
+    }
+  };
+
+  const handleFolderSelect = (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      handleAddFiles(e.target.files);
+      e.target.value = '';
+    }
+  };
+
   const handleRemoveFile = async (fileId) => {
     setBusyFileId(fileId);
     setError(null);
     try {
       const res = await removeFileFromPackage(packageId, fileId);
       onPackageUpdated(res.package);
+      if (onToast) onToast('File removed from discovery package.', 'info', 3000);
     } catch (err) {
       const message = getFriendlyErrorMessage(err);
       setError(message);
@@ -77,15 +105,52 @@ export default function DiscoveryPackageReview({ discoveryPackage, onPackageUpda
       <div className="discovery-review-inner">
         <div className="discovery-review-heading">
           <h3>{discoveryPackage?.package_name || 'Discovery Package'}</h3>
-          <p>Review the selected files, then generate the solution proposal.</p>
+          <p>Review the staged files, add any missing notes or documents, then generate the solution proposal.</p>
         </div>
+
+        {/* Hidden inputs for adding more files/folders */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept=".pdf,.docx,.doc,.xlsx,.xls,.txt,.csv,.md"
+          onChange={handleFileSelect}
+          style={{ display: 'none' }}
+          disabled={isAdding || isGenerating}
+        />
+        <input
+          ref={folderInputRef}
+          type="file"
+          webkitdirectory=""
+          directory=""
+          multiple
+          onChange={handleFolderSelect}
+          style={{ display: 'none' }}
+          disabled={isAdding || isGenerating}
+        />
 
         <div className="discovery-review-files-header">
           <span>{files.length} file{files.length === 1 ? '' : 's'} in package</span>
-          <button type="button" className="btn-review-add-files" onClick={() => setIsBrowserOpen(true)} disabled={isAdding}>
-            {isAdding ? <Loader2 size={13} className="discovery-review-spin" /> : <Plus size={13} />}
-            <span>Add more files</span>
-          </button>
+          <div className="review-add-actions">
+            <button
+              type="button"
+              className="btn-review-add-files"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isAdding || isGenerating}
+            >
+              {isAdding ? <Loader2 size={13} className="discovery-review-spin" /> : <FileUp size={13} />}
+              <span>Add files</span>
+            </button>
+            <button
+              type="button"
+              className="btn-review-add-files"
+              onClick={() => folderInputRef.current?.click()}
+              disabled={isAdding || isGenerating}
+            >
+              <FolderUp size={13} />
+              <span>Add folder</span>
+            </button>
+          </div>
         </div>
 
         <ul className="discovery-review-file-list">
@@ -101,7 +166,7 @@ export default function DiscoveryPackageReview({ discoveryPackage, onPackageUpda
                 type="button"
                 className="btn-review-remove-file"
                 onClick={() => handleRemoveFile(file.package_file_id)}
-                disabled={busyFileId === file.package_file_id}
+                disabled={busyFileId === file.package_file_id || isGenerating}
                 aria-label={`Remove ${file.file_name}`}
               >
                 {busyFileId === file.package_file_id ? <Loader2 size={13} className="discovery-review-spin" /> : <XIcon size={13} />}
@@ -120,14 +185,10 @@ export default function DiscoveryPackageReview({ discoveryPackage, onPackageUpda
             disabled={files.length === 0 || isGenerating}
           >
             {isGenerating ? <Loader2 size={16} className="discovery-review-spin" /> : <Sparkles size={16} />}
-            <span>{isGenerating ? 'Starting…' : 'Generate Proposal'}</span>
+            <span>{isGenerating ? 'Starting Generation…' : 'Generate Proposal'}</span>
           </button>
         </div>
       </div>
-
-      {isBrowserOpen && (
-        <WorkDriveBrowser onClose={() => setIsBrowserOpen(false)} onContinue={handleAddFiles} />
-      )}
     </SpotlightCard>
   );
 }

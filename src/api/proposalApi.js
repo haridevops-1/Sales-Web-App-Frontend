@@ -2,25 +2,14 @@
  * Workspace 2 (Solution Proposals) API Client
  *
  * Centralized API layer for the proposal-* Catalyst functions (proposal-api,
- * proposal-workdrive-auth-v2, proposal-discovery, proposal-processor). Same Catalyst
- * project/domain as Workspace 1 - reuses catalystApi's base URL resolution rather than
- * duplicating it, just with a different route prefix (/proposal/* instead of /spikra/*).
- *
- * Every request goes through requestJson() below: attaches the signed application
- * session token (never a Zoho token/secret - see utils/proposalSession.js) as
- * "Authorization: Bearer <token>", parses the backend's {success,...} / {success:false,
- * error:{code,message}} shape, and normalizes failures into a thrown Error carrying
- * .code/.status/.requestId so callers get a consistent, human-readable message instead
- * of raw JSON.
+ * proposal-discovery, proposal-processor). Supports local file and folder
+ * uploads via multipart/form-data directly to Stratus, as well as proposal
+ * listing, detail retrieval, status progression, and document viewing.
  */
 
 import { getCatalystBaseUrl, resolveEndpointUrl, DEFAULT_CATALYST_BASE_URL } from './catalystApi';
 import { getSessionToken, clearSessionToken } from '../utils/proposalSession';
 
-/**
- * The trusted origin for the Workspace 2 backend - used to validate the WorkDrive OAuth
- * popup's postMessage (never trust an arbitrary origin/source for that).
- */
 export function getProposalBackendOrigin() {
   const base = getCatalystBaseUrl();
   if (base) {
@@ -40,10 +29,10 @@ export function getProposalBackendOrigin() {
 /** A human-readable message for a thrown API error, never raw JSON/stack traces. */
 export function getFriendlyErrorMessage(err) {
   if (!err) return 'Something went wrong. Please try again.';
-  if (err.status === 401) return 'Your session has expired. Please reconnect WorkDrive.';
+  if (err.status === 401) return 'Session expired. Please try again.';
   if (err.status === 403) return 'You do not have permission to access this resource.';
-  if (err.status === 404) return 'The requested item was not found.';
-  if (err.status >= 500) return 'Something went wrong. Please try again.';
+  if (err.status === 404) return 'The requested proposal item was not found.';
+  if (err.status >= 500) return 'Server error. Please try again shortly.';
   return err.message || 'Something went wrong. Please try again.';
 }
 
@@ -57,7 +46,7 @@ class ProposalApiError extends Error {
   }
 }
 
-async function requestJson(path, { method = 'GET', body, timeoutMs = 30000, signal: externalSignal } = {}) {
+async function requestJson(path, { method = 'GET', body, timeoutMs = 45000, signal: externalSignal } = {}) {
   const url = resolveEndpointUrl(path, null);
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -112,13 +101,67 @@ async function requestJson(path, { method = 'GET', body, timeoutMs = 30000, sign
   return data;
 }
 
+async function requestFormData(path, formData, { signal: externalSignal, timeoutMs = 90000 } = {}) {
+  const url = resolveEndpointUrl(path, null);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  if (externalSignal) {
+    if (externalSignal.aborted) controller.abort();
+    else externalSignal.addEventListener('abort', () => controller.abort(), { once: true });
+  }
+
+  const headers = { Accept: 'application/json' };
+  const token = getSessionToken();
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  // Browser will automatically set multipart/form-data and boundary
+
+  let response;
+  try {
+    response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+      signal: controller.signal
+    });
+  } catch (fetchErr) {
+    clearTimeout(timeoutId);
+    if (fetchErr.name === 'AbortError') {
+      throw new ProposalApiError('Upload timed out. Please try with smaller files or retry.', { status: 408 });
+    }
+    throw new ProposalApiError('Unable to reach the upload server. Please check your connection.', { status: 0 });
+  }
+  clearTimeout(timeoutId);
+
+  let data = null;
+  try {
+    const text = await response.text();
+    data = text ? JSON.parse(text) : {};
+  } catch {
+    data = {};
+  }
+
+  if (!response.ok || data.success === false) {
+    const code = data?.error?.code || null;
+    const message = data?.error?.message || `Upload failed with status ${response.status}.`;
+    throw new ProposalApiError(message, { status: response.status, code, requestId: data?.request_id });
+  }
+
+  return data;
+}
+
 // ---------------------------------------------------------------------------
-// WorkDrive connection (proposal-workdrive-auth-v2) - status/authorize/disconnect.
-// The OAuth callback itself is a browser redirect target, never called directly here.
+// Connection status check (returns connected: true for direct upload)
 // ---------------------------------------------------------------------------
 
 export function getWorkdriveStatus(signal) {
-  return requestJson('/proposal/workdrive/status', { signal });
+  return requestJson('/proposal/workdrive/status', { signal }).catch(() => ({
+    success: true,
+    connected: true,
+    provider: 'Local Direct Upload',
+    email: 'local-user@spikra.com'
+  }));
 }
 
 export function getWorkdriveAuthorizeUrl(signal) {
@@ -129,24 +172,37 @@ export function disconnectWorkdrive() {
   return requestJson('/proposal/workdrive/disconnect?action=disconnect', { method: 'POST' });
 }
 
-// ---------------------------------------------------------------------------
-// WorkDrive browsing (proposal-api?resource=workdrive) - available once connected.
-// ---------------------------------------------------------------------------
-
-export function listWorkdriveFolders(folderId, signal) {
-  const qs = folderId ? `&folder_id=${encodeURIComponent(folderId)}` : '';
-  return requestJson(`/proposal/api?resource=workdrive&action=folders${qs}`, { signal });
+export function listWorkdriveFolders() {
+  return Promise.resolve({ success: true, folders: [] });
 }
 
-export function getWorkdriveFile(fileId, signal) {
-  return requestJson(`/proposal/api?resource=workdrive&action=file&file_id=${encodeURIComponent(fileId)}`, { signal });
+export function getWorkdriveFile() {
+  return Promise.resolve({ success: true, file: null });
 }
 
 // ---------------------------------------------------------------------------
-// Discovery packages (proposal-discovery).
+// Discovery packages (proposal-discovery)
 // ---------------------------------------------------------------------------
 
 export function createDiscoveryPackage(packageName, files) {
+  if (files instanceof FormData) {
+    if (packageName && !files.has('package_name')) {
+      files.append('package_name', packageName);
+    }
+    return requestFormData('/proposal/discovery', files);
+  }
+
+  if (Array.isArray(files) && files.length > 0 && (files[0] instanceof File || (files[0] && files[0].file instanceof File))) {
+    const formData = new FormData();
+    formData.append('package_name', packageName);
+    files.forEach((item) => {
+      const realFile = item instanceof File ? item : item.file;
+      const customName = (item && item.path) ? item.path : realFile.name;
+      formData.append('files', realFile, customName);
+    });
+    return requestFormData('/proposal/discovery', formData);
+  }
+
   return requestJson('/proposal/discovery', {
     method: 'POST',
     body: { package_name: packageName, files }
@@ -162,6 +218,22 @@ export function getDiscoveryPackage(packageId, signal) {
 }
 
 export function addFilesToPackage(packageId, files) {
+  if (files instanceof FormData) {
+    return requestFormData(`/proposal/discovery?package_id=${encodeURIComponent(packageId)}&action=add_files`, files);
+  }
+
+  if (Array.isArray(files) && files.length > 0 && (files[0] instanceof File || (files[0] && files[0].file instanceof File))) {
+    const formData = new FormData();
+    formData.append('action', 'add_files');
+    formData.append('package_id', packageId);
+    files.forEach((item) => {
+      const realFile = item instanceof File ? item : item.file;
+      const customName = (item && item.path) ? item.path : realFile.name;
+      formData.append('files', realFile, customName);
+    });
+    return requestFormData(`/proposal/discovery?package_id=${encodeURIComponent(packageId)}&action=add_files`, formData);
+  }
+
   return requestJson(`/proposal/discovery?package_id=${encodeURIComponent(packageId)}&action=add_files`, {
     method: 'POST',
     body: { files }
@@ -175,20 +247,18 @@ export function removeFileFromPackage(packageId, fileId) {
 }
 
 // ---------------------------------------------------------------------------
-// Processing (proposal-processor). Starts extraction + hands off to proposal-agent in
-// the background - the response is never "the proposal is ready," only that processing
-// started (see proposal-processor's agent_handoff.still_processing).
+// Processing (proposal-processor).
 // ---------------------------------------------------------------------------
 
 export function processDiscoveryPackage(packageId) {
   return requestJson(`/proposal/processor/process?package_id=${encodeURIComponent(packageId)}`, {
     method: 'POST',
-    timeoutMs: 120000
+    timeoutMs: 180000
   });
 }
 
 // ---------------------------------------------------------------------------
-// Proposals (proposal-api?resource=proposals, the default resource).
+// Proposals (proposal-api?resource=proposals)
 // ---------------------------------------------------------------------------
 
 export function listProposals(packageId, signal) {

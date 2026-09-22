@@ -104,7 +104,7 @@ export const PROCESS_STAGE_LABELS = {
 
 // Supported discovery document formats - matches proposal-discovery's own
 // SUPPORTED_FILE_EXTENSIONS exactly (backend re-validates regardless).
-export const W2_SUPPORTED_FILE_EXTENSIONS = ['.pdf', '.docx', '.doc', '.xlsx', '.xls', '.txt'];
+export const W2_SUPPORTED_FILE_EXTENSIONS = ['.pdf', '.docx', '.doc', '.xlsx', '.xls', '.txt', '.csv', '.md'];
 
 // Matches proposal-discovery's MAX_FILE_SIZE_BYTES (25MB) - frontend guard only.
 export const W2_MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024;

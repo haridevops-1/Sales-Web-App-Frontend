@@ -1,40 +1,167 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import './DiscoveryUploadCard.css';
-import { FolderOpen, X as XIcon, FileText, ArrowRight, Loader2 } from 'lucide-react';
+import {
+  UploadCloud,
+  FolderUp,
+  FileUp,
+  FolderOpen,
+  X as XIcon,
+  FileText,
+  ArrowRight,
+  Loader2,
+  Trash2
+} from 'lucide-react';
 import SpotlightCard from '@/reactbits/SpotlightCard';
-import WorkDriveConnect from '@/components/proposal/WorkDriveConnect/WorkDriveConnect';
-import WorkDriveBrowser from '@/components/proposal/WorkDriveBrowser/WorkDriveBrowser';
-import { useWorkDriveAuth } from '@/hooks/useWorkDriveAuth';
 import { createDiscoveryPackage, getFriendlyErrorMessage } from '@/api/proposalApi';
 import { formatBytes } from '@/utils/helpers';
 
+const SUPPORTED_EXTENSIONS = ['.pdf', '.docx', '.doc', '.xlsx', '.xls', '.txt'];
+
+function isSupportedFile(file) {
+  const name = file.name.toLowerCase();
+  return SUPPORTED_EXTENSIONS.some((ext) => name.endsWith(ext));
+}
+
 /**
- * Create Proposal - Step 1: connect WorkDrive, select discovery files, name the
- * package, and create it (real backend call to proposal-discovery). Local file upload
- * is not supported by the current backend - only the WorkDrive path is wired up.
+ * Create Proposal - Step 1: Upload local discovery files and/or folders.
+ * Supports multiple file selection, folder selection (webkitdirectory), and drag-and-drop.
  */
 export default function DiscoveryUploadCard({ onContinue, disabled = false, onToast }) {
-  const workdrive = useWorkDriveAuth();
-  const [isBrowserOpen, setIsBrowserOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [packageName, setPackageName] = useState('');
+  const [isDragging, setIsDragging] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState(null);
 
-  const handleBrowseContinue = (files) => {
+  const fileInputRef = useRef(null);
+  const folderInputRef = useRef(null);
+
+  // Helper to add files and suggest package name if not yet set
+  const appendFiles = useCallback((newFiles, suggestedFolder = '') => {
+    const validFiles = Array.from(newFiles).filter(isSupportedFile);
+    if (validFiles.length === 0) {
+      if (onToast) onToast('Please select supported documents (.pdf, .docx, .doc, .xlsx, .xls, .txt).', 'warning', 4500);
+      return;
+    }
+
     setSelectedFiles((prev) => {
-      const existingIds = new Set(prev.map((f) => f.workdrive_file_id));
-      const merged = [...prev];
-      files.forEach((f) => {
-        if (!existingIds.has(f.workdrive_file_id)) merged.push(f);
-      });
-      return merged;
+      const existingKeys = new Set(prev.map((f) => `${f.name}_${f.size}`));
+      const filtered = validFiles.filter((f) => !existingKeys.has(`${f.name}_${f.size}`));
+      return [...prev, ...filtered];
     });
-    setIsBrowserOpen(false);
+
+    setPackageName((prev) => {
+      if (prev.trim()) return prev;
+      if (suggestedFolder) return suggestedFolder;
+      if (validFiles[0]) {
+        return validFiles[0].name.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ');
+      }
+      return 'Discovery Package';
+    });
+  }, [onToast]);
+
+  // File input change handler (multiple files)
+  const handleFilesSelect = (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      appendFiles(e.target.files);
+      e.target.value = '';
+    }
   };
 
-  const handleRemoveFile = (workdriveFileId) => {
-    setSelectedFiles((prev) => prev.filter((f) => f.workdrive_file_id !== workdriveFileId));
+  // Folder input change handler
+  const handleFolderSelect = (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      let folderName = '';
+      const firstRel = e.target.files[0]?.webkitRelativePath;
+      if (firstRel && firstRel.includes('/')) {
+        folderName = firstRel.split('/')[0];
+      }
+      appendFiles(e.target.files, folderName);
+      e.target.value = '';
+    }
+  };
+
+  // Drag and drop handlers
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!disabled && !isDragging) setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    if (disabled || isCreating) return;
+
+    const items = e.dataTransfer.items;
+    if (items && items.length > 0) {
+      const collectedFiles = [];
+      const entryPromises = [];
+
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (typeof item.webkitGetAsEntry === 'function') {
+          const entry = item.webkitGetAsEntry();
+          if (entry) {
+            entryPromises.push(readEntryRecursively(entry, collectedFiles));
+            continue;
+          }
+        }
+        if (item.kind === 'file') {
+          const file = item.getAsFile();
+          if (file) collectedFiles.push(file);
+        }
+      }
+
+      if (entryPromises.length > 0) {
+        await Promise.all(entryPromises);
+      }
+
+      if (collectedFiles.length > 0) {
+        appendFiles(collectedFiles);
+        return;
+      }
+    }
+
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      appendFiles(e.dataTransfer.files);
+    }
+  };
+
+  // Recursively read directories from drag-and-drop
+  const readEntryRecursively = (entry, outArray) => {
+    return new Promise((resolve) => {
+      if (entry.isFile) {
+        entry.file((file) => {
+          outArray.push(file);
+          resolve();
+        }, () => resolve());
+      } else if (entry.isDirectory) {
+        const dirReader = entry.createReader();
+        dirReader.readEntries(async (entries) => {
+          const childPromises = entries.map((child) => readEntryRecursively(child, outArray));
+          await Promise.all(childPromises);
+          resolve();
+        }, () => resolve());
+      } else {
+        resolve();
+      }
+    });
+  };
+
+  const handleRemoveFile = (index) => {
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleClearAll = () => {
+    setSelectedFiles([]);
   };
 
   const isFormValid = selectedFiles.length > 0 && packageName.trim().length > 0;
@@ -45,7 +172,7 @@ export default function DiscoveryUploadCard({ onContinue, disabled = false, onTo
     setCreateError(null);
     try {
       const res = await createDiscoveryPackage(packageName.trim(), selectedFiles);
-      if (onToast) onToast('Discovery package created.', 'success', 4000);
+      if (onToast) onToast(`Discovery package "${packageName.trim()}" created successfully.`, 'success', 4000);
       if (onContinue) onContinue(res.package);
     } catch (err) {
       const message = getFriendlyErrorMessage(err);
@@ -57,66 +184,159 @@ export default function DiscoveryUploadCard({ onContinue, disabled = false, onTo
   };
 
   return (
-    <SpotlightCard className="discovery-upload-card" spotlightColor="rgba(255, 122, 26, 0.1)">
+    <SpotlightCard className="discovery-upload-card" spotlightColor="rgba(255, 122, 26, 0.12)">
       <div className="discovery-upload-inner">
         <div className="discovery-section-heading">
-          <h3 className="discovery-dropzone-title">Upload Discovery Package</h3>
+          <h3 className="discovery-dropzone-title">Upload Discovery Documents</h3>
           <p className="discovery-dropzone-hint">
-            Connect Zoho WorkDrive and select the files that make up this customer's discovery package.
+            Upload multiple files or an entire folder containing discovery notes, RFPs, emails, or MOM documents.
           </p>
         </div>
 
-        <WorkDriveConnect
-          status={workdrive.status}
-          email={workdrive.email}
-          isConnecting={workdrive.isConnecting}
-          onConnect={workdrive.connect}
-          onBrowseFiles={() => setIsBrowserOpen(true)}
-          onDisconnect={workdrive.disconnect}
+        {/* Hidden File Inputs */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept=".pdf,.docx,.doc,.xlsx,.xls,.txt"
+          onChange={handleFilesSelect}
+          style={{ display: 'none' }}
+          disabled={disabled || isCreating}
+        />
+        <input
+          ref={folderInputRef}
+          type="file"
+          webkitdirectory=""
+          directory=""
+          multiple
+          onChange={handleFolderSelect}
+          style={{ display: 'none' }}
+          disabled={disabled || isCreating}
         />
 
-        {workdrive.error && (
-          <div className="discovery-inline-error" role="alert">{workdrive.error}</div>
-        )}
+        {/* Drag and Drop Zone */}
+        <div
+          className={`discovery-dropzone ${isDragging ? 'is-dragging' : ''} ${disabled ? 'is-disabled' : ''}`}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
+          <div className="dropzone-icon-bubble">
+            <UploadCloud size={28} className="dropzone-cloud-icon" />
+          </div>
+          <div className="dropzone-text-group">
+            <p className="dropzone-primary-text">
+              Drag & drop discovery files or folders here
+            </p>
+            <p className="dropzone-secondary-text">
+              Supports <strong>PDF, DOCX, DOC, XLSX, XLS, TXT</strong> (up to 25MB per file)
+            </p>
+          </div>
 
+          <div className="dropzone-actions-group">
+            <button
+              type="button"
+              className="btn-dropzone-action btn-files-picker"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={disabled || isCreating}
+            >
+              <FileUp size={16} />
+              <span>Choose Files</span>
+            </button>
+
+            <button
+              type="button"
+              className="btn-dropzone-action btn-folder-picker"
+              onClick={() => folderInputRef.current?.click()}
+              disabled={disabled || isCreating}
+            >
+              <FolderUp size={16} />
+              <span>Upload Folder</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Selected Files Review List */}
         {selectedFiles.length > 0 && (
           <div className="discovery-selected-files animate-fade-in">
             <div className="discovery-selected-header">
-              <span>{selectedFiles.length} file{selectedFiles.length === 1 ? '' : 's'} selected</span>
-              {workdrive.isConnected && (
-                <button type="button" className="btn-add-more-files" onClick={() => setIsBrowserOpen(true)} disabled={disabled}>
-                  Add more files
+              <span className="selected-count-badge">
+                {selectedFiles.length} document{selectedFiles.length === 1 ? '' : 's'} staged
+              </span>
+              <div className="selected-header-actions">
+                <button
+                  type="button"
+                  className="btn-add-more-inline"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={disabled || isCreating}
+                >
+                  <FileUp size={13} />
+                  <span>Add files</span>
                 </button>
-              )}
+                <button
+                  type="button"
+                  className="btn-add-more-inline"
+                  onClick={() => folderInputRef.current?.click()}
+                  disabled={disabled || isCreating}
+                >
+                  <FolderUp size={13} />
+                  <span>Add folder</span>
+                </button>
+                <button
+                  type="button"
+                  className="btn-clear-staged"
+                  onClick={handleClearAll}
+                  disabled={disabled || isCreating}
+                >
+                  <Trash2 size={13} />
+                  <span>Clear</span>
+                </button>
+              </div>
             </div>
+
             <ul className="discovery-selected-list">
-              {selectedFiles.map((file) => (
-                <li key={file.workdrive_file_id} className="discovery-selected-item">
-                  <FileText size={15} className="selected-file-icon" />
-                  <span className="selected-file-name" title={file.file_name}>{file.file_name}</span>
-                  {file.file_size > 0 && <span className="selected-file-size">{formatBytes(file.file_size)}</span>}
-                  <button
-                    type="button"
-                    className="btn-remove-selected-file"
-                    onClick={() => handleRemoveFile(file.workdrive_file_id)}
-                    disabled={disabled || isCreating}
-                    aria-label={`Remove ${file.file_name}`}
-                  >
-                    <XIcon size={14} />
-                  </button>
-                </li>
-              ))}
+              {selectedFiles.map((file, idx) => {
+                const relPath = file.webkitRelativePath || '';
+                return (
+                  <li key={`${file.name}_${idx}`} className="discovery-selected-item">
+                    <FileText size={16} className="selected-file-icon" />
+                    <div className="selected-file-meta">
+                      <span className="selected-file-name" title={file.name}>
+                        {file.name}
+                      </span>
+                      {relPath && relPath !== file.name && (
+                        <span className="selected-file-relpath" title={relPath}>
+                          {relPath}
+                        </span>
+                      )}
+                    </div>
+                    {file.size > 0 && (
+                      <span className="selected-file-size">{formatBytes(file.size)}</span>
+                    )}
+                    <button
+                      type="button"
+                      className="btn-remove-selected-file"
+                      onClick={() => handleRemoveFile(idx)}
+                      disabled={disabled || isCreating}
+                      aria-label={`Remove ${file.name}`}
+                    >
+                      <XIcon size={14} />
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         )}
 
+        {/* Customer / Package Name Field */}
         {selectedFiles.length > 0 && (
           <div className="discovery-field animate-fade-in">
             <label className="discovery-field-label" htmlFor="discovery-package-name">
-              Customer / Package Name <span className="discovery-req-asterisk">*</span>
+              Customer / Proposal Package Name <span className="discovery-req-asterisk">*</span>
             </label>
             <div className="discovery-field-input-wrap">
-              <FolderOpen size={15} className="discovery-field-icon" />
+              <FolderOpen size={16} className="discovery-field-icon" />
               <input
                 id="discovery-package-name"
                 type="text"
@@ -132,7 +352,9 @@ export default function DiscoveryUploadCard({ onContinue, disabled = false, onTo
         )}
 
         {createError && (
-          <div className="discovery-inline-error" role="alert">{createError}</div>
+          <div className="discovery-inline-error" role="alert">
+            {createError}
+          </div>
         )}
 
         <div className="discovery-footer-row">
@@ -142,18 +364,19 @@ export default function DiscoveryUploadCard({ onContinue, disabled = false, onTo
             onClick={handleCreatePackage}
             disabled={!isFormValid || disabled || isCreating}
           >
-            {isCreating ? <Loader2 size={16} className="discovery-spin" /> : <ArrowRight size={16} strokeWidth={2.4} />}
-            <span>{isCreating ? 'Creating package…' : 'Create Discovery Package'}</span>
+            {isCreating ? (
+              <Loader2 size={16} className="discovery-spin" />
+            ) : (
+              <ArrowRight size={16} strokeWidth={2.4} />
+            )}
+            <span>
+              {isCreating
+                ? 'Creating package & uploading files…'
+                : `Create Discovery Package (${selectedFiles.length} file${selectedFiles.length === 1 ? '' : 's'})`}
+            </span>
           </button>
         </div>
       </div>
-
-      {isBrowserOpen && (
-        <WorkDriveBrowser
-          onClose={() => setIsBrowserOpen(false)}
-          onContinue={handleBrowseContinue}
-        />
-      )}
     </SpotlightCard>
   );
 }
