@@ -488,11 +488,8 @@ export default function DiscoveryUploadCard({ onContinue, onGenerate, disabled =
             >
               <div className="discovery-field-label-row">
                 <label className="discovery-field-label" htmlFor="discovery-package-name">
-                  Customer / Proposal Package Name <span className="discovery-req-asterisk">*</span>
+                  Business Name <span className="discovery-req-asterisk">*</span>
                 </label>
-                <span className="discovery-field-tip">
-                  <Info size={12} /> Auto-suggested from uploaded content
-                </span>
               </div>
 
               <div className="discovery-field-input-wrap">
@@ -501,7 +498,7 @@ export default function DiscoveryUploadCard({ onContinue, onGenerate, disabled =
                   id="discovery-package-name"
                   type="text"
                   className="discovery-field-input"
-                  placeholder="e.g. Apex Global Logistics Solution Proposal"
+                  placeholder="e.g. Acme Industries Pvt. Ltd."
                   value={packageName}
                   onChange={(e) => setPackageName(e.target.value)}
                   disabled={disabled || isCreating}

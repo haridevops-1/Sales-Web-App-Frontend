@@ -82,7 +82,8 @@ export default function WorkspaceHub({
                 </p>
                 <div className="module-card-status">
                   <span className="live-status-pill blue-pill">
-                    <span>V2 • AI-assisted</span>
+                    <span className="status-dot-blue" />
+                    <span>Active Workspace</span>
                   </span>
                 </div>
               </div>
