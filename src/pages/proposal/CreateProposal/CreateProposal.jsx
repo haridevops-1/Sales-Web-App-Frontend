@@ -5,6 +5,7 @@ import DiscoveryPackageReview from '@/components/proposal/DiscoveryPackageReview
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft,
+  ArrowRight,
   Clock,
   CheckCircle2,
   Loader2,
@@ -435,33 +436,33 @@ export default function CreateProposal({ onNavigate, onViewProposal, onToast }) 
   return (
     <div className="create-proposal-page animate-fade-in">
       <div className="container create-proposal-container">
-        {/* Navigation Breadcrumb Bar */}
+        {/* Navigation Choice Bar: Left to Sales Workspace & Far Right to All Proposals */}
         <div className="create-proposal-nav-bar">
-          <div className="create-proposal-nav-buttons">
-            <motion.button
-              type="button"
-              className="btn-back-to-workspace"
-              onClick={handleGoToWorkspace}
-              whileHover={{ x: -2 }}
-              transition={{ duration: 0.15 }}
-              title="Navigate to Sales Workspace"
-            >
-              <ArrowLeft size={15} />
-              <span>Sales Workspace</span>
-            </motion.button>
+          <motion.button
+            type="button"
+            className="btn-nav-choice btn-nav-left"
+            onClick={handleGoToWorkspace}
+            whileHover={{ x: -3, scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+            title="Go to Sales Workspace"
+          >
+            <ArrowLeft size={15} className="btn-nav-arrow-left" />
+            <span>Go to Sales Workspace</span>
+          </motion.button>
 
-            <motion.button
-              type="button"
-              className="btn-go-to-proposals"
-              onClick={handleBackToProposals}
-              whileHover={{ x: 2 }}
-              transition={{ duration: 0.15 }}
-              title="View All Proposals"
-            >
-              <FolderKanban size={15} />
-              <span>All Proposals</span>
-            </motion.button>
-          </div>
+          <motion.button
+            type="button"
+            className="btn-nav-choice btn-nav-right"
+            onClick={handleBackToProposals}
+            whileHover={{ x: 3, scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+            title="Go to All Proposals"
+          >
+            <span>Go to All Proposals</span>
+            <ArrowRight size={15} className="btn-nav-arrow-right" />
+          </motion.button>
         </div>
 
         {/* Hero Header */}

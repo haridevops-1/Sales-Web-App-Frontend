@@ -23,7 +23,7 @@ export default function ProposalPage({
     setIsLoading(true);
     setError(null);
 
-    // Read cached/locally staged proposals first
+    // Read cached proposals for instant display on mount
     let localProposals = [];
     try {
       localProposals = JSON.parse(localStorage.getItem('spikra_proposals') || '[]');
@@ -36,34 +36,39 @@ export default function ProposalPage({
 
     try {
       const res = await listProposals(null, signal);
-      const backendList = Array.isArray(res.proposals) ? res.proposals : [];
+      const backendList = Array.isArray(res?.proposals) ? res.proposals : [];
 
-      // Merge backend and local proposals
-      // Prioritize the salesperson's entered business name and generated URL
-      const mergedMap = new Map();
+      // The backend is the single source of truth for proposals.
+      // If the backend has no proposals (e.g. user deleted them all), show empty state!
+      if (backendList.length === 0) {
+        setProposals([]);
+        try {
+          localStorage.removeItem('spikra_proposals');
+        } catch (e) {}
+        return;
+      }
 
-      backendList.forEach((p) => {
-        const id = p.proposal_id || p.id;
-        if (id) mergedMap.set(String(id), p);
-      });
-
+      // Map backend proposals, preserving user-entered business names and URLs if available
+      const localMap = new Map();
       localProposals.forEach((p) => {
         const id = p.proposal_id || p.id;
-        if (id) {
-          const existing = mergedMap.get(String(id));
-          mergedMap.set(String(id), {
-            ...(existing || {}),
-            ...p,
-            customer_name: p.customer_name || existing?.customer_name || 'Business Client',
-            business_name: p.business_name || p.customer_name || existing?.business_name || 'Business Client',
-            generated_url: p.generated_url || existing?.generated_url || existing?.proposal_url || ''
-          });
-        }
+        if (id) localMap.set(String(id), p);
       });
 
-      const finalProposals = Array.from(mergedMap.values());
-      setProposals(finalProposals);
+      const finalProposals = backendList.map((p) => {
+        const id = p.proposal_id || p.id;
+        const local = id ? localMap.get(String(id)) : null;
+        const bizName = p.customer_name || p.business_name || p.package_name || local?.customer_name || local?.business_name || 'Business Client';
+        return {
+          ...p,
+          customer_name: bizName,
+          business_name: bizName,
+          package_name: bizName,
+          generated_url: p.generated_url || p.proposal_url || local?.generated_url || ''
+        };
+      });
 
+      setProposals(finalProposals);
       try {
         localStorage.setItem('spikra_proposals', JSON.stringify(finalProposals));
       } catch (e) {
@@ -71,9 +76,7 @@ export default function ProposalPage({
       }
     } catch (err) {
       if (err.name === 'AbortError') return;
-      if (localProposals.length === 0) {
-        setError(err);
-      }
+      setError(err);
     } finally {
       setIsLoading(false);
     }

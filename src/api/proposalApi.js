@@ -64,7 +64,7 @@ async function requestJson(path, { method = 'GET', body, timeoutMs = 45000, sign
     headers['Content-Type'] = 'application/json';
   }
 
-  console.log(`%c[Workspace 2 Proposal API] 📡 ${method} ${url}`, 'color: #ff5a1f; font-weight: bold;', body !== undefined ? body : '');
+  console.log(`[Workspace 2 Proposal API] ${method} ${url}`, body !== undefined ? body : '');
 
   let response;
   try {
@@ -102,7 +102,7 @@ async function requestJson(path, { method = 'GET', body, timeoutMs = 45000, sign
     throw new ProposalApiError(message, { status: response.status, code, requestId: data?.request_id });
   }
 
-  console.log(`%c[Workspace 2 Proposal API] ✅ 200 OK (${path})`, 'color: #10b981; font-weight: bold;', data);
+  console.log(`[Workspace 2 Proposal API] 200 OK (${path})`, data);
   return data;
 }
 
@@ -122,7 +122,7 @@ async function requestFormData(path, formData, { signal: externalSignal, timeout
   }
   // Browser will automatically set multipart/form-data and boundary
 
-  console.log(`%c[Workspace 2 Proposal API] 📤 POST (multipart) ${url}`, 'color: #ff5a1f; font-weight: bold;');
+  console.log(`[Workspace 2 Proposal API] POST (multipart) ${url}`);
 
   let response;
   try {
@@ -157,7 +157,7 @@ async function requestFormData(path, formData, { signal: externalSignal, timeout
     throw new ProposalApiError(message, { status: response.status, code, requestId: data?.request_id });
   }
 
-  console.log(`%c[Workspace 2 Proposal API] ✅ 200 OK Upload (${path})`, 'color: #10b981; font-weight: bold;', data);
+  console.log(`[Workspace 2 Proposal API] 200 OK Upload (${path})`, data);
   return data;
 }
 
@@ -195,7 +195,7 @@ export function getWorkdriveFile() {
 // ---------------------------------------------------------------------------
 
 export function createDiscoveryPackage(packageName, files) {
-  console.log(`%c[Workspace 2 API] 📤 Uploading discovery package '${packageName}' to Stratus storage...`, 'color: #3b82f6; font-weight: bold;');
+  console.log(`[Workspace 2 API] Uploading discovery package '${packageName}' to Stratus storage...`);
   if (files instanceof FormData) {
     if (packageName && !files.has('package_name')) {
       files.append('package_name', packageName);
@@ -262,7 +262,7 @@ export function removeFileFromPackage(packageId, fileId) {
 // ---------------------------------------------------------------------------
 
 export function processDiscoveryPackage(packageId) {
-  console.log(`%c[Workspace 2 API] 🤖 Triggering Customer Proposal Generation Agent & Pipeline for package '${packageId}'...`, 'color: #3b82f6; font-weight: bold;');
+  console.log(`[Workspace 2 API] Triggering Customer Proposal Generation Agent & Pipeline for package '${packageId}'...`);
   return requestJson(`/proposal/processor/process?package_id=${encodeURIComponent(packageId)}`, {
     method: 'POST',
     timeoutMs: 180000
@@ -275,7 +275,7 @@ export function processDiscoveryPackage(packageId) {
 
 export function listProposals(packageId, signal) {
   const qs = packageId ? `&package_id=${encodeURIComponent(packageId)}` : '';
-  console.log(`%c[Workspace 2 API] 📋 Fetching customer proposals from Catalyst Datastore...`, 'color: #3b82f6; font-weight: bold;');
+  console.log(`[Workspace 2 API] Fetching customer proposals from Catalyst Datastore...`);
   return requestJson(`/proposal/api?resource=proposals${qs}`, { signal }).then((res) => {
     if (res && Array.isArray(res.proposals)) {
       res.proposals = res.proposals.map(sanitizeProposalObj);
