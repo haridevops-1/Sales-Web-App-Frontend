@@ -188,14 +188,27 @@ export async function copyToClipboard(text) {
  * Converting it to query-based format: https://spikra-ai-proposal.onslate.com/?slug=abc-pvt-ltd_proposal
  * allows Slate's index.html to load with HTTP 200, parse the slug, and fetch the proposal from Catalyst.
  */
-export function formatProposalUrl(rawUrl, experienceId = '') {
+export function formatProposalUrl(rawUrl, proposalOrExpId = '') {
   if (!rawUrl || typeof rawUrl !== 'string') return '';
-  const trimmed = rawUrl.trim();
+  let trimmed = rawUrl.trim();
   if (!trimmed) return '';
+
+  if (trimmed.includes('spikra-customer-prop-msdrrgbk.onslate.com')) {
+    trimmed = trimmed.replace('spikra-customer-prop-msdrrgbk.onslate.com', 'spikra-w2-proposal-jmdbymcs.onslate.com');
+  }
 
   try {
     const parsed = new URL(trimmed);
     if (parsed.hostname.toLowerCase().includes('onslate.com')) {
+      // Workspace 2 Solution Proposal handling
+      if (parsed.hostname.includes('spikra-w2-proposal') || parsed.searchParams.has('proposal_id') || String(rawUrl).includes('proposal')) {
+        if (proposalOrExpId && !parsed.searchParams.has('proposal_id')) {
+          parsed.searchParams.set('proposal_id', String(proposalOrExpId).trim());
+        }
+        return parsed.toString();
+      }
+
+      // Workspace 1 Interactive Experience handling
       const pathname = parsed.pathname.replace(/^\/+|\/+$/g, '');
       if (pathname && pathname.toLowerCase() !== 'index.html' && pathname.toLowerCase() !== '404.html') {
         if (!parsed.searchParams.has('slug')) {
@@ -203,8 +216,8 @@ export function formatProposalUrl(rawUrl, experienceId = '') {
         }
         parsed.pathname = '/';
       }
-      if (experienceId && !parsed.searchParams.has('experience_id')) {
-        parsed.searchParams.set('experience_id', String(experienceId).trim());
+      if (proposalOrExpId && !parsed.searchParams.has('experience_id')) {
+        parsed.searchParams.set('experience_id', String(proposalOrExpId).trim());
       }
       return parsed.toString();
     }

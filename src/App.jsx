@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Routes, Route, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import './App.css';
 import Header from '@/components/shared/Header/Header';
 import Sidebar from '@/components/shared/Sidebar/Sidebar';
@@ -15,6 +16,18 @@ import { SpotlightCursor } from '@/components/ui/spotlight-cursor';
 import { AnimatePresence, motion } from 'framer-motion';
 import { getCustomerExperiences } from '@/api/catalystApi';
 import { formatProposalUrl } from '@/utils/helpers';
+
+// Helper component to extract URL proposal ID param
+function ProposalDetailsRoute({ onNavigate, onToast }) {
+  const { id } = useParams();
+  return (
+    <ProposalDetails
+      proposalId={id}
+      onNavigate={onNavigate}
+      onToast={onToast}
+    />
+  );
+}
 
 // Normalize experience object so both camelCase and snake_case properties are supported
 const normalizeExperience = (exp) => {
@@ -58,9 +71,22 @@ const normalizeExperience = (exp) => {
 };
 
 export default function App() {
-  // Navigation Routing State
-  const [activeModule, setActiveModule] = useState('workspace'); // 'workspace' | 'proposal' | 'experience'
-  const [activeSubPage, setActiveSubPage] = useState('hub');     // 'hub' | 'proposal-list' | 'proposal-create' | 'generator' | 'history'
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Derive activeModule and activeSubPage from current location path for perfect header/sidebar synchronization
+  const getActiveModuleAndPage = (pathname) => {
+    const p = (pathname || '/').replace(/\/+$/, '') || '/';
+    if (p === '/proposals/create') return { module: 'proposal', page: 'proposal-create' };
+    if (p.startsWith('/proposals/') && p !== '/proposals') return { module: 'proposal', page: 'proposal-details' };
+    if (p === '/proposals') return { module: 'proposal', page: 'proposal-list' };
+    if (p === '/showcases/create') return { module: 'experience', page: 'generator' };
+    if (p === '/showcases') return { module: 'experience', page: 'history' };
+    if (p === '/workspace' || p === '') return { module: 'workspace', page: 'hub' };
+    return { module: 'workspace', page: 'hub' };
+  };
+
+  const { module: activeModule, page: activeSubPage } = getActiveModuleAndPage(location.pathname);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
@@ -69,8 +95,6 @@ export default function App() {
   const [experiences, setExperiences] = useState([]);
   const [isLoadingExperiences, setIsLoadingExperiences] = useState(true);
   const [experiencesError, setExperiencesError] = useState(null);
-  // Workspace 2 (Solution Proposals) owns its own proposal/package data via proposalApi -
-  // App.jsx only needs to remember which proposal_id to show on the details page.
   const [selectedProposalId, setSelectedProposalId] = useState(null);
 
   // Authenticated user state
@@ -157,32 +181,44 @@ export default function App() {
   const handleViewProposal = (proposalId) => {
     if (!proposalId) return;
     setSelectedProposalId(proposalId);
-    handleNavigate('proposal', 'proposal-details');
+    setIsSidebarOpen(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    navigate(`/proposals/${proposalId}`);
   };
 
-  // Unified router handler
+  // Unified router handler: maps module/subpage requests directly to URL paths
   const handleNavigate = (moduleOrPage, subPage = null) => {
-    if (subPage) {
-      setActiveModule(moduleOrPage);
-      setActiveSubPage(subPage);
-    } else {
-      // Legacy or single-argument calls
-      if (moduleOrPage === 'generator' || moduleOrPage === 'history') {
-        setActiveModule('experience');
-        setActiveSubPage(moduleOrPage);
-      } else if (moduleOrPage === 'proposal' || moduleOrPage === 'proposal-list') {
-        setActiveModule('proposal');
-        setActiveSubPage('proposal-list');
-      } else if (moduleOrPage === 'workspace' || moduleOrPage === 'hub') {
-        setActiveModule('workspace');
-        setActiveSubPage('hub');
+    let target = '/workspace';
+
+    if (moduleOrPage === 'workspace' || moduleOrPage === 'hub') {
+      target = '/workspace';
+    } else if (moduleOrPage === 'proposal') {
+      if (subPage === 'proposal-create') {
+        target = '/proposals/create';
+      } else if (subPage === 'proposal-details') {
+        target = selectedProposalId ? `/proposals/${selectedProposalId}` : '/proposals';
       } else {
-        setActiveModule(moduleOrPage);
+        target = '/proposals';
       }
+    } else if (moduleOrPage === 'experience') {
+      if (subPage === 'generator') {
+        target = '/showcases/create';
+      } else {
+        target = '/showcases';
+      }
+    } else if (moduleOrPage === 'generator') {
+      target = '/showcases/create';
+    } else if (moduleOrPage === 'history') {
+      target = '/showcases';
+    } else if (moduleOrPage === 'proposal-list') {
+      target = '/proposals';
+    } else if (moduleOrPage === 'proposal-create') {
+      target = '/proposals/create';
     }
 
     setIsSidebarOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    navigate(target);
   };
 
   const toggleSidebar = () => {
@@ -218,56 +254,75 @@ export default function App() {
         currentUser={currentUser}
       />
 
-      {/* Main Dynamic View Content */}
+      {/* Main Dynamic View Content with React Router */}
       <main className="spikra-page-content" id="main-content">
-        {activeModule === 'workspace' && (
-          <WorkspaceHub
-            onNavigate={handleNavigate}
-            experiencesCount={experiences.length}
-            currentUser={currentUser}
+        <Routes>
+          <Route path="/" element={<Navigate to="/workspace" replace />} />
+          <Route
+            path="/workspace"
+            element={
+              <WorkspaceHub
+                onNavigate={handleNavigate}
+                experiencesCount={experiences.length}
+                currentUser={currentUser}
+              />
+            }
           />
-        )}
-
-        {activeModule === 'proposal' && (
-          activeSubPage === 'proposal-create' ? (
-            <CreateProposal
-              onNavigate={handleNavigate}
-              onViewProposal={handleViewProposal}
-              onToast={showToast}
-            />
-          ) : activeSubPage === 'proposal-details' ? (
-            <ProposalDetails
-              proposalId={selectedProposalId}
-              onNavigate={handleNavigate}
-              onToast={showToast}
-            />
-          ) : (
-            <ProposalPage
-              onNavigate={handleNavigate}
-              onViewProposal={handleViewProposal}
-              onToast={showToast}
-            />
-          )
-        )}
-
-        {activeModule === 'experience' && (
-          activeSubPage === 'history' ? (
-            <AllExperiences
-              onNavigate={handleNavigate}
-              experiences={experiences}
-              isLoading={isLoadingExperiences}
-              error={experiencesError}
-              onRefresh={() => loadExperiences({})}
-            />
-          ) : (
-            <Dashboard
-              onNavigate={handleNavigate}
-              onToast={showToast}
-              onExperienceCreated={handleExperienceCreated}
-              experiences={experiences}
-            />
-          )
-        )}
+          <Route
+            path="/proposals"
+            element={
+              <ProposalPage
+                onNavigate={handleNavigate}
+                onViewProposal={handleViewProposal}
+                onToast={showToast}
+              />
+            }
+          />
+          <Route
+            path="/proposals/create"
+            element={
+              <CreateProposal
+                onNavigate={handleNavigate}
+                onViewProposal={handleViewProposal}
+                onToast={showToast}
+              />
+            }
+          />
+          <Route
+            path="/proposals/:id"
+            element={
+              <ProposalDetailsRoute
+                onNavigate={handleNavigate}
+                onToast={showToast}
+              />
+            }
+          />
+          <Route
+            path="/showcases"
+            element={
+              <AllExperiences
+                onNavigate={handleNavigate}
+                experiences={experiences}
+                isLoading={isLoadingExperiences}
+                error={experiencesError}
+                onRefresh={() => loadExperiences({})}
+              />
+            }
+          />
+          <Route
+            path="/showcases/create"
+            element={
+              <Dashboard
+                onNavigate={handleNavigate}
+                onToast={showToast}
+                onExperienceCreated={handleExperienceCreated}
+                experiences={experiences}
+              />
+            }
+          />
+          {/* Catch-all route */}
+          <Route path="*" element={<Navigate to="/workspace" replace />} />
+        </Routes>
       </main>
 
       {/* Enterprise Footer */}

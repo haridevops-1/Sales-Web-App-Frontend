@@ -9,14 +9,15 @@ import {
   CheckCircle2,
   Loader2,
   FileText,
-  ArrowUpRight
+  ArrowUpRight,
+  FolderKanban
 } from 'lucide-react';
 import {
   processDiscoveryPackage,
   listProposals,
   getFriendlyErrorMessage
 } from '@/api/proposalApi';
-import { formatDate } from '@/utils/helpers';
+import { formatDate, formatProposalUrl } from '@/utils/helpers';
 
 /**
  * 6 Thinking / Processing Steps with smooth realistic progression
@@ -180,7 +181,10 @@ function ProposalResultCard({
   const fileCount = proposal?.content?.sources?.length || discoveryPackage?.files?.length || 1;
   const createdAt = proposal?.created_at ? formatDate(proposal.created_at) : formatDate();
   const status = proposal?.status || 'Draft';
-  const targetUrl = proposal?.proposal_url || proposal?.generated_url || proposal?.slate_url || (proposalId && proposalId !== '—' ? `https://spikra-customer-prop-msdrrgbk.onslate.com/?proposal_id=${proposalId}` : null);
+  let targetUrl = proposal?.proposal_url || proposal?.generated_url || proposal?.slate_url || (proposalId && proposalId !== '—' ? `https://spikra-w2-proposal-jmdbymcs.onslate.com/?proposal_id=${proposalId}` : null);
+  if (targetUrl && targetUrl.includes('spikra-customer-prop-msdrrgbk.onslate.com')) {
+    targetUrl = targetUrl.replace('spikra-customer-prop-msdrrgbk.onslate.com', 'spikra-w2-proposal-jmdbymcs.onslate.com');
+  }
 
   return (
     <div className="proposal-result-card animate-fade-in">
@@ -215,6 +219,24 @@ function ProposalResultCard({
           <span className="result-status-pill">{status}</span>
         </div>
       </div>
+
+      {targetUrl && (
+        <div className="proposal-result-url-box" style={{ margin: '18px 0', padding: '14px 18px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em' }}>PROPOSAL LIVE URL:</span>
+            <span style={{ fontSize: '11px', fontWeight: 600, color: '#10b981' }}>● Active</span>
+          </div>
+          <a
+            href={targetUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ fontSize: '13px', color: '#ff5a1f', fontWeight: 600, textDecoration: 'none', wordBreak: 'break-all' }}
+            title={targetUrl}
+          >
+            {targetUrl}
+          </a>
+        </div>
+      )}
 
       <div className="proposal-result-actions">
         {targetUrl && (
@@ -295,6 +317,11 @@ export default function CreateProposal({ onNavigate, onViewProposal, onToast }) 
     };
   }, []);
 
+  const handleGoToWorkspace = () => {
+    stopTimer();
+    if (onNavigate) onNavigate('workspace', 'hub');
+  };
+
   const handleBackToProposals = () => {
     stopTimer();
     if (onNavigate) onNavigate('proposal', 'proposal-list');
@@ -307,6 +334,42 @@ export default function CreateProposal({ onNavigate, onViewProposal, onToast }) 
 
   const handlePackageUpdated = (pkg) => {
     setDiscoveryPackage(pkg);
+  };
+
+  // Helper to persist proposal with salesperson entered business name and generated link
+  const saveGeneratedProposal = (res, pkg) => {
+    const rawProposal = res?.proposal || res || {};
+    const pkgObj = pkg || discoveryPackage || {};
+    const enteredBizName = pkgObj?.customer_name || pkgObj?.package_name || rawProposal?.customer_name || 'Business Client';
+    const cleanBiz = String(enteredBizName).replace(/~\d+/g, '').trim() || 'Business Client';
+    const proposalId = rawProposal?.proposal_id || pkgObj?.package_id || String(Date.now());
+    const rawUrl = (rawProposal?.generated_url || rawProposal?.proposal_url || '').trim() ||
+      `https://spikra-customer-prop-msdrrgbk.onslate.com/?proposal_id=${proposalId}`;
+    const formattedUrl = formatProposalUrl(rawUrl, proposalId) || rawUrl;
+
+    const normalizedProposal = {
+      ...rawProposal,
+      proposal_id: proposalId,
+      customer_name: cleanBiz,
+      business_name: cleanBiz,
+      package_name: cleanBiz,
+      proposal_title: rawProposal?.proposal_title || `${cleanBiz} — Solution Proposal`,
+      generated_url: formattedUrl,
+      proposal_url: formattedUrl,
+      status: (rawProposal?.status || 'COMPLETED').toUpperCase(),
+      created_at: rawProposal?.created_at || new Date().toISOString()
+    };
+
+    try {
+      const stored = JSON.parse(localStorage.getItem('spikra_proposals') || '[]');
+      const filtered = stored.filter((p) => p.proposal_id !== proposalId);
+      const updated = [normalizedProposal, ...filtered];
+      localStorage.setItem('spikra_proposals', JSON.stringify(updated));
+    } catch (e) {
+      console.warn('Failed to save proposal to localStorage:', e);
+    }
+
+    return normalizedProposal;
   };
 
   // Direct 1-click generate from the intake page: package was just created
@@ -324,7 +387,7 @@ export default function CreateProposal({ onNavigate, onViewProposal, onToast }) 
       const res = await processDiscoveryPackage(packageId);
       console.log(`[Workspace 2 Proposal API] ✅ Proposal generation complete:`, res);
       stopTimer();
-      const proposal = res?.proposal || res;
+      const proposal = saveGeneratedProposal(res, pkg);
       setGeneratedProposal(proposal);
       setStep('result');
       if (onToast) onToast('Proposal generated successfully.', 'success', 5000);
@@ -352,7 +415,7 @@ export default function CreateProposal({ onNavigate, onViewProposal, onToast }) 
       const res = await processDiscoveryPackage(packageId);
       console.log(`[Workspace 2 Proposal API] ✅ Proposal generation complete:`, res);
       stopTimer();
-      const proposal = res?.proposal || res;
+      const proposal = saveGeneratedProposal(res, discoveryPackage);
       setGeneratedProposal(proposal);
       setStep('result');
       if (onToast) onToast('Proposal generated successfully.', 'success', 5000);
@@ -374,20 +437,30 @@ export default function CreateProposal({ onNavigate, onViewProposal, onToast }) 
       <div className="container create-proposal-container">
         {/* Navigation Breadcrumb Bar */}
         <div className="create-proposal-nav-bar">
-          <motion.button
-            type="button"
-            className="btn-back-to-proposals"
-            onClick={handleBackToProposals}
-            whileHover={{ x: -3 }}
-            transition={{ duration: 0.15 }}
-          >
-            <ArrowLeft size={15} />
-            <span>Back to Proposals</span>
-          </motion.button>
+          <div className="create-proposal-nav-buttons">
+            <motion.button
+              type="button"
+              className="btn-back-to-workspace"
+              onClick={handleGoToWorkspace}
+              whileHover={{ x: -2 }}
+              transition={{ duration: 0.15 }}
+              title="Navigate to Sales Workspace"
+            >
+              <ArrowLeft size={15} />
+              <span>Sales Workspace</span>
+            </motion.button>
 
-          <div className="nav-engine-pill">
-            <span className="engine-ping-dot" />
-            <span>Workspace 2 • Solution Architecture</span>
+            <motion.button
+              type="button"
+              className="btn-go-to-proposals"
+              onClick={handleBackToProposals}
+              whileHover={{ x: 2 }}
+              transition={{ duration: 0.15 }}
+              title="View All Proposals"
+            >
+              <FolderKanban size={15} />
+              <span>All Proposals</span>
+            </motion.button>
           </div>
         </div>
 

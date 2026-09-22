@@ -22,12 +22,58 @@ export default function ProposalPage({
   const load = useCallback(async (signal) => {
     setIsLoading(true);
     setError(null);
+
+    // Read cached/locally staged proposals first
+    let localProposals = [];
+    try {
+      localProposals = JSON.parse(localStorage.getItem('spikra_proposals') || '[]');
+      if (Array.isArray(localProposals) && localProposals.length > 0) {
+        setProposals(localProposals);
+      }
+    } catch (e) {
+      console.warn('Could not read cached proposals:', e);
+    }
+
     try {
       const res = await listProposals(null, signal);
-      setProposals(Array.isArray(res.proposals) ? res.proposals : []);
+      const backendList = Array.isArray(res.proposals) ? res.proposals : [];
+
+      // Merge backend and local proposals
+      // Prioritize the salesperson's entered business name and generated URL
+      const mergedMap = new Map();
+
+      backendList.forEach((p) => {
+        const id = p.proposal_id || p.id;
+        if (id) mergedMap.set(String(id), p);
+      });
+
+      localProposals.forEach((p) => {
+        const id = p.proposal_id || p.id;
+        if (id) {
+          const existing = mergedMap.get(String(id));
+          mergedMap.set(String(id), {
+            ...(existing || {}),
+            ...p,
+            customer_name: p.customer_name || existing?.customer_name || 'Business Client',
+            business_name: p.business_name || p.customer_name || existing?.business_name || 'Business Client',
+            generated_url: p.generated_url || existing?.generated_url || existing?.proposal_url || ''
+          });
+        }
+      });
+
+      const finalProposals = Array.from(mergedMap.values());
+      setProposals(finalProposals);
+
+      try {
+        localStorage.setItem('spikra_proposals', JSON.stringify(finalProposals));
+      } catch (e) {
+        console.warn('Could not sync localStorage proposals:', e);
+      }
     } catch (err) {
       if (err.name === 'AbortError') return;
-      setError(err);
+      if (localProposals.length === 0) {
+        setError(err);
+      }
     } finally {
       setIsLoading(false);
     }

@@ -14,17 +14,30 @@ export default function ProposalCard({
 
   if (!proposal) return null;
 
-  const rawBiz = proposal.customer_name || proposal.business_name || proposal.package_name || 'Business Client';
+  const rawBiz = proposal.customer_name || proposal.business_name || proposal.package_name || proposal.content?.customer?.company_name || 'Business Client';
   const businessName = rawBiz.replace(/~\d+/g, '').trim() || 'Business Client';
   const proposalId = proposal.proposal_id || proposal.proposalId || '';
-  const title = proposal.proposal_title || `${businessName} — Solution Proposal`;
+
+  // Clean proposal title so the business name is not redundantly duplicated
+  let cleanTitle = (proposal.proposal_title || proposal.title || '').trim();
+  if (cleanTitle) {
+    const escapedBiz = businessName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    cleanTitle = cleanTitle.replace(new RegExp(`^${escapedBiz}\\s*[—–-]\\s*`, 'i'), '').trim();
+  }
+  if (!cleanTitle || cleanTitle.toLowerCase() === businessName.toLowerCase()) {
+    cleanTitle = 'Solution Proposal & Architecture Blueprint';
+  }
+  const title = cleanTitle;
   const projectRef = proposalId ? `Proposal #${proposalId}` : 'Solution Proposal';
 
   const rawStatus = (proposal.status || proposal.proposal_status || 'PUBLISHED').toUpperCase();
   const createdAt = proposal.created_at || proposal.createdAt || null;
 
-  const rawUrl = (proposal.generated_url || proposal.proposal_url || proposal.slate_url || '').trim() ||
-    (proposalId ? `https://spikra-customer-prop-msdrrgbk.onslate.com/?proposal_id=${proposalId}` : '');
+  let rawUrl = (proposal.generated_url || proposal.proposal_url || proposal.slate_url || '').trim() ||
+    (proposalId ? `https://spikra-w2-proposal-jmdbymcs.onslate.com/?proposal_id=${proposalId}` : '');
+  if (rawUrl.includes('spikra-customer-prop-msdrrgbk.onslate.com')) {
+    rawUrl = rawUrl.replace('spikra-customer-prop-msdrrgbk.onslate.com', 'spikra-w2-proposal-jmdbymcs.onslate.com');
+  }
   const targetUrl = formatProposalUrl(rawUrl, proposalId) || rawUrl;
 
   const isPublished = rawStatus === 'COMPLETED' || rawStatus === 'PUBLISHED' || rawStatus === 'APPROVED' || Boolean(targetUrl);

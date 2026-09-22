@@ -208,11 +208,17 @@ export default function DiscoveryUploadCard({ onContinue, onGenerate, disabled =
     setCreateError(null);
     try {
       const res = await createDiscoveryPackage(packageName.trim(), selectedFiles);
+      const pkgData = {
+        ...(res?.package || {}),
+        package_name: packageName.trim(),
+        customer_name: packageName.trim(),
+        business_name: packageName.trim()
+      };
       if (onToast) onToast(`Uploaded documents & created package "${packageName.trim()}".`, 'success', 3000);
       if (onGenerate) {
-        onGenerate(res.package);
+        onGenerate(pkgData);
       } else if (onContinue) {
-        onContinue(res.package);
+        onContinue(pkgData);
       }
     } catch (err) {
       const message = getFriendlyErrorMessage(err);
@@ -228,8 +234,14 @@ export default function DiscoveryUploadCard({ onContinue, onGenerate, disabled =
     setCreateError(null);
     try {
       const res = await createDiscoveryPackage(packageName.trim(), selectedFiles);
+      const pkgData = {
+        ...(res?.package || {}),
+        package_name: packageName.trim(),
+        customer_name: packageName.trim(),
+        business_name: packageName.trim()
+      };
       if (onToast) onToast(`Discovery package "${packageName.trim()}" staged for review.`, 'success', 3000);
-      if (onContinue) onContinue(res.package);
+      if (onContinue) onContinue(pkgData);
     } catch (err) {
       const message = getFriendlyErrorMessage(err);
       setCreateError(message);

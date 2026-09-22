@@ -34,9 +34,9 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: false
         },
-        // Workspace 2 (Solution Proposals) backend - same Catalyst project/domain as
-        // Workspace 1, just a different route prefix.
-        '/proposal': {
+        // Workspace 2 (Solution Proposals) backend API routes (/proposal/api, /proposal/discovery, etc.)
+        // Using regex pattern ensures frontend routes like /proposals and /proposals/create are served as SPA routes.
+        '^/proposal/': {
           target: catalystTarget,
           changeOrigin: true,
           secure: false

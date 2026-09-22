@@ -29,6 +29,23 @@ async function deploy() {
   // Ensure 404.html exists for client-side routing
   fs.copyFileSync(path.join(distDir, 'index.html'), path.join(distDir, '404.html'));
 
+  // Ensure static route folders exist with index.html for direct URL access on Slate & static hosts
+  const staticRoutes = [
+    'workspace',
+    'proposals',
+    path.join('proposals', 'create'),
+    'showcases',
+    path.join('showcases', 'create')
+  ];
+
+  for (const routePath of staticRoutes) {
+    const targetFolder = path.join(distDir, routePath);
+    if (!fs.existsSync(targetFolder)) {
+      fs.mkdirSync(targetFolder, { recursive: true });
+    }
+    fs.copyFileSync(path.join(distDir, 'index.html'), path.join(targetFolder, 'index.html'));
+  }
+
   // Create temporary zip archive using native zip
   const tempZip = path.join(projectRoot, '.deploy.zip');
   if (fs.existsSync(tempZip)) {
