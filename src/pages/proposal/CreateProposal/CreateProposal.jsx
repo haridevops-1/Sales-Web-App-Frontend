@@ -13,17 +13,13 @@ import {
 } from 'lucide-react';
 import {
   processDiscoveryPackage,
-  getDiscoveryPackage,
   listProposals,
   getFriendlyErrorMessage
 } from '@/api/proposalApi';
 import { formatDate } from '@/utils/helpers';
 
-const POLL_INTERVAL_MS = 2000;
-const MAX_POLL_MS = 3 * 60 * 1000; // 3 minutes polling timeout
-
 /**
- * 5 Simplified Thinking / Processing Steps
+ * 6 Thinking / Processing Steps with smooth realistic progression
  */
 function ProcessingProposalCard({
   elapsedSeconds,
@@ -38,8 +34,11 @@ function ProcessingProposalCard({
   const seconds = elapsedSeconds % 60;
   const elapsedLabel = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
 
-  const isExtractionDone = packageStatus === 'GENERATING' || packageStatus === 'PROCESSED';
-  const isGenerationDone = packageStatus === 'PROCESSED';
+  const st = String(packageStatus || 'PROCESSING').toUpperCase();
+  const isComplete = st === 'COMPLETED' || st === 'PROCESSED';
+  const isGenerating = st === 'GENERATING' || isComplete || elapsedSeconds >= 16;
+  const isAnalyzing = st === 'ANALYZING' || isGenerating || elapsedSeconds >= 3;
+  const isExtracted = ['EXTRACTED', 'ANALYZING', 'GENERATING', 'COMPLETED', 'PROCESSED'].includes(st) || elapsedSeconds >= 3;
 
   return (
     <div className="preparing-proposal-card animate-fade-in">
@@ -80,25 +79,25 @@ function ProcessingProposalCard({
         </div>
 
         {/* Step 3: Extracting Document Content */}
-        <div className={`pipeline-step-item ${isExtractionDone ? 'step-completed' : 'step-active'}`}>
+        <div className={`pipeline-step-item ${isExtracted ? 'step-completed' : 'step-active'}`}>
           <div className="pipeline-step-icon">
-            {isExtractionDone ? <CheckCircle2 size={16} /> : <Loader2 size={16} className="discovery-spin" />}
+            {isExtracted ? <CheckCircle2 size={16} /> : <Loader2 size={16} className="discovery-spin" />}
           </div>
           <div className="pipeline-step-info">
             <span className="pipeline-step-title">3. Extracting Document Content</span>
             <span className="pipeline-step-desc">Extracting text, specifications, and scope notes</span>
           </div>
-          <span className={`pipeline-step-badge ${isExtractionDone ? 'badge-done' : 'badge-active'}`}>
-            {isExtractionDone ? 'Extracted' : 'In Progress'}
+          <span className={`pipeline-step-badge ${isExtracted ? 'badge-done' : 'badge-active'}`}>
+            {isExtracted ? 'Extracted' : 'In Progress'}
           </span>
         </div>
 
         {/* Step 4: Analyzing Customer Requirements */}
-        <div className={`pipeline-step-item ${isExtractionDone ? (isGenerationDone ? 'step-completed' : 'step-active') : 'step-pending'}`}>
+        <div className={`pipeline-step-item ${isGenerating ? 'step-completed' : isAnalyzing ? 'step-active' : 'step-pending'}`}>
           <div className="pipeline-step-icon">
-            {isGenerationDone ? (
+            {isGenerating ? (
               <CheckCircle2 size={16} />
-            ) : isExtractionDone ? (
+            ) : isAnalyzing ? (
               <Loader2 size={16} className="discovery-spin" />
             ) : (
               <Clock size={16} />
@@ -108,17 +107,17 @@ function ProcessingProposalCard({
             <span className="pipeline-step-title">4. Analyzing Customer Requirements</span>
             <span className="pipeline-step-desc">Identifying client goals, pain points, and architecture needs</span>
           </div>
-          <span className={`pipeline-step-badge ${isGenerationDone ? 'badge-done' : isExtractionDone ? 'badge-active' : 'badge-pending'}`}>
-            {isGenerationDone ? 'Done' : isExtractionDone ? 'Analyzing…' : 'Queued'}
+          <span className={`pipeline-step-badge ${isGenerating ? 'badge-done' : isAnalyzing ? 'badge-active' : 'badge-pending'}`}>
+            {isGenerating ? 'Done' : isAnalyzing ? 'Analyzing…' : 'Queued'}
           </span>
         </div>
 
         {/* Step 5: Generating Proposal */}
-        <div className={`pipeline-step-item ${packageStatus === 'GENERATING' ? 'step-active' : isGenerationDone ? 'step-completed' : 'step-pending'}`}>
+        <div className={`pipeline-step-item ${isComplete ? 'step-completed' : isGenerating ? 'step-active' : 'step-pending'}`}>
           <div className="pipeline-step-icon">
-            {isGenerationDone ? (
+            {isComplete ? (
               <CheckCircle2 size={16} />
-            ) : packageStatus === 'GENERATING' ? (
+            ) : isGenerating ? (
               <Loader2 size={16} className="discovery-spin" />
             ) : (
               <Clock size={16} />
@@ -128,22 +127,22 @@ function ProcessingProposalCard({
             <span className="pipeline-step-title">5. Generating Proposal</span>
             <span className="pipeline-step-desc">Structuring deliverables, executive summary, and solutions</span>
           </div>
-          <span className={`pipeline-step-badge ${isGenerationDone ? 'badge-done' : packageStatus === 'GENERATING' ? 'badge-active' : 'badge-pending'}`}>
-            {isGenerationDone ? 'Ready' : packageStatus === 'GENERATING' ? 'Generating…' : 'Queued'}
+          <span className={`pipeline-step-badge ${isComplete ? 'badge-done' : isGenerating ? 'badge-active' : 'badge-pending'}`}>
+            {isComplete ? 'Ready' : isGenerating ? 'Generating…' : 'Queued'}
           </span>
         </div>
 
         {/* Step 6: Finalizing Proposal */}
-        <div className={`pipeline-step-item ${isGenerationDone ? 'step-completed' : 'step-pending'}`}>
+        <div className={`pipeline-step-item ${isComplete ? 'step-completed' : 'step-pending'}`}>
           <div className="pipeline-step-icon">
-            {isGenerationDone ? <CheckCircle2 size={16} /> : <Clock size={16} />}
+            {isComplete ? <CheckCircle2 size={16} /> : <Clock size={16} />}
           </div>
           <div className="pipeline-step-info">
             <span className="pipeline-step-title">6. Finalizing Proposal</span>
             <span className="pipeline-step-desc">Publishing solution proposal and preparing interactive view</span>
           </div>
-          <span className={`pipeline-step-badge ${isGenerationDone ? 'badge-done' : 'badge-pending'}`}>
-            {isGenerationDone ? 'Published' : 'Queued'}
+          <span className={`pipeline-step-badge ${isComplete ? 'badge-done' : 'badge-pending'}`}>
+            {isComplete ? 'Published' : 'Queued'}
           </span>
         </div>
       </div>
@@ -181,7 +180,7 @@ function ProposalResultCard({
   const fileCount = proposal?.content?.sources?.length || discoveryPackage?.files?.length || 1;
   const createdAt = proposal?.created_at ? formatDate(proposal.created_at) : formatDate();
   const status = proposal?.status || 'Draft';
-  const targetUrl = proposal?.generated_url || proposal?.slate_url || `https://spikra-ai-proposal-698386704.development.catalystserverless.com/proposal/api?resource=view&proposal_id=${proposalId}`;
+  const targetUrl = proposal?.proposal_url || proposal?.generated_url || proposal?.slate_url || (proposalId && proposalId !== '—' ? `https://spikra-customer-prop-msdrrgbk.onslate.com/?proposal_id=${proposalId}` : null);
 
   return (
     <div className="proposal-result-card animate-fade-in">
@@ -218,19 +217,21 @@ function ProposalResultCard({
       </div>
 
       <div className="proposal-result-actions">
-        <motion.button
-          type="button"
-          className="btn-open-proposal"
-          onClick={() => {
-            console.log(`[Workspace 2 Proposal API] 🌐 Opening proposal URL:`, targetUrl);
-            window.open(targetUrl, '_blank', 'noopener,noreferrer');
-          }}
-          whileHover={{ scale: 1.02, y: -1 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          <ArrowUpRight size={17} />
-          <span>Open Proposal</span>
-        </motion.button>
+        {targetUrl && (
+          <motion.button
+            type="button"
+            className="btn-open-proposal"
+            onClick={() => {
+              console.log(`[Workspace 2 Proposal API] 🌐 Opening proposal URL:`, targetUrl);
+              window.open(targetUrl, '_blank', 'noopener,noreferrer');
+            }}
+            whileHover={{ scale: 1.02, y: -1 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <ArrowUpRight size={17} />
+            <span>Open Proposal</span>
+          </motion.button>
+        )}
 
         {onViewDetails && (
           <button
@@ -262,11 +263,7 @@ function ProposalResultCard({
   );
 }
 
-export default function CreateProposal({
-  onNavigate,
-  onViewProposal,
-  onToast
-}) {
+export default function CreateProposal({ onNavigate, onViewProposal, onToast }) {
   const [step, setStep] = useState('discovery'); // 'discovery' | 'review' | 'processing' | 'result'
   const [discoveryPackage, setDiscoveryPackage] = useState(null);
   const [generatedProposal, setGeneratedProposal] = useState(null);
@@ -274,7 +271,6 @@ export default function CreateProposal({
   const [isTakingLong, setIsTakingLong] = useState(false);
   const [packageStatus, setPackageStatus] = useState('PROCESSING');
 
-  const pollAbortRef = useRef(null);
   const timerRef = useRef(null);
 
   const startTimer = () => {
@@ -296,14 +292,11 @@ export default function CreateProposal({
   useEffect(() => {
     return () => {
       stopTimer();
-      // Stop any in-flight polling if the salesperson navigates away mid-generation.
-      if (pollAbortRef.current) pollAbortRef.current.abort();
     };
   }, []);
 
   const handleBackToProposals = () => {
     stopTimer();
-    if (pollAbortRef.current) pollAbortRef.current.abort();
     if (onNavigate) onNavigate('proposal', 'proposal-list');
   };
 
@@ -314,62 +307,6 @@ export default function CreateProposal({
 
   const handlePackageUpdated = (pkg) => {
     setDiscoveryPackage(pkg);
-  };
-
-  const pollForProposal = async (packageId, signal) => {
-    const start = Date.now();
-
-    while (!signal.aborted) {
-      const elapsed = Math.floor((Date.now() - start) / 1000);
-
-      if (elapsed >= MAX_POLL_MS / 1000) {
-        setIsTakingLong(true);
-      }
-
-      console.log(`[Workspace 2 Proposal API] 📡 Polling status (elapsed ${elapsed}s): GET /proposal/discovery?package_id=${packageId}`);
-      let pkgRes;
-      try {
-        pkgRes = await getDiscoveryPackage(packageId, signal);
-      } catch (err) {
-        if (signal.aborted) return null;
-        console.warn(`[Workspace 2 Proposal API] Polling warning:`, err.message);
-      }
-
-      const pkgStatus = pkgRes?.package?.status;
-      if (pkgStatus) {
-        console.log(`[Workspace 2 Proposal API] 📊 Backend status: ${pkgStatus}`);
-        setPackageStatus(pkgStatus);
-      }
-
-      if (pkgStatus === 'FAILED') {
-        stopTimer();
-        throw new Error('Discovery package processing failed.');
-      }
-
-      if (pkgStatus === 'PROCESSED') {
-        console.log(`[Workspace 2 Proposal API] 🔍 Package is PROCESSED! Fetching generated proposal: GET /proposal/api?resource=proposals&package_id=${packageId}`);
-        let proposalsRes;
-        try {
-          proposalsRes = await listProposals(packageId, signal);
-        } catch (err) {
-          if (signal.aborted) return null;
-          proposalsRes = null;
-        }
-        const proposal = proposalsRes?.proposals?.[0];
-        if (proposal) {
-          console.log(`[Workspace 2 Proposal API] 🎉 Proposal ready!`, proposal);
-          stopTimer();
-          setGeneratedProposal(proposal);
-          setStep('result');
-          if (onToast) onToast('Proposal generated successfully.', 'success', 5000);
-          return proposal;
-        }
-      }
-
-      await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
-    }
-
-    return null;
   };
 
   // Direct 1-click generate from the intake page: package was just created
@@ -383,31 +320,27 @@ export default function CreateProposal({
     const packageId = pkg.package_id;
     console.log(`[Workspace 2 Proposal API] 🚀 Initiating proposal generation for package: ${packageId}`);
 
-    processDiscoveryPackage(packageId)
-      .then((res) => {
-        console.log(`[Workspace 2 Proposal API] ✅ Process trigger acknowledged:`, res);
-      })
-      .catch((err) => {
-        console.warn(`[Workspace 2 Proposal API] Process call background notice (polling active):`, err.message);
-      });
-
-    const controller = new AbortController();
-    pollAbortRef.current = controller;
-
     try {
-      await pollForProposal(packageId, controller.signal);
+      const res = await processDiscoveryPackage(packageId);
+      console.log(`[Workspace 2 Proposal API] ✅ Proposal generation complete:`, res);
+      stopTimer();
+      const proposal = res?.proposal || res;
+      setGeneratedProposal(proposal);
+      setStep('result');
+      if (onToast) onToast('Proposal generated successfully.', 'success', 5000);
     } catch (err) {
       stopTimer();
-      if (!controller.signal.aborted) {
-        const message = getFriendlyErrorMessage(err);
-        if (onToast) onToast(message, 'error', 6000);
-        setStep('review');
-      }
+      console.error(`[Workspace 2 Proposal API] Generation error:`, err);
+      const message = getFriendlyErrorMessage(err);
+      if (onToast) onToast(message, 'error', 6000);
+      setStep('review');
     }
   };
 
   const handleGenerate = async () => {
-    const packageId = discoveryPackage.package_id;
+    const packageId = discoveryPackage?.package_id;
+    if (!packageId) return;
+
     setStep('processing');
     startTimer();
     setIsTakingLong(false);
@@ -415,44 +348,25 @@ export default function CreateProposal({
 
     console.log(`[Workspace 2 Proposal API] 🚀 Starting proposal generation for package: ${packageId}`);
 
-    processDiscoveryPackage(packageId)
-      .then((res) => {
-        console.log(`[Workspace 2 Proposal API] ✅ Process trigger acknowledged:`, res);
-      })
-      .catch((err) => {
-        console.warn(`[Workspace 2 Proposal API] Process call background notice (polling active):`, err.message);
-      });
-
-    const controller = new AbortController();
-    pollAbortRef.current = controller;
-
     try {
-      await pollForProposal(packageId, controller.signal);
+      const res = await processDiscoveryPackage(packageId);
+      console.log(`[Workspace 2 Proposal API] ✅ Proposal generation complete:`, res);
+      stopTimer();
+      const proposal = res?.proposal || res;
+      setGeneratedProposal(proposal);
+      setStep('result');
+      if (onToast) onToast('Proposal generated successfully.', 'success', 5000);
     } catch (err) {
       stopTimer();
-      if (!controller.signal.aborted) {
-        const message = getFriendlyErrorMessage(err);
-        if (onToast) onToast(message, 'error', 6000);
-        setStep('review');
-      }
+      console.error(`[Workspace 2 Proposal API] Generation error:`, err);
+      const message = getFriendlyErrorMessage(err);
+      if (onToast) onToast(message, 'error', 6000);
+      setStep('review');
     }
   };
 
   const handleKeepWaiting = () => {
     setIsTakingLong(false);
-    const packageId = discoveryPackage?.package_id;
-    if (!packageId) return;
-
-    const controller = new AbortController();
-    pollAbortRef.current = controller;
-
-    pollForProposal(packageId, controller.signal).catch((err) => {
-      stopTimer();
-      if (!controller.signal.aborted) {
-        if (onToast) onToast(getFriendlyErrorMessage(err), 'error', 6000);
-        setStep('review');
-      }
-    });
   };
 
   return (

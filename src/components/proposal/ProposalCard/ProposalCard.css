@@ -1,257 +1,101 @@
-.proposal-glass-card {
+/* Clean minimal card styling for Workspace 2 Proposals
+   Displays: Business Name, One Detail, View Proposal Link */
+
+.proposal-clean-card {
   position: relative;
   width: 100%;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  box-shadow: 0 8px 20px -8px rgba(11, 25, 44, 0.08);
-  padding: 1.4rem;
+  border-radius: 18px !important;
+  background: rgba(255, 255, 255, 0.92) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  border: 1px solid rgba(226, 232, 240, 0.9) !important;
+  box-shadow: 0 4px 18px -4px rgba(11, 25, 44, 0.07) !important;
+  padding: 1.5rem !important;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  cursor: pointer;
   display: flex;
   flex-direction: column;
-  gap: 1.1rem;
-  cursor: pointer;
+  justify-content: space-between;
+  min-height: 165px;
   overflow: hidden;
-  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
-              box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1),
-              border-color 0.22s ease;
 }
 
-.proposal-glass-card:hover {
-  transform: translateY(-3px);
-}
-
-.proposal-glass-card::before {
-  content: '';
+.proposal-clean-card::before {
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  height: 3.5px;
+  height: 3px;
+  background: linear-gradient(90deg, #FF7A1A, #FF9240);
+  opacity: 0.85;
 }
 
-.proposal-glass-card.tone-approved::before { background: linear-gradient(90deg, #10b981, #6ee7b7); }
-.proposal-glass-card.tone-review::before { background: linear-gradient(90deg, #FF7A1A, #FF9240); }
-.proposal-glass-card.tone-sent::before { background: linear-gradient(90deg, #0052ff, #4d8bff); }
-.proposal-glass-card.tone-draft::before { background: linear-gradient(90deg, #94a3b8, #cbd5e1); }
-
-.proposal-glass-card.tone-approved:hover { box-shadow: 0 16px 32px -10px rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.3); }
-.proposal-glass-card.tone-review:hover { box-shadow: 0 16px 32px -10px rgba(255, 122, 26, 0.22); border-color: rgba(255, 122, 26, 0.35); }
-.proposal-glass-card.tone-sent:hover { box-shadow: 0 16px 32px -10px rgba(0, 82, 255, 0.16); border-color: rgba(0, 82, 255, 0.3); }
-.proposal-glass-card.tone-draft:hover { box-shadow: 0 16px 32px -10px rgba(100, 116, 139, 0.16); border-color: rgba(148, 163, 184, 0.4); }
-
-/* Top Row */
-.proposal-glass-top-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
+.proposal-clean-card:hover {
+  transform: translateY(-3px) !important;
+  border-color: rgba(255, 122, 26, 0.4) !important;
+  box-shadow: 0 14px 30px -8px rgba(255, 122, 26, 0.18) !important;
 }
 
-.proposal-glass-status-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-size: 0.72rem;
-  font-weight: 700;
-  padding: 0.2rem 0.6rem;
-  border-radius: 9999px;
-  background: #f1f5f9;
-  color: #334155;
-  border: 1px solid #cbd5e1;
-}
-
-.proposal-glass-status-pill.approved { background: #ecfdf5; color: #059669; border-color: #a7f3d0; }
-.proposal-glass-status-pill.review { background: #fff7ed; color: #E86A00; border-color: #ffedd5; }
-.proposal-glass-status-pill.sent { background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }
-.proposal-glass-status-pill.draft { background: #f1f5f9; color: #475569; border-color: #cbd5e1; }
-
-.status-dot-sm {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: currentColor;
-  position: relative;
-}
-
-.status-dot-sm::before {
-  content: '';
-  position: absolute;
-  inset: -4px;
-  border-radius: 50%;
-  border: 1.5px solid currentColor;
-  opacity: 0;
-  animation: proposalDotPulse 2.2s cubic-bezier(0.4, 0, 0.3, 1) infinite;
-}
-
-@keyframes proposalDotPulse {
-  0% { transform: scale(0.6); opacity: 0.7; }
-  70% { transform: scale(1.8); opacity: 0; }
-  100% { transform: scale(1.8); opacity: 0; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .status-dot-sm::before { animation: none; }
-}
-
-.proposal-glass-date {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-size: 0.75rem;
-  color: #64748b;
-  font-weight: 500;
-}
-
-/* Identity Row */
-.proposal-glass-identity-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.85rem;
-}
-
-.proposal-glass-avatar {
-  width: 50px;
-  height: 50px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, #0b192c 0%, #1e2e45 100%);
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.05rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  flex-shrink: 0;
-  box-shadow: 0 4px 10px rgba(11, 25, 44, 0.2);
-  border: 1.5px solid rgba(255, 255, 255, 0.3);
-}
-
-.proposal-glass-titles {
+.proposal-clean-content {
   display: flex;
   flex-direction: column;
-  min-width: 0;
-  flex: 1;
-}
-
-.proposal-glass-industry {
-  font-size: 0.7rem;
-  font-weight: 800;
-  color: #D05E00;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-bottom: 0.15rem;
-}
-
-.proposal-glass-title {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #0f172a;
-  line-height: 1.35;
-  margin: 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.proposal-glass-customer-row {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  margin-top: 0.3rem;
-  font-size: 0.78rem;
-  color: #64748b;
-}
-
-.proposal-glass-customer-name {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Deal Value Box */
-.proposal-glass-info-box {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  padding: 0.6rem 0.8rem;
-  display: flex;
-  align-items: center;
   justify-content: space-between;
+  height: 100%;
+  gap: 1.25rem;
 }
 
-.proposal-info-label {
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: #64748b;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+.proposal-clean-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
 }
 
-.proposal-info-value {
-  font-size: 1rem;
+.proposal-clean-business {
+  font-size: 1.12rem;
   font-weight: 800;
-  color: #0052ff;
-  font-feature-settings: 'tnum';
-}
-
-/* Actions */
-.proposal-glass-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.65rem;
-}
-
-.btn-proposal-view,
-.btn-proposal-copy {
-  height: 2.6rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.45rem;
-  border-radius: 10px;
-  font-size: 0.82rem;
-  font-weight: 700;
-  transition: all 0.2s ease;
-}
-
-.btn-proposal-view {
-  background: linear-gradient(135deg, #FF7A1A 0%, #FF9240 100%);
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  box-shadow: 0 3px 12px rgba(255, 122, 26, 0.28);
-  padding: 0 0.95rem;
-  overflow: hidden;
-  font-family: var(--font-family-primary);
-}
-
-.btn-proposal-view:hover {
-  background: linear-gradient(135deg, #E86A00 0%, #FF7A1A 100%);
-  box-shadow: 0 6px 18px rgba(255, 122, 26, 0.38);
-  transform: translateY(-2px);
-}
-
-.btn-proposal-copy {
-  background: #ffffff;
-  border: 1.5px solid #e2e8f0;
-  color: #334155;
-  font-weight: 600;
-}
-
-.btn-proposal-copy span {
+  color: #0f172a;
+  margin: 0;
+  line-height: 1.35;
+  letter-spacing: -0.015em;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-.btn-proposal-copy:hover {
-  background: #ffffff;
-  border-color: #94a3b8;
-  color: #0f172a;
-  transform: translateY(-1px);
+.proposal-clean-detail {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.proposal-clean-actions {
+  display: flex;
+  align-items: center;
+  margin-top: auto;
+}
+
+.proposal-clean-actions .btn-proposal-view {
+  width: 100%;
+  height: 2.55rem;
+  background: linear-gradient(135deg, #FF7A1A 0%, #FF9240 100%) !important;
+  color: #ffffff !important;
+  border-radius: 10px !important;
+  box-shadow: 0 3px 12px rgba(255, 122, 26, 0.25) !important;
+  font-size: 0.85rem !important;
+  font-weight: 700 !important;
+  cursor: pointer;
+  transition: all 0.2s ease !important;
+  border: none !important;
+}
+
+.proposal-clean-actions .btn-proposal-view:hover {
+  background: linear-gradient(135deg, #E86A00 0%, #FF7A1A 100%) !important;
+  box-shadow: 0 6px 18px rgba(255, 122, 26, 0.35) !important;
+  transform: translateY(-1px) !important;
 }
