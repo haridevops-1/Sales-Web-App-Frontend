@@ -51,8 +51,8 @@ async function requestJson(path, { method = 'GET', body, timeoutMs = 45000, sign
   // Only the AI-triggering endpoints get a hard call cap, to avoid duplicate generation
   // requests for the same package - everything else (status/list/read calls, polled and
   // refreshed repeatedly across a normal session) must stay uncapped.
-  const isAiOperation = path.includes('/processor/process') || path.includes('/agent') || path.includes('/session');
-  const maxCalls = isAiOperation ? 1 : Infinity;
+  // Strictly single call limit across all endpoints with zero retries
+  const maxCalls = 1;
   const paramKey = body ? (body.package_id || body.proposal_id || JSON.stringify(body).slice(0, 80)) : null;
   const apiKey = getApiKey(method, path, paramKey);
 

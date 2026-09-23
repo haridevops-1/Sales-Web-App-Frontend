@@ -1,13 +1,20 @@
 /**
- * Centralized API Call Guard & Circuit Breaker
+ * Centralized API Call Guard & Global Circuit Breaker
  * 
- * Guarantees that:
- * 1. Every API is called at most once (or within its strict limit).
- * 2. If an API call fails once, it is permanently blocked from being called again
- *    (preventing repeated API calls and unwanted charges).
- * 3. Concurrent duplicate in-flight requests are blocked/deduplicated.
- * 4. Zero automatic retries are allowed anywhere in the application.
+ * Strict Guarantees:
+ * 1. ZERO automatic retries or fallback API calls anywhere in the application.
+ * 2. Every API is called at most ONCE.
+ * 3. GLOBAL APPLICATION EMERGENCY STOP:
+ *    If ANY single API call fails, the entire application halts all further API
+ *    traffic immediately and permanently. No secondary requests, no fallback
+ *    URLs, no polling loops, and no repeat calls can reach the network.
+ * 4. Concurrent duplicate in-flight requests are blocked/deduplicated.
  */
+
+// Global emergency stop flag
+let isGlobalApplicationHalted = false;
+let globalHaltReason = null;
+const GLOBAL_HALT_KEY = "spikra_app_permanently_halted";
 
 // In-memory registry of failed calls
 const failedKeys = new Set();
@@ -22,9 +29,62 @@ const callCounts = new Map();
 const inFlightPromises = new Map();
 
 // Session storage prefix to persist failure locks across component remounts
-const STORAGE_PREFIX = 'spikra_api_failed_';
-const COUNT_PREFIX = 'spikra_api_count_';
-const FAILED_ID_PREFIX = 'spikra_failed_id_';
+const STORAGE_PREFIX = "spikra_api_failed_";
+const COUNT_PREFIX = "spikra_api_count_";
+const FAILED_ID_PREFIX = "spikra_failed_id_";
+
+/**
+ * Check if the entire application has been halted due to any API failure.
+ * @returns {boolean} True if application is halted
+ */
+export function isAppHalted() {
+  if (isGlobalApplicationHalted) return true;
+  try {
+    if (typeof sessionStorage !== "undefined") {
+      const stored = sessionStorage.getItem(GLOBAL_HALT_KEY);
+      if (stored) {
+        isGlobalApplicationHalted = true;
+        globalHaltReason = stored;
+        return true;
+      }
+    }
+  } catch {}
+  return false;
+}
+
+/**
+ * Get the reason for the global application halt.
+ * @returns {string|null}
+ */
+export function getAppHaltReason() {
+  if (!globalHaltReason) {
+    try {
+      if (typeof sessionStorage !== "undefined") {
+        globalHaltReason = sessionStorage.getItem(GLOBAL_HALT_KEY);
+      }
+    } catch {}
+  }
+  return globalHaltReason;
+}
+
+/**
+ * Trip the Global Circuit Breaker immediately halting the entire application.
+ * @param {Error|any} error - The error that caused the halt
+ * @param {string} [triggerKey=""] - Operation key that failed
+ */
+export function tripGlobalCircuitBreaker(error, triggerKey = "") {
+  isGlobalApplicationHalted = true;
+  globalHaltReason = error?.message || "An API operation failed";
+  try {
+    if (typeof sessionStorage !== "undefined") {
+      sessionStorage.setItem(GLOBAL_HALT_KEY, `${triggerKey ? "[" + triggerKey + "] " : ""}${globalHaltReason}`);
+    }
+  } catch {}
+  console.error(
+    `[API Guard EMERGENCY STOP] Application-wide halt triggered by "${triggerKey}". ZERO subsequent API calls will be made.`,
+    error
+  );
+}
 
 /**
  * Generate a consistent unique key for an API call.
@@ -33,19 +93,18 @@ const FAILED_ID_PREFIX = 'spikra_failed_id_';
  * @param {string|null} [paramIdentifier] - Optional unique identifier (e.g. documentId, projectId, packageId)
  * @returns {string} Unique operation key
  */
-export function getApiKey(method = 'GET', endpoint = '', paramIdentifier = null) {
+export function getApiKey(method = "GET", endpoint = "", paramIdentifier = null) {
   const cleanMethod = String(method).toUpperCase();
-  // Strip origin and query timestamps for consistent keying
   let cleanEndpoint = String(endpoint).trim();
   try {
-    if (cleanEndpoint.startsWith('http')) {
+    if (cleanEndpoint.startsWith("http")) {
       const urlObj = new URL(cleanEndpoint);
       cleanEndpoint = urlObj.pathname;
     } else {
-      cleanEndpoint = cleanEndpoint.split('?')[0];
+      cleanEndpoint = cleanEndpoint.split("?")[0];
     }
   } catch {
-    cleanEndpoint = cleanEndpoint.split('?')[0];
+    cleanEndpoint = cleanEndpoint.split("?")[0];
   }
 
   if (paramIdentifier) {
@@ -62,13 +121,11 @@ export function getApiKey(method = 'GET', endpoint = '', paramIdentifier = null)
 export function hasApiFailed(key) {
   if (failedKeys.has(key)) return true;
   try {
-    if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem(`${STORAGE_PREFIX}${key}`)) {
+    if (typeof sessionStorage !== "undefined" && sessionStorage.getItem(`${STORAGE_PREFIX}${key}`)) {
       failedKeys.add(key);
       return true;
     }
-  } catch {
-    // sessionStorage might be restricted in some environments
-  }
+  } catch {}
   return false;
 }
 
@@ -80,7 +137,7 @@ export function hasApiFailed(key) {
 export function getApiCallCount(key) {
   let count = callCounts.get(key) || 0;
   try {
-    if (typeof sessionStorage !== 'undefined') {
+    if (typeof sessionStorage !== "undefined") {
       const stored = parseInt(sessionStorage.getItem(`${COUNT_PREFIX}${key}`), 10);
       if (!isNaN(stored) && stored > count) {
         count = stored;
@@ -100,29 +157,28 @@ export function getApiCallCount(key) {
 export function markApiAsFailed(key, error) {
   failedKeys.add(key);
   try {
-    if (typeof sessionStorage !== 'undefined') {
+    if (typeof sessionStorage !== "undefined") {
       sessionStorage.setItem(`${STORAGE_PREFIX}${key}`, JSON.stringify({
         timestamp: Date.now(),
-        message: error?.message || 'Failed'
+        message: error?.message || "Failed"
       }));
     }
   } catch {}
 
-  // Extract and permanently mark any entity identifier in the key (e.g. documentId, projectId)
-  const parts = String(key).split(':');
+  const parts = String(key).split(":");
   if (parts.length > 2) {
-    const identifier = parts.slice(2).join(':').trim();
+    const identifier = parts.slice(2).join(":").trim();
     if (identifier) {
       failedIdentifiers.add(identifier);
       try {
-        if (typeof sessionStorage !== 'undefined') {
-          sessionStorage.setItem(`${FAILED_ID_PREFIX}${identifier}`, '1');
+        if (typeof sessionStorage !== "undefined") {
+          sessionStorage.setItem(`${FAILED_ID_PREFIX}${identifier}`, "1");
         }
       } catch {}
     }
   }
 
-  console.error(`[API Guard] Circuit broken: "${key}" failed and is permanently locked from repeating.`, error?.message);
+  console.error(`[API Guard] Circuit broken: "${key}" failed and is permanently locked.`, error?.message);
 }
 
 /**
@@ -134,7 +190,7 @@ export function incrementApiCallCount(key) {
   const next = current + 1;
   callCounts.set(key, next);
   try {
-    if (typeof sessionStorage !== 'undefined') {
+    if (typeof sessionStorage !== "undefined") {
       sessionStorage.setItem(`${COUNT_PREFIX}${key}`, String(next));
     }
   } catch {}
@@ -143,42 +199,39 @@ export function incrementApiCallCount(key) {
 
 /**
  * Validate whether an API call is permitted to execute.
- * Throws an Error if the API has previously failed or reached its call limit.
+ * Throws an Error if the global application is halted, if the API has failed, or reached its call limit.
  * 
  * @param {string} key - Operation key
- * @param {number} [maxAllowed=1] - Maximum allowed executions (default 1)
+ * @param {number} [maxAllowed=1] - Maximum allowed executions (strictly 1 by default)
  */
 export function assertCanCallApi(key, maxAllowed = 1) {
+  // 0. GLOBAL APPLICATION HALT: If ANY API has failed, stop the whole application instantly!
+  if (isAppHalted()) {
+    const haltMsg = `[Application Halted] All API activity has been permanently stopped due to an earlier failure: ${getAppHaltReason() || "API failed"}. No further network requests will be executed.`;
+    console.error(haltMsg);
+    throw new Error(haltMsg);
+  }
+
   // 1. Check if this exact operation has previously failed
   if (hasApiFailed(key)) {
-    const errorMsg = `[API Guard Blocked] Operation "${key}" previously failed. Subsequent calls are permanently blocked to prevent recurring charges.`;
+    const errorMsg = `[API Guard Blocked] Operation "${key}" previously failed. Subsequent calls are permanently blocked.`;
     console.warn(errorMsg);
     throw new Error(errorMsg);
   }
 
   // 2. Check if the entity identifier within this key has previously encountered a failure
-  const parts = String(key).split(':');
+  const parts = String(key).split(":");
   if (parts.length > 2) {
-    const identifier = parts.slice(2).join(':').trim();
-    if (identifier && (failedIdentifiers.has(identifier) || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem(`${FAILED_ID_PREFIX}${identifier}`)))) {
+    const identifier = parts.slice(2).join(":").trim();
+    if (identifier && (failedIdentifiers.has(identifier) || (typeof sessionStorage !== "undefined" && sessionStorage.getItem(`${FAILED_ID_PREFIX}${identifier}`)))) {
       const errorMsg = `[API Guard Blocked] Entity "${identifier}" encountered a previous failure. All operations for this entity are stopped.`;
       console.warn(errorMsg);
       throw new Error(errorMsg);
     }
   }
 
-  // Hard cap for expensive AI, generation, upload, and processing endpoints: STRICTLY 1 call max
-  const isExpensive = key.includes('/document/analyze') ||
-                      key.includes('/experience/generate') ||
-                      key.includes('/experience/deploy') ||
-                      key.includes('/document/upload') ||
-                      key.includes('/document/process') ||
-                      key.includes('/processor/process') ||
-                      key.includes('/agent') ||
-                      key.includes('/proposal/discovery') ||
-                      key.includes('/process/status');
-
-  const effectiveMax = isExpensive ? 1 : Math.min(maxAllowed, 5);
+  // Strict cap: Every API call is capped at strictly 1 call max
+  const effectiveMax = Math.min(maxAllowed, 1);
 
   // 3. Check if this operation has already reached its strict call limit
   const count = getApiCallCount(key);
@@ -199,7 +252,7 @@ export function assertCanCallApi(key, maxAllowed = 1) {
  * @returns {Promise<any>} The result of callFn
  */
 export async function executeGuardedApiCall(key, callFn, { maxCalls = 1 } = {}) {
-  // Check failure and call limit before attempting
+  // Check global halt, failure, and call limit before attempting any call
   assertCanCallApi(key, maxCalls);
 
   // Check if an identical request is currently in-flight
@@ -216,11 +269,11 @@ export async function executeGuardedApiCall(key, callFn, { maxCalls = 1 } = {}) 
       const result = await callFn();
       return result;
     } catch (err) {
-      // User-initiated explicit cancellation button is not a backend failure
-      if (err?.name === 'CancelledError') {
+      if (err?.name === "CancelledError") {
         throw err;
       }
-      // Record failure permanently: this key is never allowed to be called again!
+      // CRITICAL: Trip global circuit breaker and mark this API as failed immediately
+      tripGlobalCircuitBreaker(err, key);
       markApiAsFailed(key, err);
       throw err;
     } finally {
@@ -236,8 +289,15 @@ export async function executeGuardedApiCall(key, callFn, { maxCalls = 1 } = {}) 
  * Reset all guard memory (useful only for fresh full application reload if needed).
  */
 export function resetApiGuard() {
+  isGlobalApplicationHalted = false;
+  globalHaltReason = null;
   failedKeys.clear();
   failedIdentifiers.clear();
   callCounts.clear();
   inFlightPromises.clear();
+  try {
+    if (typeof sessionStorage !== "undefined") {
+      sessionStorage.removeItem(GLOBAL_HALT_KEY);
+    }
+  } catch {}
 }

@@ -1185,7 +1185,6 @@ export async function getCustomerExperiences(filters = {}, timeoutMs = 30000) {
     ? '/spikra/experience/list'
     : `${directBase}/spikra/experience/list`;
 
-  const fallbackListUrl = primaryCorsUrl;
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -1307,7 +1306,7 @@ export async function getCustomerExperiences(filters = {}, timeoutMs = 30000) {
     throw new Error('Unable to retrieve customer experiences. Please check your network connection.');
   }
   // Read-only list call with strict cap to prevent infinite re-fetching loops
-  }, { maxCalls: 5 });
+  }, { maxCalls: 1 });
 }
 
 // Alias for getCustomerExperiences
