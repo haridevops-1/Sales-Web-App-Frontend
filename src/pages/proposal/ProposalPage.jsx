@@ -144,7 +144,7 @@ export default function ProposalPage({
                 className="btn btn-secondary"
                 onClick={() => load()}
                 disabled={isLoading}
-                title="Refresh customer proposals from Catalyst backend"
+                title="Refresh customer proposals"
               >
                 <span className={isLoading ? 'spinning' : ''}>↻</span>
                 <span>{isLoading ? 'Refreshing...' : 'Refresh'}</span>
@@ -226,7 +226,7 @@ export default function ProposalPage({
             <div className="gen-exp-spinner" style={{ margin: '0 auto 1rem' }} />
             <h3 className="empty-heading">Loading customer proposals...</h3>
             <p className="empty-text">
-              Retrieving live proposals from Zoho Catalyst serverless backend...
+              Retrieving live proposals...
             </p>
           </div>
         ) : error ? (

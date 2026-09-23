@@ -91,216 +91,92 @@
    Preparing / Generating State Card
    ========================================================================== */
 
-.preparing-proposal-card {
-  background: #FFFFFF;
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  border-radius: 20px;
-  box-shadow: 0 20px 40px -15px rgba(11, 25, 44, 0.08), 0 0 0 1px rgba(226, 232, 240, 0.5);
-  padding: 2.5rem;
+/* Mirrors Workspace 1's ProcessingState.css exactly, so the "thinking steps"
+   animation looks identical across both workspaces. */
+.compact-processing-card {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 32px;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 20px;
+  box-shadow: 0 10px 30px -5px rgba(11, 25, 44, 0.06), 0 4px 12px rgba(255, 122, 26, 0.04);
   position: relative;
   overflow: hidden;
 }
 
-.preparing-proposal-card::before {
+.compact-processing-card::before {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  height: 3.5px;
-  background: linear-gradient(90deg, #FF7A1A 0%, #0052FF 100%);
+  height: 3px;
+  background: linear-gradient(90deg, #FF7A1A 0%, #FFC48E 50%, #FF7A1A 100%);
 }
 
-.preparing-header {
+.processing-compact-header {
   display: flex;
-  align-items: flex-start;
-  gap: 1.25rem;
+  align-items: center;
+  gap: 16px;
 }
 
-.preparing-spinner {
-  width: 40px;
-  height: 40px;
-  flex-shrink: 0;
-  border: 3.5px solid #FFEDD5;
+.spinner-orange-glow {
+  width: 38px;
+  height: 38px;
+  border: 3.5px solid #ffedd5;
   border-top-color: #FF7A1A;
   border-radius: 50%;
-  animation: preparingSpin 0.85s linear infinite;
-  margin-top: 0.15rem;
+  animation: preparingSpin 0.8s linear infinite;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 0 14px rgba(255, 122, 26, 0.25);
+}
+
+.spinner-center-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #FF7A1A;
 }
 
 @keyframes preparingSpin {
   to { transform: rotate(360deg); }
 }
 
-.preparing-title {
-  font-family: var(--font-family-display, 'Poppins', sans-serif);
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #0F172A;
-  margin: 0 0 0.35rem 0;
-  letter-spacing: -0.015em;
-}
-
-.preparing-subtitle {
-  font-size: 0.9rem;
-  color: #64748B;
-  margin: 0;
-  line-height: 1.55;
-}
-
-/* ==========================================================================
-   Pipeline Steps Timeline Card
-   ========================================================================== */
-
-.pipeline-steps-card {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  background: #F8FAFC;
-  border: 1px solid #E2E8F0;
-  border-radius: 16px;
-  padding: 1.25rem 1.35rem;
-  margin: 0.35rem 0;
-}
-
-.pipeline-step-item {
-  display: flex;
-  align-items: center;
-  gap: 0.9rem;
-  padding: 0.65rem 0.85rem;
-  border-radius: 12px;
-  transition: all 0.25s ease;
-}
-
-.pipeline-step-item.step-completed {
-  background: rgba(240, 253, 244, 0.7);
-  border: 1px solid rgba(187, 247, 208, 0.6);
-}
-
-.pipeline-step-item.step-active {
-  background: rgba(255, 247, 237, 0.85);
-  border: 1px solid rgba(254, 215, 170, 0.8);
-  box-shadow: 0 4px 12px rgba(255, 122, 26, 0.08);
-}
-
-.pipeline-step-item.step-pending {
-  background: transparent;
-  border: 1px dashed #E2E8F0;
-  opacity: 0.75;
-}
-
-.pipeline-step-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.step-completed .pipeline-step-icon {
-  background: #DCFCE7;
-  color: #16A34A;
-}
-
-.step-active .pipeline-step-icon {
-  background: #FFEDD5;
-  color: #EA580C;
-}
-
-.step-pending .pipeline-step-icon {
-  background: #F1F5F9;
-  color: #94A3B8;
-}
-
-.pipeline-step-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
+.processing-titles {
+  flex-grow: 1;
   min-width: 0;
 }
 
-.pipeline-step-title {
-  font-size: 0.88rem;
-  font-weight: 600;
-  color: #0F172A;
+.processing-main-text {
+  font-family: var(--font-family-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 4px 0;
   letter-spacing: -0.01em;
 }
 
-.pipeline-step-desc {
-  font-size: 0.78rem;
-  color: #64748B;
-  line-height: 1.4;
-}
-
-.pipeline-step-badge {
-  font-size: 0.72rem;
-  font-weight: 700;
-  padding: 0.25rem 0.65rem;
-  border-radius: 9999px;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  flex-shrink: 0;
-}
-
-.badge-done {
-  background: #DCFCE7;
-  color: #15803D;
-}
-
-.badge-active {
-  background: #FFEDD5;
-  color: #C2410C;
-  animation: pulseGlow 1.5s ease-in-out infinite;
-}
-
-.badge-pending {
-  background: #F1F5F9;
-  color: #64748B;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.discovery-spin {
-  animation: spin 0.9s linear infinite;
-  transform-origin: center;
-}
-
-@keyframes pulseGlow {
-  0%, 100% { opacity: 0.85; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.02); }
-}
-
-.pipeline-complete-banner {
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-  padding: 0.75rem 1rem;
-  background: #ECFDF5;
-  border: 1px solid #A7F3D0;
-  border-radius: 12px;
-  color: #065F46;
-  font-size: 0.85rem;
+.processing-active-stage {
+  font-family: var(--font-family-body);
+  font-size: 0.875rem;
+  color: #E86A00;
   font-weight: 600;
-  margin-bottom: 0.5rem;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1);
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.banner-check-icon {
-  color: #10B981;
-  flex-shrink: 0;
+.processing-thinking-wrapper {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 1.15rem 1.35rem;
 }
 
 .preparing-elapsed-row {

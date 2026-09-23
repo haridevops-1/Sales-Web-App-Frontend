@@ -106,7 +106,7 @@ export default function Footer({ onNavigate }) {
             © {new Date().getFullYear()} Spikra Pvt Ltd. All rights reserved.
           </span>
           <span className="footer-tagline">
-            Zoho Premium Partner • ISO 27001 Certified • Catalyst Enterprise Cloud
+            Zoho Premium Partner • ISO 27001 Certified
           </span>
         </div>
       </div>

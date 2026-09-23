@@ -93,7 +93,7 @@ export default function AllExperiences({
                   className="btn btn-secondary"
                   onClick={onRefresh}
                   disabled={isLoading}
-                  title="Refresh customer showcases from Catalyst backend"
+                  title="Refresh customer showcases"
                 >
                   <span className={isLoading ? 'spinning' : ''}>↻</span>
                   <span>{isLoading ? 'Refreshing...' : 'Refresh'}</span>
@@ -176,7 +176,7 @@ export default function AllExperiences({
             <div className="gen-exp-spinner" style={{ margin: '0 auto 1rem' }}></div>
             <h3 className="empty-heading">Loading customer showcases...</h3>
             <p className="empty-text">
-              Retrieving live customer proposals from Zoho Catalyst serverless backend...
+              Retrieving live customer proposals...
             </p>
           </div>
         ) : error ? (

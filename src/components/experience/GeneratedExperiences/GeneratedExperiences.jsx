@@ -49,7 +49,7 @@ export default function GeneratedExperiences({
               Generated Customer Showcases
             </h2>
             <p className="gen-exp-subtitle">
-              Live interactive proposal showcases retrieved dynamically from the Spikra serverless backend.
+              Live interactive proposal showcases, always kept up to date.
             </p>
           </div>
 
@@ -71,7 +71,7 @@ export default function GeneratedExperiences({
                 className="btn-refresh-experiences"
                 onClick={onRefresh}
                 disabled={isLoading}
-                title="Refresh customer experiences from Catalyst backend"
+                title="Refresh customer experiences"
               >
                 <span className={`refresh-icon ${isLoading ? 'spinning' : ''}`}>↻</span>
                 <span>{isLoading ? 'Refreshing...' : 'Refresh'}</span>
@@ -86,7 +86,7 @@ export default function GeneratedExperiences({
             <div className="gen-exp-spinner"></div>
             <h3 className="loading-title">Loading customer experiences...</h3>
             <p className="loading-desc">
-              Retrieving live customer proposals from Zoho Catalyst serverless backend...
+              Retrieving live customer proposals...
             </p>
           </div>
         ) : error ? (
@@ -97,7 +97,7 @@ export default function GeneratedExperiences({
             <p className="error-card-desc">
               {typeof error === 'string'
                 ? error
-                : error?.message || 'A network error occurred while communicating with the Catalyst backend.'}
+                : error?.message || 'A network error occurred. Please try again.'}
             </p>
             {onRefresh && (
               <button

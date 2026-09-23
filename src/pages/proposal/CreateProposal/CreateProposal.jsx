@@ -7,7 +7,6 @@ import {
   ArrowLeft,
   Clock,
   CheckCircle2,
-  Loader2,
   FileText,
   ArrowUpRight,
   Copy,
@@ -18,6 +17,7 @@ import {
   ExternalLink,
   Plus
 } from 'lucide-react';
+import ThinkingState from '@/components/ui/thinking';
 import {
   processDiscoveryPackage,
   runProposalAgent,
@@ -40,34 +40,27 @@ const PIPELINE_STEPS = [
   },
   {
     id: 2,
-    title: 'Creating Session',
-    desc: 'Setting up a secure workspace session',
-    activeBadge: 'Initializing...',
-    doneBadge: 'Ready'
-  },
-  {
-    id: 3,
     title: 'Extracting Content',
     desc: 'Reading text and key information from documents',
     activeBadge: 'Extracting...',
     doneBadge: 'Extracted'
   },
   {
-    id: 4,
+    id: 3,
     title: 'Analyzing Requirements',
     desc: 'Understanding client needs and solution fit',
     activeBadge: 'Analyzing...',
     doneBadge: 'Analyzed'
   },
   {
-    id: 5,
+    id: 4,
     title: 'Building Proposal',
     desc: 'Writing the proposal sections and structure',
     activeBadge: 'Building...',
     doneBadge: 'Built'
   },
   {
-    id: 6,
+    id: 5,
     title: 'Publishing',
     desc: 'Creating a shareable client link',
     activeBadge: 'Publishing...',
@@ -94,57 +87,35 @@ function ProcessingProposalCard({
   const seconds = elapsedSeconds % 60;
   const elapsedLabel = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
 
+  const thinkingRows = PIPELINE_STEPS.map((step) => ({
+    primary: step.title,
+    secondary: step.desc
+  }));
+
   return (
-    <div className="preparing-proposal-card animate-fade-in">
-      <div className="preparing-header">
-        <span className="preparing-spinner" aria-hidden="true" />
-        <div>
-          <h3 className="preparing-title">Generating Solution Proposal...</h3>
-          <p className="preparing-subtitle">
-            Processing <strong>{packageName}</strong>{fileCount > 0 ? ` (${fileCount} document${fileCount === 1 ? '' : 's'})` : ''}. This may take a minute.
-          </p>
+    <div className="compact-processing-card animate-fade-in" aria-live="polite">
+      <div className="processing-compact-header">
+        <div className="spinner-orange-glow">
+          <div className="spinner-center-dot"></div>
+        </div>
+        <div className="processing-titles">
+          <h4 className="processing-main-text">Generating Solution Proposal...</h4>
+          <span className="processing-active-stage">
+            Processing {packageName}{fileCount > 0 ? ` (${fileCount} document${fileCount === 1 ? '' : 's'})` : ''}
+          </span>
         </div>
       </div>
 
-      {isAllComplete && (
-        <div className="pipeline-complete-banner animate-fade-in">
-          <CheckCircle2 size={16} className="banner-check-icon" />
-          <span>All steps completed — redirecting...</span>
-        </div>
-      )}
-
-      {/* Live Pipeline Steps Progress */}
-      <div className="pipeline-steps-card">
-        {PIPELINE_STEPS.map((step, idx) => {
-          const isDone = isAllComplete || idx < activeStepIndex;
-          const isActive = !isAllComplete && idx === activeStepIndex;
-          const isPending = !isAllComplete && idx > activeStepIndex;
-
-          const itemClass = isDone ? 'step-completed' : isActive ? 'step-active' : 'step-pending';
-          const badgeClass = isDone ? 'badge-done' : isActive ? 'badge-active' : 'badge-pending';
-          const badgeText = isDone ? step.doneBadge : isActive ? step.activeBadge : 'Queued';
-
-          return (
-            <div key={step.id} className={`pipeline-step-item ${itemClass}`}>
-              <div className="pipeline-step-icon">
-                {isDone ? (
-                  <CheckCircle2 size={16} />
-                ) : isActive ? (
-                  <Loader2 size={16} className="discovery-spin" />
-                ) : (
-                  <Clock size={16} />
-                )}
-              </div>
-              <div className="pipeline-step-info">
-                <span className="pipeline-step-title">{step.title}</span>
-                <span className="pipeline-step-desc">{step.desc}</span>
-              </div>
-              <span className={`pipeline-step-badge ${badgeClass}`}>
-                {badgeText}
-              </span>
-            </div>
-          );
-        })}
+      <div className="processing-thinking-wrapper">
+        <ThinkingState
+          variant="Steps"
+          activeText="Proposal Generation in Progress"
+          doneText="Proposal Ready to View"
+          rows={thinkingRows}
+          currentStepIndex={activeStepIndex}
+          isWorking={!isAllComplete}
+          defaultExpanded={true}
+        />
       </div>
 
       <div className="preparing-elapsed-row">
@@ -467,15 +438,15 @@ export default function CreateProposal({ onNavigate, onViewProposal, onToast, on
    */
   const cascadeCompleteRemainingSteps = async (currentStep, proposalResult) => {
     // Cascade any remaining steps one-by-one
-    for (let s = Math.max(currentStep, 1); s <= 6; s++) {
+    for (let s = Math.max(currentStep, 1); s <= 5; s++) {
       setActiveStepIndex(s);
-      if (s < 6) {
+      if (s < 5) {
         await new Promise((resolve) => setTimeout(resolve, 280));
       }
     }
 
     setIsAllComplete(true);
-    setActiveStepIndex(6);
+    setActiveStepIndex(5);
 
     await new Promise((resolve) => setTimeout(resolve, 600));
     stopTimers();
@@ -497,14 +468,10 @@ export default function CreateProposal({ onNavigate, onViewProposal, onToast, on
     try {
       // Step 1 active — Validating
       advanceStep(0);
+      const sessionId = packageId; // package_id doubles as the session identifier throughout
 
-      // Step 2 active — Creating Session (package_id doubles as the session identifier;
-      // there is no separate session-creation endpoint on the backend).
+      // Step 2 active — Extracting Content (running agent)
       advanceStep(1);
-      const sessionId = packageId;
-
-      // Step 3 active — Extracting Content (running agent)
-      advanceStep(2);
       console.log('[Workspace 2] Running proposal agent for package:', packageId);
       let agentResult = null;
       try {
@@ -517,16 +484,16 @@ export default function CreateProposal({ onNavigate, onViewProposal, onToast, on
         console.warn('[Workspace 2] Agent notice (non-blocking):', agentErr?.message);
       }
 
-      // Step 4 active — Analyzing / Processing
-      advanceStep(3);
+      // Step 3 active — Analyzing / Processing
+      advanceStep(2);
       console.log('[Workspace 2] Running processor for package:', packageId);
       const res = await processDiscoveryPackage(packageId);
       console.log('[Workspace 2] Processor completed:', res);
 
       const proposalId = res?.proposal_id || res?.proposal?.proposal_id || agentResult?.proposal_id || packageId;
 
-      // Step 5 active — Fetching from Datastore
-      advanceStep(4);
+      // Step 4 active — Fetching from Datastore
+      advanceStep(3);
       let datastoreProposal = null;
       if (proposalId) {
         console.log('[Workspace 2] Fetching proposal from datastore:', proposalId);
@@ -539,8 +506,8 @@ export default function CreateProposal({ onNavigate, onViewProposal, onToast, on
         }
       }
 
-      // Step 6 active — Publishing / Syncing catalog
-      advanceStep(5);
+      // Step 5 active — Publishing / Syncing catalog
+      advanceStep(4);
       console.log('[Workspace 2] Syncing proposals catalog...');
       try {
         const catalog = await listProposals();
@@ -554,7 +521,7 @@ export default function CreateProposal({ onNavigate, onViewProposal, onToast, on
       if (onProposalCreated) onProposalCreated(finalProposal);
 
       // All steps done — cascade to complete
-      await cascadeCompleteRemainingSteps(6, finalProposal);
+      await cascadeCompleteRemainingSteps(5, finalProposal);
     } catch (err) {
       stopTimers();
       console.error('[Workspace 2] Generation error:', err);

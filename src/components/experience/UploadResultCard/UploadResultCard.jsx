@@ -69,36 +69,36 @@ export default function UploadResultCard({
   const isFailed = isAiFailed || isExtractFailed || isGenerationFailed || isDeployFailed;
 
   // Header Title, Caption & Status Pill Label
-  let mainHeading = 'AI Analysis Completed Successfully';
+  let mainHeading = 'Document Analysis Completed Successfully';
   let subCaption = 'Discovery requirements analyzed successfully. Ready to generate customer experience.';
   let mappedStatusText = STATUS_MAPPING.AI_ANALYZED;
 
   if (isPublished) {
     mainHeading = `Customer experience for ${businessName || 'Client'}`;
-    subCaption = 'Customer proposal experience published to Zoho Slate and ready to share.';
+    subCaption = 'Customer proposal experience published and ready to share.';
     mappedStatusText = FUNCTION_5_LABELS.PUBLISHED;
   } else if (isDeployInProgress) {
     mainHeading = `Customer experience for ${businessName || 'Client'}`;
-    subCaption = 'Slate accepted the deployment. The experience is still being built.';
+    subCaption = 'Your proposal is still being built.';
     mappedStatusText = FUNCTION_5_LABELS.IN_PROGRESS;
   } else if (isDeployActive) {
-    mainHeading = 'Publishing Customer Experience to Slate...';
-    subCaption = `Deploying generated interactive proposal for ${businessName || 'Client'} to Zoho Slate hosting.`;
+    mainHeading = 'Publishing Customer Experience...';
+    subCaption = `Deploying generated interactive proposal for ${businessName || 'Client'}.`;
     mappedStatusText = FUNCTION_5_LABELS.DEPLOYING;
   } else if (isDeployFailed) {
-    mainHeading = 'The experience was generated, but it could not be published to Slate.';
+    mainHeading = 'The experience was generated, but it could not be published.';
     subCaption = deployError || 'Customer experience publication failed. Please try again.';
     mappedStatusText = FUNCTION_5_LABELS.FAILED;
   } else if (isGenerated) {
     mainHeading = 'Customer experience generated';
-    subCaption = 'Customer-facing interface created from document content, extracted text, and AI analysis. Stored securely in Stratus.';
+    subCaption = 'Customer-facing interface created from your document content and analysis. Stored securely.';
     mappedStatusText = FUNCTION_5_LABELS.READY_TO_PUBLISH;
   } else if (isGenerationFailed) {
     mainHeading = 'The document was analyzed, but the customer experience could not be generated.';
     subCaption = generationError || 'Experience generation encountered a server or network failure. You can retry the generation below.';
     mappedStatusText = STATUS_MAPPING.FAILED;
   } else if (isAiFailed) {
-    mainHeading = 'Document text was extracted, but AI analysis failed.';
+    mainHeading = 'Document text was extracted, but analysis failed.';
     subCaption = analysisResult?.message || 'Document analysis failed.';
     mappedStatusText = STATUS_MAPPING.FAILED;
   } else if (isExtractFailed) {
@@ -262,8 +262,8 @@ export default function UploadResultCard({
             <span className="spinning-ring"></span>
           </div>
           <div className="banner-text-area">
-            <span className="banner-title">Slate deployment is in progress</span>
-            <span className="banner-desc">Slate accepted the deployment. The experience is still being built.</span>
+            <span className="banner-title">Publishing is in progress</span>
+            <span className="banner-desc">Your proposal is still being built.</span>
           </div>
         </div>
       )}
@@ -273,7 +273,7 @@ export default function UploadResultCard({
         <div className="deployment-notice-banner banner-failed animate-fade-in" role="alert">
           <div className="banner-icon-area">⚠️</div>
           <div className="banner-text-area">
-            <span className="banner-title">The experience was generated, but it could not be published to Slate.</span>
+            <span className="banner-title">The experience was generated, but it could not be published.</span>
             <span className="banner-desc">{deployError}</span>
           </div>
         </div>
@@ -287,7 +287,7 @@ export default function UploadResultCard({
               <span className="published-globe-icon">🌐</span>
               <div>
                 <h4 className="published-h4">Customer experience for {businessName}</h4>
-                <span className="published-subtitle">Live Interactive Proposal on Zoho Slate</span>
+                <span className="published-subtitle">Live Interactive Proposal</span>
               </div>
             </div>
             <div className="badge-live-published">
@@ -313,7 +313,7 @@ export default function UploadResultCard({
                 type="button"
                 className="btn-copy-live-url"
                 onClick={handleCopyUrl}
-                title="Copy live Slate URL"
+                title="Copy live proposal URL"
               >
                 {copiedUrl ? '✓ Copied' : 'Copy Link'}
               </button>
@@ -360,13 +360,13 @@ export default function UploadResultCard({
             {isPublished
               ? 'Customer proposal published'
               : isDeployActive
-              ? 'Publishing to Slate'
+              ? 'Publishing proposal'
               : isDeployFailed
               ? 'Customer experience publication failed'
               : isGenerated
               ? 'Customer experience generated'
               : isGenerationFailed
-              ? 'AI analysis completed • Generation failed'
+              ? 'Analysis completed • Generation failed'
               : !isFailed && analysisResult?.success
               ? 'Ready for proposal generation'
               : 'Processing in progress'}
@@ -385,20 +385,20 @@ export default function UploadResultCard({
               title={
                 !canDeploy
                   ? 'All prerequisites (project ID, document ID, experience ID, business name) must be present.'
-                  : 'Deploy the customer proposal to Zoho Slate'
+                  : 'Deploy the customer proposal'
               }
             >
               {isDeployActive ? (
                 <>
                   <span className="btn-spinner-icon"></span>
-                  <span>Publishing customer experience to Slate...</span>
+                  <span>Publishing customer experience...</span>
                 </>
               ) : isDeployFailed ? (
                 <>
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
                     <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
                   </svg>
-                  <span>Retry Slate Deployment</span>
+                  <span>Retry Publishing</span>
                 </>
               ) : (
                 <>

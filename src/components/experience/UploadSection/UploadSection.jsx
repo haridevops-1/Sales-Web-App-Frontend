@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import './UploadSection.css';
 import UploadDropzone from '../UploadDropzone/UploadDropzone';
 import FilePreview from '../FilePreview/FilePreview';
@@ -40,6 +40,18 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
   // backend job - it just stops this tab from polling; analyzeDocument()'s own in-flight guard is
   // what actually prevents duplicate Agent calls.
   const analysisAbortControllerRef = useRef(null);
+
+  // Guards the Function 6 status poll: a single live timer/abort pair so a slow or
+  // unmounted poll can never keep firing overlapping requests in the background.
+  const statusPollTimerRef = useRef(null);
+  const statusPollAbortRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (statusPollTimerRef.current) clearTimeout(statusPollTimerRef.current);
+      if (statusPollAbortRef.current) statusPollAbortRef.current.abort();
+    };
+  }, []);
 
   const updateStage = (stage) => {
     setUploadStage(stage);
@@ -305,39 +317,52 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
           handleStatusPublished(fn5Result);
         } else {
           // Poll silently while remaining on the ProcessingState screen with Step 5 active!
-          let pollCount = 0;
+          // Each poll waits for the previous one to finish before scheduling the next, so a
+          // slow/timed-out call can never stack up overlapping in-flight requests.
           const maxPolls = 20;
-          const pollTimer = setInterval(async () => {
-            pollCount++;
+          const pollIntervalMs = 2500;
+          const perPollTimeoutMs = 10000;
+
+          const runPoll = async (pollCount) => {
+            const controller = new AbortController();
+            statusPollAbortRef.current = controller;
+
             try {
               const statusResponse = await getProcessStatus({
                 projectId: fn1Result.projectId,
                 documentId: fn1Result.documentId,
-                experienceId: fn4Result.experienceId
+                experienceId: fn4Result.experienceId,
+                timeoutMs: perPollTimeoutMs,
+                signal: controller.signal
               });
 
               const polledUrl = (statusResponse?.experience?.generated_url || '').trim();
               const currentStatus = String(statusResponse?.current_stage || '').toUpperCase();
 
               if (currentStatus === 'PUBLISHED' || polledUrl) {
-                clearInterval(pollTimer);
                 handleStatusPublished(statusResponse);
-              } else if (currentStatus === 'FAILED' || pollCount >= maxPolls) {
-                clearInterval(pollTimer);
-                if (currentStatus === 'FAILED') {
-                  updateStage(UPLOAD_STAGES.FAILED);
-                  if (onError) onError('Publication failed. Please try again.');
-                } else {
-                  handleStatusPublished(statusResponse || fn5Result);
-                }
+                return;
+              }
+              if (currentStatus === 'FAILED') {
+                updateStage(UPLOAD_STAGES.FAILED);
+                if (onError) onError('Publication failed. Please try again.');
+                return;
+              }
+              if (pollCount >= maxPolls) {
+                handleStatusPublished(statusResponse || fn5Result);
+                return;
               }
             } catch (pErr) {
               if (pollCount >= maxPolls) {
-                clearInterval(pollTimer);
                 handleStatusPublished(fn5Result);
+                return;
               }
             }
-          }, 2500);
+
+            statusPollTimerRef.current = setTimeout(() => runPoll(pollCount + 1), pollIntervalMs);
+          };
+
+          runPoll(1);
         }
       } catch (fn5Err) {
         console.error('[Experience Deploy Failed]', fn5Err);
@@ -468,7 +493,7 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
     // 3. Validate that Function 3 completed successfully
     const isF3Complete = analysisResult?.processingStatus === 'COMPLETED' || (analysisResult?.success && analysisResult?.processingStatus !== 'FAILED');
     if (!isF3Complete) {
-      const err = 'AI analysis must complete successfully before generating experience.';
+      const err = 'Analysis must complete successfully before generating experience.';
       setInlineError(err);
       if (onError) onError(err);
       return;
@@ -572,7 +597,7 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
 
     // 4. Check that Function 4 returned GENERATED
     if (experienceResult?.status !== 'GENERATED') {
-      const err = 'Customer experience must be generated before deploying to Slate.';
+      const err = 'Customer experience must be generated before publishing.';
       setInlineError(err);
       if (onError) onError(err);
       return;
@@ -611,11 +636,11 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
       setShowStatusTracker(true);
     } catch (deployErr) {
       console.error('[Function 5 Experience Deploy Failed]', deployErr);
-      const errorMsg = deployErr.message || 'The experience was generated, but it could not be published to Slate.';
+      const errorMsg = deployErr.message || 'The experience was generated, but it could not be published.';
       setDeployError(errorMsg);
       setShowStatusTracker(true);
       if (onError) {
-        onError(`The experience was generated, but it could not be published to Slate. (${errorMsg})`);
+        onError(`The experience was generated, but it could not be published. (${errorMsg})`);
       }
     } finally {
       setIsDeploying(false);

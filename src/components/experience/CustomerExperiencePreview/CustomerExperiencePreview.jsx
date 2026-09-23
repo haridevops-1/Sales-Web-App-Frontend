@@ -55,7 +55,7 @@ export default function CustomerExperiencePreview({
         <div className="preview-status-group">
           <span className={`preview-status-pill ${status.toLowerCase()}`}>
             <span className="status-dot"></span>
-            <span>{status === 'PUBLISHED' ? 'Published on Slate' : status === 'DEPLOYING' ? 'Deploying to Slate' : 'Generated Preview'}</span>
+            <span>{status === 'PUBLISHED' ? 'Published' : status === 'DEPLOYING' ? 'Deploying' : 'Generated Preview'}</span>
           </span>
           <span className="preview-watermark">Spikra Design System • Official Source of Truth</span>
         </div>
@@ -146,7 +146,7 @@ export default function CustomerExperiencePreview({
                 </div>
                 <div className="exp-snap-card">
                   <span className="snap-lbl">Engine Architecture</span>
-                  <span className="snap-val text-orange">Zoho Catalyst</span>
+                  <span className="snap-val text-orange">Enterprise Cloud Platform</span>
                 </div>
                 <div className="exp-snap-card">
                   <span className="snap-lbl">Proposal Status</span>
@@ -368,7 +368,6 @@ export default function CustomerExperiencePreview({
                 <div className="exp-tech-card">
                   <h4 className="exp-tech-title">Technology Stack & Infrastructure</h4>
                   <div className="exp-tech-tags">
-                    <span className="exp-tag-tech"><span className="tech-dot orange"></span>Zoho Catalyst</span>
                     <span className="exp-tag-tech"><span className="tech-dot orange"></span>Serverless Cloud</span>
                     <span className="exp-tag-tech"><span className="tech-dot orange"></span>HTTPS / TLS 1.3</span>
                   </div>

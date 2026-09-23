@@ -242,7 +242,7 @@ export default function Sidebar({
                 </div>
                 <div style={{ fontSize: '11px', color: '#94a3b8', lineHeight: 1.45 }}>
                   <div>● TLS 1.3 End-to-End Encrypted</div>
-                  <div>● Catalyst Enterprise Datastore</div>
+                  <div>● Secure Enterprise Datastore</div>
                   <div>● User: {currentUser?.name || 'Authorized Consultant'}</div>
                 </div>
               </div>

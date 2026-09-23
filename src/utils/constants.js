@@ -49,29 +49,29 @@ export const STATUS_MAPPING = {
   EXTRACTING: 'Extracting document text...',
   EXTRACTED: 'Document text extracted',
   AI_ANALYZING: 'Analyzing document requirements...',
-  AI_ANALYZED: 'AI analysis completed',
+  AI_ANALYZED: 'Analysis completed',
   GENERATING_EXPERIENCE: 'Creating branded customer experience...',
   GENERATED: 'Branded customer experience generated',
-  DEPLOYING: 'Publishing branded experience to Slate...',
+  DEPLOYING: 'Publishing branded experience...',
   PUBLISHED: 'Branded customer experience published',
   FAILED: 'Processing failed',
   // Function 5 specific status labels
   READY_TO_PUBLISH: 'Ready to publish',
-  DEPLOYMENT_IN_PROGRESS: 'Slate deployment is in progress',
+  DEPLOYMENT_IN_PROGRESS: 'Publishing is in progress',
   DEPLOYMENT_FAILED: 'Customer experience publication failed',
   // Backend status aliases
   UPLOADED: 'Document uploaded',
   PROCESSING: 'Analyzing document...',
-  COMPLETED: 'AI analysis completed',
+  COMPLETED: 'Analysis completed',
   RUNNING: 'Analyzing document...'
 };
 
 // Function 5 Slate Deployment Status Labels
 export const FUNCTION_5_LABELS = {
   READY_TO_PUBLISH: 'Ready to publish',
-  DEPLOYING: 'Publishing branded experience to Slate...',
+  DEPLOYING: 'Publishing branded experience...',
   PUBLISHED: 'Branded customer experience published',
-  IN_PROGRESS: 'Slate deployment is in progress',
+  IN_PROGRESS: 'Publishing is in progress',
   FAILED: 'Customer experience publication failed'
 };
 

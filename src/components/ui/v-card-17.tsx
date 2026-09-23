@@ -16,7 +16,7 @@ const defaultContent: Record<string, { description: string; title: string; meta?
   billing: {
     description: "Manage your subscription, invoices, and payment methods for the Spikra sales engine.",
     title: "Billing & Plans",
-    meta: "Zoho Catalyst Serverless Plan (Active)"
+    meta: "Enterprise Plan (Active)"
   },
   notifications: {
     description: "Control how and when you receive proposal approval alerts and digest emails.",
@@ -29,9 +29,9 @@ const defaultContent: Record<string, { description: string; title: string; meta?
     meta: "Hariharan R • Product Consultant"
   },
   security: {
-    description: "Set a strong password, two-factor authentication, and Zoho SSO login keys.",
+    description: "Set a strong password, two-factor authentication, and single sign-on.",
     title: "Security & SSO",
-    meta: "Zoho Enterprise SSO Verified"
+    meta: "Enterprise SSO Verified"
   },
 };
 
