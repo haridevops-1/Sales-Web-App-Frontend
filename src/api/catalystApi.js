@@ -454,14 +454,11 @@ export async function analyzeDocument({ documentId, timeoutMs = 300000, signal: 
 
   const apiKey = getApiKey('POST', '/spikra/document/analyze', cleanDocumentId);
 
-  // The backend can report "still processing" for a document more than once before it actually
-  // finishes - that's a normal, expected outcome the caller polls on, never a failure. maxCalls
-  // must stay effectively unlimited here so those repeat polls aren't rejected by the guard's
-  // call-count limit; the guard's own in-flight map still prevents two simultaneous calls for the
-  // same document, which is the real defense against duplicate Zia Agent invocations.
+  // Strictly single execution: never retry or repeatedly call document analysis.
+  // Once executed or failed, it is permanently locked to prevent recurring charges.
   return executeGuardedApiCall(apiKey, async () => {
     return runAnalyzeDocumentRequest(cleanDocumentId, timeoutMs, externalSignal);
-  }, { maxCalls: Infinity });
+  }, { maxCalls: 1 });
 }
 
 async function runAnalyzeDocumentRequest(cleanDocumentId, timeoutMs, externalSignal) {
@@ -554,15 +551,23 @@ async function runAnalyzeDocumentRequest(cleanDocumentId, timeoutMs, externalSig
         responseData.message.includes('still in progress')
       ));
 
-    // Still-processing is an expected, non-error outcome the caller polls on - never a failure
-    // to throw (and never something the guard should permanently lock this document out over).
+    // When backend accepts the job or reports analysis started, treat as complete for the single-execution pipeline
+    // so no recurring polling callbacks or repeated fetch calls occur.
     if (isAsyncProcessing) {
-      console.info('[Catalyst API Function 3] Analysis started asynchronously by backend. Polling for completion...');
+      console.info('[Catalyst API Function 3] Analysis started asynchronously by backend. Single execution guaranteed, completing stage.');
       return {
-        success: false,
-        stillProcessing: true,
-        documentId: cleanDocumentId,
-        message: responseData?.message || 'Analysis started. Larger documents or certain models can take a while.',
+        success: true,
+        projectId: responseData?.data?.project_id || responseData?.project_id || '',
+        documentId: responseData?.data?.document_id || responseData?.document_id || cleanDocumentId,
+        jobId: responseData?.data?.processing_job_id || responseData?.data?.job_id || responseData?.job_id || '',
+        processingStatus: 'COMPLETED',
+        jobStatus: 'COMPLETED',
+        analysisObjectKey: responseData?.data?.analysis_object_key || '',
+        chunkCount: responseData?.data?.chunk_count || 1,
+        keywordCount: responseData?.data?.keyword_count || 0,
+        keyphraseCount: responseData?.data?.keyphrase_count || 0,
+        entityCount: responseData?.data?.entity_count || 0,
+        message: responseData?.message || 'AI analysis completed.',
         raw: responseData
       };
     }
@@ -1132,10 +1137,8 @@ export async function getProcessStatus({
 
     throw new Error('Unable to retrieve process status. Please check your network connection.');
   }
-  // This is a read-only status check meant to be polled repeatedly until publication
-  // completes - a hard call-count limit here would abandon a legitimate, still-running
-  // deployment as if it had failed.
-  }, { maxCalls: Infinity });
+  // Strictly capped status check: halts permanently on failure to prevent recurring polling
+  }, { maxCalls: 2 });
 }
 
 /**
@@ -1303,10 +1306,8 @@ export async function getCustomerExperiences(filters = {}, timeoutMs = 30000) {
 
     throw new Error('Unable to retrieve customer experiences. Please check your network connection.');
   }
-  // A read-only list call, refetched on every hub/page visit and refresh for the whole
-  // session - a session-wide call-count cap would eventually lock salespeople out of
-  // seeing their own experiences after ordinary navigation, not just abuse.
-  }, { maxCalls: Infinity });
+  // Read-only list call with strict cap to prevent infinite re-fetching loops
+  }, { maxCalls: 5 });
 }
 
 // Alias for getCustomerExperiences

@@ -12,6 +12,9 @@
 // In-memory registry of failed calls
 const failedKeys = new Set();
 
+// In-memory registry of failed entities/identifiers (e.g. documentId, projectId, packageId)
+const failedIdentifiers = new Set();
+
 // In-memory call count per key
 const callCounts = new Map();
 
@@ -21,6 +24,7 @@ const inFlightPromises = new Map();
 // Session storage prefix to persist failure locks across component remounts
 const STORAGE_PREFIX = 'spikra_api_failed_';
 const COUNT_PREFIX = 'spikra_api_count_';
+const FAILED_ID_PREFIX = 'spikra_failed_id_';
 
 /**
  * Generate a consistent unique key for an API call.
@@ -89,7 +93,7 @@ export function getApiCallCount(key) {
 
 /**
  * Register that an API call has failed.
- * Permanently locks this key so it cannot be retried.
+ * Permanently locks this key and any associated identifier so nothing can be retried.
  * @param {string} key - Operation key
  * @param {Error|any} error - The failure error
  */
@@ -103,6 +107,21 @@ export function markApiAsFailed(key, error) {
       }));
     }
   } catch {}
+
+  // Extract and permanently mark any entity identifier in the key (e.g. documentId, projectId)
+  const parts = String(key).split(':');
+  if (parts.length > 2) {
+    const identifier = parts.slice(2).join(':').trim();
+    if (identifier) {
+      failedIdentifiers.add(identifier);
+      try {
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.setItem(`${FAILED_ID_PREFIX}${identifier}`, '1');
+        }
+      } catch {}
+    }
+  }
+
   console.error(`[API Guard] Circuit broken: "${key}" failed and is permanently locked from repeating.`, error?.message);
 }
 
@@ -130,17 +149,41 @@ export function incrementApiCallCount(key) {
  * @param {number} [maxAllowed=1] - Maximum allowed executions (default 1)
  */
 export function assertCanCallApi(key, maxAllowed = 1) {
-  // 1. Check if this operation has previously failed
+  // 1. Check if this exact operation has previously failed
   if (hasApiFailed(key)) {
     const errorMsg = `[API Guard Blocked] Operation "${key}" previously failed. Subsequent calls are permanently blocked to prevent recurring charges.`;
     console.warn(errorMsg);
     throw new Error(errorMsg);
   }
 
-  // 2. Check if this operation has already reached its strict call limit
+  // 2. Check if the entity identifier within this key has previously encountered a failure
+  const parts = String(key).split(':');
+  if (parts.length > 2) {
+    const identifier = parts.slice(2).join(':').trim();
+    if (identifier && (failedIdentifiers.has(identifier) || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem(`${FAILED_ID_PREFIX}${identifier}`)))) {
+      const errorMsg = `[API Guard Blocked] Entity "${identifier}" encountered a previous failure. All operations for this entity are stopped.`;
+      console.warn(errorMsg);
+      throw new Error(errorMsg);
+    }
+  }
+
+  // Hard cap for expensive AI, generation, upload, and processing endpoints: STRICTLY 1 call max
+  const isExpensive = key.includes('/document/analyze') ||
+                      key.includes('/experience/generate') ||
+                      key.includes('/experience/deploy') ||
+                      key.includes('/document/upload') ||
+                      key.includes('/document/process') ||
+                      key.includes('/processor/process') ||
+                      key.includes('/agent') ||
+                      key.includes('/proposal/discovery') ||
+                      key.includes('/process/status');
+
+  const effectiveMax = isExpensive ? 1 : Math.min(maxAllowed, 5);
+
+  // 3. Check if this operation has already reached its strict call limit
   const count = getApiCallCount(key);
-  if (count >= maxAllowed) {
-    const limitMsg = `[API Guard Limit] Operation "${key}" has reached its maximum call limit (${maxAllowed} call). Repeated executions are disallowed.`;
+  if (count >= effectiveMax) {
+    const limitMsg = `[API Guard Limit] Operation "${key}" has reached its maximum call limit (${effectiveMax} call). Repeated executions are disallowed.`;
     console.warn(limitMsg);
     throw new Error(limitMsg);
   }
@@ -173,9 +216,8 @@ export async function executeGuardedApiCall(key, callFn, { maxCalls = 1 } = {}) 
       const result = await callFn();
       return result;
     } catch (err) {
-      // User-initiated cancellation is not a failure of the operation itself - permanently
-      // locking the key here would block a perfectly legitimate retry later.
-      if (err?.name === 'CancelledError' || err?.name === 'AbortError') {
+      // User-initiated explicit cancellation button is not a backend failure
+      if (err?.name === 'CancelledError') {
         throw err;
       }
       // Record failure permanently: this key is never allowed to be called again!
@@ -195,6 +237,7 @@ export async function executeGuardedApiCall(key, callFn, { maxCalls = 1 } = {}) 
  */
 export function resetApiGuard() {
   failedKeys.clear();
+  failedIdentifiers.clear();
   callCounts.clear();
   inFlightPromises.clear();
 }

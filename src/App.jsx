@@ -348,6 +348,8 @@ export default function App() {
                 onViewProposal={handleViewProposal}
                 onToast={showToast}
                 onProposalCreated={handleProposalCreated}
+                proposalsCount={proposals.length}
+                experiencesCount={experiences.length}
               />
             }
           />

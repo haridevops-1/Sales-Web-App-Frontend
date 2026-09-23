@@ -87,7 +87,7 @@ export default function UploadResultCard({
     mappedStatusText = FUNCTION_5_LABELS.DEPLOYING;
   } else if (isDeployFailed) {
     mainHeading = 'The experience was generated, but it could not be published.';
-    subCaption = deployError || 'Customer experience publication failed. Please try again.';
+    subCaption = deployError || 'Customer experience publication failed. Execution stopped to prevent recurring charges.';
     mappedStatusText = FUNCTION_5_LABELS.FAILED;
   } else if (isGenerated) {
     mainHeading = 'Customer experience generated';
@@ -95,7 +95,7 @@ export default function UploadResultCard({
     mappedStatusText = FUNCTION_5_LABELS.READY_TO_PUBLISH;
   } else if (isGenerationFailed) {
     mainHeading = 'The document was analyzed, but the customer experience could not be generated.';
-    subCaption = generationError || 'Experience generation encountered a server or network failure. You can retry the generation below.';
+    subCaption = generationError || 'Experience generation encountered a server or network failure. Execution stopped to prevent recurring charges.';
     mappedStatusText = STATUS_MAPPING.FAILED;
   } else if (isAiFailed) {
     mainHeading = 'Document text was extracted, but analysis failed.';
@@ -375,13 +375,13 @@ export default function UploadResultCard({
 
         <div className="footer-action-buttons">
           {/* FUNCTION 5 PUBLISH CUSTOMER EXPERIENCE BUTTON (Shown after F4 GENERATED and not yet PUBLISHED) */}
-          {isGenerated && !isPublished && (
+          {isGenerated && !isPublished && !isDeployFailed && (
             <SpikraDotBorderButton
               as="button"
               type="button"
               theme="blue"
               onClick={handleDeployClick}
-              disabled={!canDeploy}
+              disabled={!canDeploy || isDeployActive}
               title={
                 !canDeploy
                   ? 'All prerequisites (project ID, document ID, experience ID, business name) must be present.'
@@ -392,13 +392,6 @@ export default function UploadResultCard({
                 <>
                   <span className="btn-spinner-icon"></span>
                   <span>Publishing customer experience...</span>
-                </>
-              ) : isDeployFailed ? (
-                <>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                    <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-                  </svg>
-                  <span>Retry Publishing</span>
                 </>
               ) : (
                 <>
@@ -435,22 +428,6 @@ export default function UploadResultCard({
                 <span>{copiedUrl ? '✓ Link Copied' : 'Copy Link'}</span>
               </button>
             </>
-          )}
-
-          {/* Retry Generation Button if F4 failed */}
-          {isGenerationFailed && (
-            <SpikraDotBorderButton
-              as="button"
-              type="button"
-              theme="orange"
-              onClick={handleGenerateClick}
-              disabled={isGenerating}
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-              </svg>
-              <span>{isGenerating ? 'Creating experience...' : 'Retry Experience Generation'}</span>
-            </SpikraDotBorderButton>
           )}
 
           {/* Generate Experience CTA if AI analysis completed and not yet generated */}

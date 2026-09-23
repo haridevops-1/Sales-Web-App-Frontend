@@ -1,7 +1,10 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import './CreateProposal.css';
 import DiscoveryUploadCard from '@/components/proposal/DiscoveryUploadCard/DiscoveryUploadCard';
 import DiscoveryPackageReview from '@/components/proposal/DiscoveryPackageReview/DiscoveryPackageReview';
+import QuickStats from '@/components/experience/QuickStats/QuickStats';
+import BlurText from '@/reactbits/BlurText';
+import GradientText from '@/reactbits/GradientText';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft,
@@ -333,7 +336,14 @@ function ProposalResultCard({
   );
 }
 
-export default function CreateProposal({ onNavigate, onViewProposal, onToast, onProposalCreated }) {
+export default function CreateProposal({
+  onNavigate,
+  onViewProposal,
+  onToast,
+  onProposalCreated,
+  proposalsCount = 0,
+  experiencesCount = 0
+}) {
   const [step, setStep] = useState('discovery'); // 'discovery' | 'review' | 'processing' | 'result'
   const [discoveryPackage, setDiscoveryPackage] = useState(null);
   const [generatedProposal, setGeneratedProposal] = useState(null);
@@ -345,6 +355,27 @@ export default function CreateProposal({ onNavigate, onViewProposal, onToast, on
   const timerRef = useRef(null);
   const isGeneratingRef = useRef(false);
   const executedPackagesRef = useRef(new Set());
+
+  // Compute live proposal and showcase counts matching Workspace 1
+  const effectiveProposalsCount = useMemo(() => {
+    if (typeof proposalsCount === 'number' && proposalsCount > 0) return proposalsCount;
+    try {
+      const stored = JSON.parse(localStorage.getItem('spikra_proposals') || '[]');
+      return Array.isArray(stored) ? stored.length : 0;
+    } catch {
+      return proposalsCount || 0;
+    }
+  }, [proposalsCount]);
+
+  const effectiveExperiencesCount = useMemo(() => {
+    if (typeof experiencesCount === 'number' && experiencesCount > 0) return experiencesCount;
+    try {
+      const stored = JSON.parse(localStorage.getItem('spikra_experiences') || '[]');
+      return Array.isArray(stored) ? stored.length : 0;
+    } catch {
+      return experiencesCount || 0;
+    }
+  }, [experiencesCount]);
 
   const stopTimers = () => {
     if (timerRef.current) {
@@ -566,28 +597,45 @@ export default function CreateProposal({ onNavigate, onViewProposal, onToast, on
   return (
     <div className="create-proposal-page animate-fade-in">
       <div className="container create-proposal-container">
-        {/* Hero Header - matches Workspace 1 style */}
-        <section className="proposal-hero-section" aria-labelledby="proposal-hero-heading">
-          <motion.h1
-            id="proposal-hero-heading"
-            className="proposal-hero-title"
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: 'easeOut' }}
+        {/* Back Link Row matching Workspace 1 */}
+        <div className="create-proposal-back-row">
+          <button
+            type="button"
+            className="btn-back-link"
+            onClick={() => onNavigate && onNavigate('workspace', 'hub')}
           >
-            Turn Discovery Documents Into a
-            <span className="proposal-hero-title-accent"> Professional Proposal</span>
-          </motion.h1>
+            <ArrowLeft size={15} className="btn-back-arrow" />
+            <span>Back to Sales Workspace</span>
+          </button>
+        </div>
 
-          <motion.p
-            className="proposal-hero-subtext"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: 'easeOut', delay: 0.08 }}
-          >
-            Upload customer discovery documents and materials to generate a structured, client-ready solution proposal.
-          </motion.p>
+        {/* Hero Header - centered and animated matching Workspace 1 exactly */}
+        <section className="proposal-hero-section" aria-labelledby="proposal-hero-heading">
+          <div className="proposal-hero-container">
+            <h1 id="proposal-hero-heading" className="proposal-hero-title">
+              <BlurText
+                text="Turn Discovery Documents Into a"
+                className="proposal-hero-title-blur"
+                delay={70}
+                animateBy="words"
+                direction="top"
+              />
+              <GradientText className="proposal-hero-title-accent" animationSpeed={5}>
+                Professional Proposal
+              </GradientText>
+            </h1>
+
+            <p className="proposal-hero-subtext">
+              Upload customer discovery documents and materials to generate a structured, client-ready solution proposal.
+            </p>
+          </div>
         </section>
+
+        {/* Quick Stats Cards matching Workspace 1 */}
+        <QuickStats
+          totalCount={effectiveProposalsCount}
+          publishedCount={effectiveExperiencesCount}
+        />
 
         {/* Body: Discovery -> Review -> Processing -> Result */}
         <div className="create-proposal-body">

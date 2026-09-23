@@ -12,8 +12,7 @@ import {
   Plus,
   Globe,
   Link2,
-  FileCheck2,
-  RotateCcw
+  FileCheck2
 } from 'lucide-react';
 
 const formatCleanText = (text) => {
@@ -160,27 +159,17 @@ export default function ProcessStatus({
     }
 
     isMountedRef.current = true;
-    isPollingRef.current = true;
+    isPollingRef.current = false;
     pollCountRef.current = 0;
 
+    // Strictly single status check on mount - zero interval timers or recurring callbacks
     pollProcessStatus();
-
-    // Guarded interval: max 3 polls total, then automatically halts
-    timerRef.current = setInterval(() => {
-      pollCountRef.current += 1;
-      if (pollCountRef.current >= 3) {
-        if (timerRef.current) {
-          clearInterval(timerRef.current);
-          timerRef.current = null;
-        }
-      }
-      pollProcessStatus();
-    }, 4000);
 
     return () => {
       isMountedRef.current = false;
       if (timerRef.current) {
         clearInterval(timerRef.current);
+        timerRef.current = null;
       }
     };
   }, [actualProjectId, actualDocumentId, actualExperienceId, propGeneratedUrl, pollProcessStatus]);
@@ -198,13 +187,6 @@ export default function ProcessStatus({
     if (generatedUrl) {
       window.open(generatedUrl, '_blank', 'noopener,noreferrer');
     }
-  };
-
-  const handleRetry = () => {
-    setFetchError(null);
-    isPollingRef.current = true;
-    setCurrentStage('DEPLOYING');
-    pollProcessStatus();
   };
 
   const isPublished = currentStage === 'PUBLISHED' || Boolean(generatedUrl);
@@ -380,18 +362,10 @@ export default function ProcessStatus({
             </div>
 
             <div className="clean-actions-row">
-              <button
-                type="button"
-                className="btn-primary-view-proposal"
-                onClick={handleRetry}
-              >
-                <RotateCcw size={15} />
-                <span>Retry Generation</span>
-              </button>
               {onUploadAnother && (
                 <button
                   type="button"
-                  className="btn-secondary-create-another"
+                  className="btn-primary-view-proposal"
                   onClick={onUploadAnother}
                 >
                   <Plus size={15} />

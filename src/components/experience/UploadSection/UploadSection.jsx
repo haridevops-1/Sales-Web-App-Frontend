@@ -258,39 +258,16 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
       const analysisController = new AbortController();
       analysisAbortControllerRef.current = analysisController;
 
-      // Analysis can genuinely take longer than one request for larger documents - the backend
-      // reports { stillProcessing: true } rather than a real result in that case, and this polls
-      // the same endpoint every ~7s until it reports done, fails for real, or the user cancels.
-      const pollIntervalMs = 7000;
-      const maxAttempts = 40; // ~5 minutes, matching the single-request timeout used elsewhere
+      // Strictly single execution: call analyzeDocument once with no retries or recurring polling loops
+      const result = await analyzeDocument({
+        documentId: fn1Result.documentId,
+        signal: analysisController.signal
+      });
 
-      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-        const result = await analyzeDocument({
-          documentId: fn1Result.documentId,
-          signal: analysisController.signal
-        });
-
-        if (!result?.stillProcessing) {
-          fn3Result = result;
-          break;
-        }
-
-        if (attempt >= maxAttempts) {
-          throw new Error('Document analysis is taking longer than expected. Please try again.');
-        }
-
-        await new Promise((resolve, reject) => {
-          const timer = setTimeout(resolve, pollIntervalMs);
-          const onAbort = () => {
-            clearTimeout(timer);
-            const cancelErr = new Error('Analysis was cancelled.');
-            cancelErr.name = 'CancelledError';
-            reject(cancelErr);
-          };
-          if (analysisController.signal.aborted) onAbort();
-          else analysisController.signal.addEventListener('abort', onAbort, { once: true });
-        });
+      if (!result || result.success === false) {
+        throw new Error(result?.message || 'Document analysis failed.');
       }
+      fn3Result = result;
 
       analysisAbortControllerRef.current = null;
       setAnalysisResult(fn3Result);
@@ -320,7 +297,7 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
       } catch (fn4Err) {
         console.error('[Experience Generation Failed]', fn4Err);
         updateStage(UPLOAD_STAGES.FAILED);
-        if (onError) onError('Proposal generation failed. Please try again.');
+        if (onError) onError('Proposal generation failed. All retries stopped.');
         setIsGenerating(false);
         return;
       } finally {
@@ -342,55 +319,37 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
         setDeploymentResult(fn5Result);
 
         const immediateUrl = (fn5Result?.generatedUrl || fn5Result?.generated_url || '').trim();
-        if (immediateUrl) {
+        if (immediateUrl || fn5Result?.status === 'PUBLISHED') {
           handleStatusPublished(fn5Result);
         } else {
-          // Poll silently while remaining on the ProcessingState screen with Step 5 active!
-          // Guarded status check: maximum 3 checks, and halts immediately on ANY error
-          const maxPolls = 3;
-          const pollIntervalMs = 3000;
-          const perPollTimeoutMs = 10000;
+          // Strictly single status check: zero recurring callbacks or interval polling
+          try {
+            const statusResponse = await getProcessStatus({
+              projectId: fn1Result.projectId,
+              documentId: fn1Result.documentId,
+              experienceId: fn4Result.experienceId,
+              timeoutMs: 15000
+            });
 
-          const runPoll = async (pollCount) => {
-            const controller = new AbortController();
-            statusPollAbortRef.current = controller;
+            const polledUrl = (statusResponse?.experience?.generated_url || '').trim();
+            const currentStatus = String(statusResponse?.current_stage || '').toUpperCase();
 
-            try {
-              const statusResponse = await getProcessStatus({
-                projectId: fn1Result.projectId,
-                documentId: fn1Result.documentId,
-                experienceId: fn4Result.experienceId,
-                timeoutMs: perPollTimeoutMs,
-                signal: controller.signal
-              });
-
-              const polledUrl = (statusResponse?.experience?.generated_url || '').trim();
-              const currentStatus = String(statusResponse?.current_stage || '').toUpperCase();
-
-              if (currentStatus === 'PUBLISHED' || polledUrl) {
-                handleStatusPublished(statusResponse);
-                return;
-              }
-              if (currentStatus === 'FAILED') {
-                updateStage(UPLOAD_STAGES.FAILED);
-                if (onError) onError('Publication failed. Please try again.');
-                return;
-              }
-              if (pollCount >= maxPolls) {
-                handleStatusPublished(statusResponse || fn5Result);
-                return;
-              }
-            } catch (pErr) {
-              console.warn('[UploadSection] Status check halted due to error (no repeat attempts allowed):', pErr?.message);
-              // Halt immediately on error - do NOT reschedule polling
-              handleStatusPublished(fn5Result);
+            if (currentStatus === 'FAILED') {
+              updateStage(UPLOAD_STAGES.FAILED);
+              if (onError) onError('Publication failed. All retries stopped.');
               return;
             }
 
-            statusPollTimerRef.current = setTimeout(() => runPoll(pollCount + 1), pollIntervalMs);
-          };
+            if (currentStatus === 'PUBLISHED' || polledUrl) {
+              handleStatusPublished(statusResponse);
+              return;
+            }
 
-          runPoll(1);
+            handleStatusPublished(statusResponse || fn5Result);
+          } catch (pErr) {
+            console.warn('[UploadSection] Status check notice:', pErr?.message);
+            handleStatusPublished(fn5Result);
+          }
         }
       } catch (fn5Err) {
         console.error('[Experience Deploy Failed]', fn5Err);
