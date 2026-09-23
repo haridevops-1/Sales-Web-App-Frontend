@@ -568,11 +568,7 @@ export default function DiscoveryUploadCard({ onContinue, onGenerate, disabled =
               </>
             ) : (
               <>
-                <span>
-                  {selectedFiles.length > 0
-                    ? `Generate Proposal (${selectedFiles.length} document${selectedFiles.length === 1 ? '' : 's'})`
-                    : 'Generate Proposal'}
-                </span>
+                <span>Generate Proposal</span>
                 <ArrowRight size={16} strokeWidth={2.2} className="btn-arrow-icon" />
               </>
             )}

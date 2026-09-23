@@ -374,55 +374,26 @@ export default function CreateProposal({ onNavigate, onViewProposal, onToast, on
   const [isTakingLong, setIsTakingLong] = useState(false);
 
   const timerRef = useRef(null);
-  const stepProgressionRef = useRef(null);
 
   const stopTimers = () => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
-    if (stepProgressionRef.current) {
-      clearInterval(stepProgressionRef.current);
-      stepProgressionRef.current = null;
-    }
   };
 
-  const startTimers = () => {
+  const startElapsedTimer = () => {
     stopTimers();
     const start = Date.now();
     setElapsedSeconds(0);
-    setActiveStepIndex(0);
-    setIsAllComplete(false);
 
-    // Elapsed timer (1 second ticks)
     timerRef.current = setInterval(() => {
       const elapsed = Math.floor((Date.now() - start) / 1000);
       setElapsedSeconds(elapsed);
-      if (elapsed > 45) {
+      if (elapsed > 90) {
         setIsTakingLong(true);
       }
     }, 1000);
-
-    // Realistic natural step progression timer
-    // Step 0 -> Step 1 at ~2s
-    // Step 1 -> Step 2 at ~4s
-    // Step 2 -> Step 3 at ~7s (Step 3 spinner rotates smoothly)
-    // Step 3 -> Step 4 at ~10s
-    // Step 4 -> Step 5 at ~13s
-    stepProgressionRef.current = setInterval(() => {
-      const elapsed = (Date.now() - start) / 1000;
-      if (elapsed >= 13) {
-        setActiveStepIndex((prev) => Math.max(prev, 5));
-      } else if (elapsed >= 10) {
-        setActiveStepIndex((prev) => Math.max(prev, 4));
-      } else if (elapsed >= 6.8) {
-        setActiveStepIndex((prev) => Math.max(prev, 3));
-      } else if (elapsed >= 3.8) {
-        setActiveStepIndex((prev) => Math.max(prev, 2));
-      } else if (elapsed >= 1.8) {
-        setActiveStepIndex((prev) => Math.max(prev, 1));
-      }
-    }, 400);
   };
 
   useEffect(() => {
@@ -487,53 +458,50 @@ export default function CreateProposal({ onNavigate, onViewProposal, onToast, on
   };
 
   /**
-   * Cascade remaining steps to Done smoothly when backend completes,
-   * guaranteeing all 6 steps are shown completing without abrupt redirection.
+   * Mark a step as complete (API-driven — called after each real API response).
    */
-  const cascadeCompleteRemainingSteps = async (startStep, proposalResult) => {
-    // Stop the natural progression timer
-    if (stepProgressionRef.current) {
-      clearInterval(stepProgressionRef.current);
-      stepProgressionRef.current = null;
-    }
-
-    // Cascade any remaining steps one-by-one so user sees all steps turn Done
-    for (let s = Math.max(startStep, 1); s <= 6; s++) {
-      setActiveStepIndex(s);
-      if (s < 6) {
-        await new Promise((resolve) => setTimeout(resolve, 320));
-      }
-    }
-
-    // Mark 100% complete
-    setIsAllComplete(true);
-    setActiveStepIndex(6);
-
-    // Brief delay to appreciate 100% completed state before showing result card
-    await new Promise((resolve) => setTimeout(resolve, 650));
-    stopTimers();
-    setGeneratedProposal(proposalResult);
-    setStep('result');
-    if (onToast) onToast('Proposal generated and published successfully.', 'success', 5000);
+  const advanceStep = (toIndex) => {
+    setActiveStepIndex(toIndex);
   };
 
   /**
-   * Full 4-API Lifecycle Execution:
-   * 1. createDiscoveryPackage (POST /proposal/discovery) -> already ran in intake
-   * 2. processDiscoveryPackage (POST /proposal/processor/process) -> proposal agent generator
-   * 3. getProposal (GET /proposal/api?resource=proposals&proposal_id=...) -> fetch record from Datastore
-   * 4. listProposals (GET /proposal/api?resource=proposals) -> refresh datastore catalog
+   * Cascade any remaining steps to Done, then show the result card.
    */
+  const cascadeCompleteRemainingSteps = async (currentStep, proposalResult) => {
+    // Cascade any remaining steps one-by-one
+    for (let s = Math.max(currentStep, 1); s <= 6; s++) {
+      setActiveStepIndex(s);
+      if (s < 6) {
+        await new Promise((resolve) => setTimeout(resolve, 280));
+      }
+    }
+
+    setIsAllComplete(true);
+    setActiveStepIndex(6);
+
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    stopTimers();
+    setGeneratedProposal(proposalResult);
+    setStep('result');
+    if (onToast) onToast('Proposal generated successfully.', 'success', 5000);
+  };
+
   const executeProposalGeneration = async (pkg) => {
     const packageId = pkg?.package_id;
     if (!packageId) return;
 
     setStep('processing');
-    startTimers();
+    setActiveStepIndex(0);
+    setIsAllComplete(false);
     setIsTakingLong(false);
+    startElapsedTimer();
 
     try {
-      // Step 1-2: Create a discovery session (proposal-discovery-session-post-api)
+      // Step 1 active — Validating
+      advanceStep(0);
+
+      // Step 2 active — Creating Session
+      advanceStep(1);
       console.log('[Workspace 2] Creating discovery session for package:', packageId);
       let sessionId = null;
       try {
@@ -541,42 +509,49 @@ export default function CreateProposal({ onNavigate, onViewProposal, onToast, on
           customer_name: pkg?.customer_name || pkg?.package_name || ''
         });
         sessionId = sessionRes?.session_id || sessionRes?.data?.session_id || null;
-        console.log('[Workspace 2] Discovery session created. session_id:', sessionId);
+        console.log('[Workspace 2] Session created:', sessionId);
       } catch (sessionErr) {
-        console.warn('[Workspace 2] Session creation notice (non-blocking):', sessionErr?.message);
+        console.warn('[Workspace 2] Session notice (non-blocking):', sessionErr?.message);
       }
 
-      // Step 3-4: Run proposal agent (proposal-agent-api)
+      // Step 3 active — Extracting Content (running agent)
+      advanceStep(2);
       console.log('[Workspace 2] Running proposal agent for package:', packageId);
       let agentResult = null;
       try {
-        agentResult = await runProposalAgent(packageId, sessionId);
-        console.log('[Workspace 2] Proposal agent completed:', agentResult);
+        agentResult = await runProposalAgent(packageId, sessionId, {
+          customer_name: pkg?.customer_name || pkg?.package_name || '',
+          file_names: (pkg?.files || []).map((f) => f.name || f.file_name || '').filter(Boolean)
+        });
+        console.log('[Workspace 2] Agent completed:', agentResult);
       } catch (agentErr) {
         console.warn('[Workspace 2] Agent notice (non-blocking):', agentErr?.message);
       }
 
-      // Step 5: Process via proposal processor (proposal-processor-api)
-      console.log('[Workspace 2] Processing discovery package via processor:', packageId);
+      // Step 4 active — Analyzing / Processing
+      advanceStep(3);
+      console.log('[Workspace 2] Running processor for package:', packageId);
       const res = await processDiscoveryPackage(packageId);
       console.log('[Workspace 2] Processor completed:', res);
 
       const proposalId = res?.proposal_id || res?.proposal?.proposal_id || agentResult?.proposal_id || packageId;
 
-      // Step 6: Fetch proposal record from datastore (proposal-api-get-api)
+      // Step 5 active — Fetching from Datastore
+      advanceStep(4);
       let datastoreProposal = null;
       if (proposalId) {
-        console.log('[Workspace 2] Fetching proposal record from datastore:', proposalId);
+        console.log('[Workspace 2] Fetching proposal from datastore:', proposalId);
         try {
           const fetched = await getProposal(proposalId);
           datastoreProposal = fetched?.proposal || null;
-          console.log('[Workspace 2] Proposal record fetched:', fetched);
+          console.log('[Workspace 2] Proposal fetched:', fetched);
         } catch (fetchErr) {
           console.warn('[Workspace 2] Datastore fetch notice:', fetchErr?.message);
         }
       }
 
-      // Sync proposals catalog
+      // Step 6 active — Publishing / Syncing catalog
+      advanceStep(5);
       console.log('[Workspace 2] Syncing proposals catalog...');
       try {
         const catalog = await listProposals();
@@ -586,13 +561,11 @@ export default function CreateProposal({ onNavigate, onViewProposal, onToast, on
       }
 
       // Normalize and save
-      const finalProposal = saveGeneratedProposal(datastoreProposal || res, pkg);
+      const finalProposal = saveGeneratedProposal(datastoreProposal || agentResult || res, pkg);
+      if (onProposalCreated) onProposalCreated(finalProposal);
 
-      if (onProposalCreated) {
-        onProposalCreated(finalProposal);
-      }
-
-      await cascadeCompleteRemainingSteps(activeStepIndex, finalProposal);
+      // All steps done — cascade to complete
+      await cascadeCompleteRemainingSteps(6, finalProposal);
     } catch (err) {
       stopTimers();
       console.error('[Workspace 2] Generation error:', err);

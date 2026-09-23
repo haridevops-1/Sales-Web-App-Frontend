@@ -290,13 +290,22 @@ export function getDiscoverySession(sessionId, signal) {
 // Proposal Agent (proposal-agent-api)
 // ---------------------------------------------------------------------------
 
-export function runProposalAgent(packageId, sessionId) {
+export function runProposalAgent(packageId, sessionId, extraData = {}) {
   const qs = sessionId
     ? 'package_id=' + encodeURIComponent(packageId) + '&session_id=' + encodeURIComponent(sessionId)
     : 'package_id=' + encodeURIComponent(packageId);
   console.log('[Workspace 2] POST /proposal/agent — ' + qs);
+  const body = {
+    package_id: packageId,
+    discovery_content: extraData.file_names?.length
+      ? 'Discovery package for ' + (extraData.customer_name || 'client') + '. Files: ' + extraData.file_names.join(', ')
+      : 'Discovery package for ' + (extraData.customer_name || 'client'),
+    customer_name: extraData.customer_name || '',
+    ...extraData
+  };
   return requestJson('/proposal/agent?' + qs, {
     method: 'POST',
+    body,
     timeoutMs: 180000
   });
 }
