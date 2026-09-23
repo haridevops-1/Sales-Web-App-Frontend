@@ -343,6 +343,8 @@ export default function CreateProposal({ onNavigate, onViewProposal, onToast, on
   const [isTakingLong, setIsTakingLong] = useState(false);
 
   const timerRef = useRef(null);
+  const isGeneratingRef = useRef(false);
+  const executedPackagesRef = useRef(new Set());
 
   const stopTimers = () => {
     if (timerRef.current) {
@@ -459,6 +461,18 @@ export default function CreateProposal({ onNavigate, onViewProposal, onToast, on
     const packageId = pkg?.package_id;
     if (!packageId) return;
 
+    if (isGeneratingRef.current) {
+      console.warn('[Workspace 2] Proposal generation is already in progress. Ignoring duplicate trigger.');
+      return;
+    }
+    if (executedPackagesRef.current.has(packageId)) {
+      console.warn('[Workspace 2] Proposal generation already executed for package ' + packageId + '. Repeat calls are blocked.');
+      return;
+    }
+
+    isGeneratingRef.current = true;
+    executedPackagesRef.current.add(packageId);
+
     setStep('processing');
     setActiveStepIndex(0);
     setIsAllComplete(false);
@@ -528,6 +542,8 @@ export default function CreateProposal({ onNavigate, onViewProposal, onToast, on
       const message = getFriendlyErrorMessage(err);
       if (onToast) onToast(message, 'error', 6000);
       setStep('review');
+    } finally {
+      isGeneratingRef.current = false;
     }
   };
 

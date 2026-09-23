@@ -83,6 +83,7 @@ export default function ProcessStatus({
   const isFetchingRef = useRef(false);
   const hasPublishedRef = useRef(Boolean(propGeneratedUrl));
   const isPollingRef = useRef(!propGeneratedUrl);
+  const pollCountRef = useRef(0);
 
   // Clean business and project names
   const rawBiz = statusData?.project?.business_name || businessName || 'Business Client';
@@ -140,7 +141,13 @@ export default function ProcessStatus({
       }
     } catch (err) {
       if (!isMountedRef.current) return;
-      console.warn('[ProcessStatus] Status poll notice:', err.message);
+      console.warn('[ProcessStatus] Status check error, halting polling permanently:', err.message);
+      isPollingRef.current = false;
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      setFetchError(err.message || 'Status check failed.');
     } finally {
       isFetchingRef.current = false;
     }
@@ -154,12 +161,21 @@ export default function ProcessStatus({
 
     isMountedRef.current = true;
     isPollingRef.current = true;
+    pollCountRef.current = 0;
 
     pollProcessStatus();
 
+    // Guarded interval: max 3 polls total, then automatically halts
     timerRef.current = setInterval(() => {
+      pollCountRef.current += 1;
+      if (pollCountRef.current >= 3) {
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+          timerRef.current = null;
+        }
+      }
       pollProcessStatus();
-    }, 2500);
+    }, 4000);
 
     return () => {
       isMountedRef.current = false;

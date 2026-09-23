@@ -9,11 +9,7 @@ export default function WorkspaceHub({
   proposalsCount = 0,
   onRefresh
 }) {
-  React.useEffect(() => {
-    if (onRefresh) {
-      onRefresh();
-    }
-  }, [onRefresh]);
+  // Counts are managed and loaded by App.jsx on initial launch; avoid re-triggering network calls on every mount
 
   return (
     <div className="workspace-hub-page animate-fade-in">

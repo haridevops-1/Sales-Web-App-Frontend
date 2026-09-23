@@ -9,6 +9,7 @@
 
 import { getCatalystBaseUrl, resolveEndpointUrl, DEFAULT_CATALYST_BASE_URL } from './catalystApi';
 import { getSessionToken, clearSessionToken } from '../utils/proposalSession';
+import { executeGuardedApiCall, getApiKey } from './apiCallGuard';
 
 export function getProposalBackendOrigin() {
   const base = getCatalystBaseUrl();
@@ -47,118 +48,130 @@ class ProposalApiError extends Error {
 }
 
 async function requestJson(path, { method = 'GET', body, timeoutMs = 45000, signal: externalSignal } = {}) {
-  const url = resolveEndpointUrl(path, null);
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-  if (externalSignal) {
-    if (externalSignal.aborted) controller.abort();
-    else externalSignal.addEventListener('abort', () => controller.abort(), { once: true });
-  }
+  const isAiOperation = path.includes('/processor/process') || path.includes('/agent') || path.includes('/session');
+  const maxCalls = isAiOperation ? 1 : 25;
+  const paramKey = body ? (body.package_id || body.proposal_id || JSON.stringify(body).slice(0, 80)) : null;
+  const apiKey = getApiKey(method, path, paramKey);
 
-  const headers = { Accept: 'application/json' };
-  const token = getSessionToken();
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-  if (body !== undefined) {
-    headers['Content-Type'] = 'application/json';
-  }
+  return executeGuardedApiCall(apiKey, async () => {
+    const url = resolveEndpointUrl(path, null);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    if (externalSignal) {
+      if (externalSignal.aborted) controller.abort();
+      else externalSignal.addEventListener('abort', () => controller.abort(), { once: true });
+    }
 
-  console.log('[Workspace 2] ' + method + ' ' + url, body !== undefined ? body : '');
+    const headers = { Accept: 'application/json' };
+    const token = getSessionToken();
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+    if (body !== undefined) {
+      headers['Content-Type'] = 'application/json';
+    }
 
-  let response;
-  try {
-    response = await fetch(url, {
-      method,
-      headers,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
-      signal: controller.signal
-    });
-  } catch (fetchErr) {
+    console.log('[Workspace 2] ' + method + ' ' + url + ' (single execution guaranteed)', body !== undefined ? body : '');
+
+    let response;
+    try {
+      response = await fetch(url, {
+        method,
+        headers,
+        body: body !== undefined ? JSON.stringify(body) : undefined,
+        signal: controller.signal
+      });
+    } catch (fetchErr) {
+      clearTimeout(timeoutId);
+      console.error('[Workspace 2] Network error on ' + method + ' ' + path + ':', fetchErr);
+      if (fetchErr.name === 'AbortError') {
+        throw new ProposalApiError('The request timed out. Please try again.', { status: 408 });
+      }
+      throw new ProposalApiError('Unable to reach the server. Please check your connection.', { status: 0 });
+    }
     clearTimeout(timeoutId);
-    console.error('[Workspace 2] Network error on ' + method + ' ' + path + ':', fetchErr);
-    if (fetchErr.name === 'AbortError') {
-      throw new ProposalApiError('The request timed out. Please try again.', { status: 408 });
+
+    let data = null;
+    try {
+      const text = await response.text();
+      data = text ? JSON.parse(text) : {};
+    } catch {
+      data = {};
     }
-    throw new ProposalApiError('Unable to reach the server. Please check your connection.', { status: 0 });
-  }
-  clearTimeout(timeoutId);
 
-  let data = null;
-  try {
-    const text = await response.text();
-    data = text ? JSON.parse(text) : {};
-  } catch {
-    data = {};
-  }
-
-  if (!response.ok || data.success === false) {
-    const code = data?.error?.code || null;
-    const message = data?.error?.message || ('Request failed with status ' + response.status + '.');
-    console.error('[Workspace 2] ' + response.status + ' error on ' + path + ':', data);
-    if (response.status === 401) {
-      clearSessionToken();
+    if (!response.ok || data.success === false) {
+      const code = data?.error?.code || null;
+      const message = data?.error?.message || ('Request failed with status ' + response.status + '.');
+      console.error('[Workspace 2] ' + response.status + ' error on ' + path + ':', data);
+      if (response.status === 401) {
+        clearSessionToken();
+      }
+      throw new ProposalApiError(message, { status: response.status, code, requestId: data?.request_id });
     }
-    throw new ProposalApiError(message, { status: response.status, code, requestId: data?.request_id });
-  }
 
-  console.log('[Workspace 2] 200 OK ' + path, data);
-  return data;
+    console.log('[Workspace 2] 200 OK ' + path, data);
+    return data;
+  }, { maxCalls });
 }
 
 async function requestFormData(path, formData, { signal: externalSignal, timeoutMs = 90000 } = {}) {
-  const url = resolveEndpointUrl(path, null);
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-  if (externalSignal) {
-    if (externalSignal.aborted) controller.abort();
-    else externalSignal.addEventListener('abort', () => controller.abort(), { once: true });
-  }
+  const pkgName = formData?.get ? formData.get('package_name') : 'form_upload';
+  const apiKey = getApiKey('POST', path, pkgName);
 
-  const headers = { Accept: 'application/json' };
-  const token = getSessionToken();
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-  // Browser will automatically set multipart/form-data and boundary
-
-  console.log('[Workspace 2] POST (multipart/form-data) ' + url);
-
-  let response;
-  try {
-    response = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: formData,
-      signal: controller.signal
-    });
-  } catch (fetchErr) {
-    clearTimeout(timeoutId);
-    console.error('[Workspace 2] Upload error on ' + path + ':', fetchErr);
-    if (fetchErr.name === 'AbortError') {
-      throw new ProposalApiError('Upload timed out. Please try with smaller files or retry.', { status: 408 });
+  return executeGuardedApiCall(apiKey, async () => {
+    const url = resolveEndpointUrl(path, null);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    if (externalSignal) {
+      if (externalSignal.aborted) controller.abort();
+      else externalSignal.addEventListener('abort', () => controller.abort(), { once: true });
     }
-    throw new ProposalApiError('Unable to reach the upload server. Please check your connection.', { status: 0 });
-  }
-  clearTimeout(timeoutId);
 
-  let data = null;
-  try {
-    const text = await response.text();
-    data = text ? JSON.parse(text) : {};
-  } catch {
-    data = {};
-  }
+    const headers = { Accept: 'application/json' };
+    const token = getSessionToken();
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+    // Browser will automatically set multipart/form-data and boundary
 
-  if (!response.ok || data.success === false) {
-    const code = data?.error?.code || null;
-    const message = data?.error?.message || ('Upload failed with status ' + response.status + '.');
-    console.error('[Workspace 2] Upload failed (' + response.status + ') on ' + path + ':', data);
-    throw new ProposalApiError(message, { status: response.status, code, requestId: data?.request_id });
-  }
+    console.log('[Workspace 2] POST (multipart/form-data) ' + url + ' (single execution guaranteed)');
 
-  console.log('[Workspace 2] 200 OK upload ' + path, data);
-  return data;
+    let response;
+    try {
+      response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: formData,
+        signal: controller.signal
+      });
+    } catch (fetchErr) {
+      clearTimeout(timeoutId);
+      console.error('[Workspace 2] Upload error on ' + path + ':', fetchErr);
+      if (fetchErr.name === 'AbortError') {
+        throw new ProposalApiError('Upload timed out. Please try with smaller files or retry.', { status: 408 });
+      }
+      throw new ProposalApiError('Unable to reach the upload server. Please check your connection.', { status: 0 });
+    }
+    clearTimeout(timeoutId);
+
+    let data = null;
+    try {
+      const text = await response.text();
+      data = text ? JSON.parse(text) : {};
+    } catch {
+      data = {};
+    }
+
+    if (!response.ok || data.success === false) {
+      const code = data?.error?.code || null;
+      const message = data?.error?.message || ('Upload failed with status ' + response.status + '.');
+      console.error('[Workspace 2] Upload failed (' + response.status + ') on ' + path + ':', data);
+      throw new ProposalApiError(message, { status: response.status, code, requestId: data?.request_id });
+    }
+
+    console.log('[Workspace 2] 200 OK upload ' + path, data);
+    return data;
+  }, { maxCalls: 1 });
 }
 
 // ---------------------------------------------------------------------------

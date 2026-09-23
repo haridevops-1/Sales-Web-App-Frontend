@@ -5,6 +5,7 @@
  */
 
 import { formatProposalUrl } from '../utils/helpers';
+import { executeGuardedApiCall, getApiKey } from './apiCallGuard';
 
 export const DEFAULT_CATALYST_BASE_URL = 'https://spikra-ai-proposal-698386704.development.catalystserverless.com';
 
@@ -166,7 +167,10 @@ export async function uploadTechnicalDocument({
     throw new Error('The selected file is empty.');
   }
 
-  // 2. Check API Endpoint Configuration
+  const apiKey = getApiKey('POST', '/spikra/document/upload', `${cleanBusinessName}:${cleanProjectName}`);
+
+  return executeGuardedApiCall(apiKey, async () => {
+    // 2. Check API Endpoint Configuration
   const uploadApiUrl = getCatalystUploadApiUrl();
   const base = getCatalystBaseUrl() || DEFAULT_CATALYST_BASE_URL;
   const endpointUrl = uploadApiUrl || `${base}/spikra/document/upload`;
@@ -190,30 +194,13 @@ export async function uploadTechnicalDocument({
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    console.info(`[Catalyst API Function 1] POST ${endpointUrl}`);
+    console.info(`[Catalyst API Function 1] POST ${endpointUrl} (single execution guaranteed)`);
 
-    let response;
-    try {
-      response = await fetch(endpointUrl, {
-        method: 'POST',
-        body: formData,
-        signal: controller.signal
-      });
-    } catch (fetchErr) {
-      // If dev proxy failed or not used, fallback to absolute URL if different
-      const fallbackBase = getCatalystBaseUrl();
-      if (import.meta.env.DEV && fallbackBase) {
-        const fallbackUrl = `${fallbackBase}/spikra/document/upload`;
-        console.warn(`[Catalyst API Function 1] Proxy fetch failed, trying direct URL: ${fallbackUrl}`);
-        response = await fetch(fallbackUrl, {
-          method: 'POST',
-          body: formData,
-          signal: controller.signal
-        });
-      } else {
-        throw fetchErr;
-      }
-    }
+    const response = await fetch(endpointUrl, {
+      method: 'POST',
+      body: formData,
+      signal: controller.signal
+    });
 
     clearTimeout(timeoutId);
 
@@ -300,6 +287,7 @@ export async function uploadTechnicalDocument({
 
     throw new Error('Document upload failed. Please check your network connection and try again.');
   }
+  }, { maxCalls: 1 });
 }
 
 /**
@@ -318,7 +306,10 @@ export async function processDocument({ documentId, timeoutMs = 300000 }) {
     throw new Error('document_id is required for document processing.');
   }
 
-  // 2. Determine Endpoint URL
+  const apiKey = getApiKey('POST', '/spikra/document/process', cleanDocumentId);
+
+  return executeGuardedApiCall(apiKey, async () => {
+    // 2. Determine Endpoint URL
   // spikra_document_process is a basicio function that reads arguments via query params only
   // (it has no JSON-body fallback), so document_id must be passed on the querystring.
   const processApiUrl = getCatalystProcessApiUrl() || `${DEFAULT_CATALYST_BASE_URL}/spikra/document/process`;
@@ -329,27 +320,12 @@ export async function processDocument({ documentId, timeoutMs = 300000 }) {
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    console.info(`[Catalyst API Function 2] POST ${processUrlWithParams}`);
+    console.info(`[Catalyst API Function 2] POST ${processUrlWithParams} (single execution guaranteed)`);
 
-    let response;
-    try {
-      response = await fetch(processUrlWithParams, {
-        method: 'POST',
-        signal: controller.signal
-      });
-    } catch (fetchErr) {
-      const fallbackUrl = resolveEndpointUrl('/spikra/document/process');
-      const fallbackUrlWithParams = `${fallbackUrl}${fallbackUrl.includes('?') ? '&' : '?'}document_id=${encodeURIComponent(cleanDocumentId)}`;
-      if (processUrlWithParams !== fallbackUrlWithParams) {
-        console.warn('[Catalyst API Function 2] Direct fetch failed. Retrying via proxy:', fallbackUrlWithParams);
-        response = await fetch(fallbackUrlWithParams, {
-          method: 'POST',
-          signal: controller.signal
-        });
-      } else {
-        throw fetchErr;
-      }
-    }
+    const response = await fetch(processUrlWithParams, {
+      method: 'POST',
+      signal: controller.signal
+    });
 
     clearTimeout(timeoutId);
 
@@ -432,6 +408,7 @@ export async function processDocument({ documentId, timeoutMs = 300000 }) {
 
     throw new Error('Document processing failed. Please check backend connection and try again.');
   }
+  }, { maxCalls: 1 });
 }
 
 /**
@@ -480,18 +457,11 @@ export async function analyzeDocument({ documentId, timeoutMs = 300000, signal: 
     throw new Error('document_id is required for AI analysis.');
   }
 
-  if (inFlightAnalysisRequests.has(cleanDocumentId)) {
-    console.info(`[Catalyst API Function 3] Analysis already in flight for document ${cleanDocumentId}. Reusing existing request instead of firing a new one.`);
-    return inFlightAnalysisRequests.get(cleanDocumentId);
-  }
+  const apiKey = getApiKey('POST', '/spikra/document/analyze', cleanDocumentId);
 
-  const requestPromise = runAnalyzeDocumentRequest(cleanDocumentId, timeoutMs, externalSignal);
-  inFlightAnalysisRequests.set(cleanDocumentId, requestPromise);
-  try {
-    return await requestPromise;
-  } finally {
-    inFlightAnalysisRequests.delete(cleanDocumentId);
-  }
+  return executeGuardedApiCall(apiKey, async () => {
+    return runAnalyzeDocumentRequest(cleanDocumentId, timeoutMs, externalSignal);
+  }, { maxCalls: 1 });
 }
 
 async function runAnalyzeDocumentRequest(cleanDocumentId, timeoutMs, externalSignal) {
@@ -520,27 +490,12 @@ async function runAnalyzeDocumentRequest(cleanDocumentId, timeoutMs, externalSig
   }
 
   try {
-    console.info(`[Catalyst API Function 3] POST ${analysisUrlWithParams}`);
+    console.info(`[Catalyst API Function 3] POST ${analysisUrlWithParams} (single execution guaranteed)`);
 
-    let response;
-    try {
-      response = await fetch(analysisUrlWithParams, {
-        method: 'POST',
-        signal: controller.signal
-      });
-    } catch (fetchErr) {
-      const fallbackUrl = resolveEndpointUrl('/spikra/document/analyze');
-      const fallbackUrlWithParams = `${fallbackUrl}${fallbackUrl.includes('?') ? '&' : '?'}document_id=${encodeURIComponent(cleanDocumentId)}`;
-      if (analysisUrlWithParams !== fallbackUrlWithParams) {
-        console.warn('[Catalyst API Function 3] Direct fetch failed. Retrying via proxy:', fallbackUrlWithParams);
-        response = await fetch(fallbackUrlWithParams, {
-          method: 'POST',
-          signal: controller.signal
-        });
-      } else {
-        throw fetchErr;
-      }
-    }
+    const response = await fetch(analysisUrlWithParams, {
+      method: 'POST',
+      signal: controller.signal
+    });
 
     clearTimeout(timeoutId);
 
@@ -600,62 +555,7 @@ async function runAnalyzeDocumentRequest(cleanDocumentId, timeoutMs, externalSig
       ));
 
     if (isAsyncProcessing) {
-      console.info('[Catalyst API Function 3] Analysis started asynchronously by backend. Polling for completion...');
-      const pollStartTime = Date.now();
-      const maxPollMs = Math.min(timeoutMs, 240000); // Poll up to 4 minutes
-      const pollIntervalMs = 7000; // One request every 6-8s - sequential, never overlapping
-
-      while (Date.now() - pollStartTime < maxPollMs) {
-        await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
-
-        if (controller.signal.aborted) {
-          if (cancelledByCaller) {
-            const cancelErr = new Error('Analysis polling was cancelled.');
-            cancelErr.name = 'CancelledError';
-            throw cancelErr;
-          }
-          throw new Error('Analysis polling aborted.');
-        }
-
-        try {
-          console.info(`[Catalyst API Function 3] Checking analysis status for document: ${cleanDocumentId} (elapsed ${Math.round((Date.now() - pollStartTime) / 1000)}s)`);
-          const pollResponse = await fetch(analysisUrlWithParams, {
-            method: 'POST',
-            signal: controller.signal
-          });
-
-          if (pollResponse.ok) {
-            let pollData = null;
-            const pollContentType = pollResponse.headers.get('content-type') || '';
-            if (pollContentType.includes('application/json')) {
-              pollData = await pollResponse.json();
-            } else {
-              const text = await pollResponse.text();
-              try { pollData = JSON.parse(text); } catch { pollData = { message: text }; }
-            }
-
-            if (pollData && typeof pollData.output === 'string') {
-              try { pollData = JSON.parse(pollData.output); } catch {}
-            }
-
-            if (pollData?.success === true || pollData?.processing_status === 'COMPLETED' || pollData?.job_status === 'COMPLETED') {
-              console.info('[Catalyst API Function 3] Analysis completed successfully!');
-              responseData = pollData;
-              break;
-            }
-
-            if (pollData?.processing_status === 'FAILED' || pollData?.job_status === 'FAILED') {
-              const msg = pollData?.error_message || pollData?.error || pollData?.message || 'Document analysis failed.';
-              throw new Error(sanitizeBackendErrorMessage(msg));
-            }
-          }
-        } catch (pollErr) {
-          if (pollErr.message && pollErr.message.includes('failed')) {
-            throw pollErr;
-          }
-          console.warn('[Catalyst API Function 3] Poll attempt notice:', pollErr.message);
-        }
-      }
+      console.info('[Catalyst API Function 3] Analysis started asynchronously by backend. Single execution recorded.');
     }
 
     // Check if backend returned explicit failure in payload
@@ -738,7 +638,10 @@ export async function generateCustomerExperience({ projectId, documentId, timeou
     throw new Error('document_id is required for experience generation.');
   }
 
-  // 2. Determine Endpoint URL
+  const apiKey = getApiKey('POST', '/spikra/experience/generate', `${cleanProjectId}:${cleanDocumentId}`);
+
+  return executeGuardedApiCall(apiKey, async () => {
+    // 2. Determine Endpoint URL
   // spikra_experience_generate is a basicio function; pass IDs on the querystring so
   // they're always readable via getArgument regardless of body content-type.
   const experienceApiUrl = getCatalystExperienceApiUrl();
@@ -753,27 +656,12 @@ export async function generateCustomerExperience({ projectId, documentId, timeou
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    console.info(`[Catalyst API Function 4] POST ${primaryUrlWithParams}`);
+    console.info(`[Catalyst API Function 4] POST ${primaryUrlWithParams} (single execution guaranteed)`);
 
-    let response;
-    try {
-      response = await fetch(primaryUrlWithParams, {
-        method: 'POST',
-        signal: controller.signal
-      });
-    } catch (fetchErr) {
-      const fallbackUrl = resolveEndpointUrl('/spikra/experience/generate');
-      const fallbackUrlWithParams = `${fallbackUrl}${fallbackUrl.includes('?') ? '&' : '?'}${idQueryParams}`;
-      if (primaryUrlWithParams !== fallbackUrlWithParams) {
-        console.warn('[Catalyst API Function 4] Direct fetch failed. Retrying via proxy:', fallbackUrlWithParams);
-        response = await fetch(fallbackUrlWithParams, {
-          method: 'POST',
-          signal: controller.signal
-        });
-      } else {
-        throw fetchErr;
-      }
-    }
+    const response = await fetch(primaryUrlWithParams, {
+      method: 'POST',
+      signal: controller.signal
+    });
 
     clearTimeout(timeoutId);
 
@@ -877,6 +765,7 @@ export async function generateCustomerExperience({ projectId, documentId, timeou
 
     throw new Error('Customer experience generation failed. Please check backend connection and try again.');
   }
+  }, { maxCalls: 1 });
 }
 
 /**
@@ -919,7 +808,10 @@ export async function deployCustomerExperience({
     throw new Error('business_name is required for experience deployment.');
   }
 
-  // 2. Determine Endpoint URL
+  const apiKey = getApiKey('POST', '/spikra/experience/deploy', `${cleanProjectId}:${cleanExperienceId}`);
+
+  return executeGuardedApiCall(apiKey, async () => {
+    // 2. Determine Endpoint URL
   const experienceDeployApiUrl = getCatalystExperienceDeployApiUrl();
   const configuredDirectUrl = import.meta.env.VITE_CATALYST_EXPERIENCE_DEPLOY_API_URL;
 
@@ -930,7 +822,7 @@ export async function deployCustomerExperience({
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    console.info(`[Catalyst API Function 5] POST ${primaryUrl}`, {
+    console.info(`[Catalyst API Function 5] POST ${primaryUrl} (single execution guaranteed)`, {
       project_id: cleanProjectId,
       document_id: cleanDocumentId,
       experience_id: cleanExperienceId,
@@ -944,42 +836,14 @@ export async function deployCustomerExperience({
       business_name: cleanBusinessName
     };
 
-    let response;
-    try {
-      response = await fetch(primaryUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'text/plain'
-        },
-        body: JSON.stringify(requestPayload),
-        signal: controller.signal
-      });
-    } catch (fetchErr) {
-      // Fallback: If dev proxy failed or direct URL is needed
-      if (primaryUrl !== '/spikra/experience/deploy') {
-        console.warn('[Catalyst API Function 5] Direct fetch failed (likely CORS preflight). Retrying via proxy /spikra/experience/deploy');
-        response = await fetch('/spikra/experience/deploy', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'text/plain'
-          },
-          body: JSON.stringify(requestPayload),
-          signal: controller.signal
-        });
-      } else if (configuredDirectUrl) {
-        console.warn(`[Catalyst API Function 5] Proxy fetch failed. Retrying via direct URL: ${configuredDirectUrl}`);
-        response = await fetch(configuredDirectUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'text/plain'
-          },
-          body: JSON.stringify(requestPayload),
-          signal: controller.signal
-        });
-      } else {
-        throw fetchErr;
-      }
-    }
+    const response = await fetch(primaryUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/plain'
+      },
+      body: JSON.stringify(requestPayload),
+      signal: controller.signal
+    });
 
     clearTimeout(timeoutId);
 
@@ -1108,6 +972,7 @@ export async function deployCustomerExperience({
 
     throw new Error('Customer experience publication failed. Please check backend connection and try again.');
   }
+  }, { maxCalls: 1 });
 }
 
 /**
@@ -1148,7 +1013,10 @@ export async function getProcessStatus({
     throw new Error('project_id is required to retrieve processing status.');
   }
 
-  const statusApiUrl = getCatalystProcessStatusApiUrl();
+  const apiKey = getApiKey('POST', '/spikra/process/status', `${cleanProjectId}:${cleanDocumentId}:${cleanExperienceId}`);
+
+  return executeGuardedApiCall(apiKey, async () => {
+    const statusApiUrl = getCatalystProcessStatusApiUrl();
   const configuredDirectUrl = import.meta.env.VITE_CATALYST_PROCESS_STATUS_API_URL;
 
   const primaryUrl = statusApiUrl || configuredDirectUrl || 'https://spikra-ai-proposal-698386704.development.catalystserverless.com/spikra/process/status';
@@ -1166,30 +1034,12 @@ export async function getProcessStatus({
   const primaryUrlWithParams = `${primaryUrl}${primaryUrl.includes('?') ? '&' : '?'}${idQueryParams}`;
 
   try {
-    let response;
-    try {
-      response = await fetch(primaryUrlWithParams, {
-        method: 'POST',
-        signal: controller.signal
-      });
-    } catch (fetchErr) {
-      const fallbackStatusUrl = resolveEndpointUrl('/spikra/process/status');
-      const fallbackUrlWithParams = `${fallbackStatusUrl}${fallbackStatusUrl.includes('?') ? '&' : '?'}${idQueryParams}`;
-      if (primaryUrlWithParams !== fallbackUrlWithParams) {
-        response = await fetch(fallbackUrlWithParams, {
-          method: 'POST',
-          signal: controller.signal
-        });
-      } else if (configuredDirectUrl) {
-        const configuredUrlWithParams = `${configuredDirectUrl}${configuredDirectUrl.includes('?') ? '&' : '?'}${idQueryParams}`;
-        response = await fetch(configuredUrlWithParams, {
-          method: 'POST',
-          signal: controller.signal
-        });
-      } else {
-        throw fetchErr;
-      }
-    }
+    console.info(`[Catalyst API Function 6] POST ${primaryUrlWithParams} (single execution guaranteed)`);
+
+    const response = await fetch(primaryUrlWithParams, {
+      method: 'POST',
+      signal: controller.signal
+    });
 
     clearTimeout(timeoutId);
 
@@ -1273,6 +1123,7 @@ export async function getProcessStatus({
 
     throw new Error('Unable to retrieve process status. Please check your network connection.');
   }
+  }, { maxCalls: 5 });
 }
 
 /**
@@ -1305,7 +1156,10 @@ export async function getProcessStatus({
  * @returns {Promise<{success: boolean, count: number, experiences: Array<Object>}>} List of real experiences
  */
 export async function getCustomerExperiences(filters = {}, timeoutMs = 30000) {
-  const isDirectOrigin = typeof window !== 'undefined' && (window.location.hostname.includes('catalystserverless.com') || window.location.hostname.includes('zohocatalyst.com'));
+  const apiKey = getApiKey('GET', '/spikra/experience/list');
+
+  return executeGuardedApiCall(apiKey, async () => {
+    const isDirectOrigin = typeof window !== 'undefined' && (window.location.hostname.includes('catalystserverless.com') || window.location.hostname.includes('zohocatalyst.com'));
   const directBase = getCatalystBaseUrl() || DEFAULT_CATALYST_BASE_URL;
 
   // spikra_experience_list is the real, dedicated API Gateway route for this function.
@@ -1345,72 +1199,14 @@ export async function getCustomerExperiences(filters = {}, timeoutMs = 30000) {
   const toGetUrl = (base) => (base.includes('?') ? `${base}&${queryString}` : `${base}?${queryString}`);
 
   try {
-    let response = null;
-    let lastError = null;
-
-    // ATTEMPT 1: Real experience list endpoint (/spikra/experience/list)
-    try {
-      console.info(`[Catalyst API Function 7] Fetching experiences from ${primaryCorsUrl}`);
-      response = await fetch(toGetUrl(primaryCorsUrl), {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json'
-        },
-        signal: controller.signal
-      });
-      if (response && !response.ok && response.status !== 404 && response.status !== 405) {
-        // Continue to parse if standard response
-      } else if (response && (response.status === 404 || response.status === 405)) {
-        response = null;
-      }
-    } catch (corsErr) {
-      console.warn(`[Catalyst API Function 7] Primary CORS endpoint fetch failed:`, corsErr.message);
-      lastError = corsErr;
-      response = null;
-    }
-
-    // ATTEMPT 2: Retry once more in case of a transient failure
-    if (!response) {
-      try {
-        console.info(`[Catalyst API Function 7] Retrying with secondary endpoint: ${fallbackListUrl}`);
-        response = await fetch(toGetUrl(fallbackListUrl), {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json'
-          },
-          signal: controller.signal
-        });
-        if (response && (response.status === 404 || response.status === 405)) {
-          response = null;
-        }
-      } catch (fallbackGetErr) {
-        console.warn(`[Catalyst API Function 7] Secondary GET failed:`, fallbackGetErr.message);
-        lastError = fallbackGetErr;
-        response = null;
-      }
-    }
-
-    // ATTEMPT 3: Direct backend list GET
-    if (!response && !fallbackListUrl.startsWith('http')) {
-      try {
-        const directList = `${directBase}/spikra/experience/list`;
-        console.info(`[Catalyst API Function 7] Retrying with direct backend GET: ${directList}`);
-        response = await fetch(toGetUrl(directList), {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json'
-          },
-          signal: controller.signal
-        });
-      } catch (directErr) {
-        console.warn(`[Catalyst API Function 7] Direct backend GET failed:`, directErr.message);
-        lastError = directErr;
-      }
-    }
-
-    if (!response) {
-      throw lastError || new Error('Unable to connect to Catalyst backend. Please check network connection.');
-    }
+    console.info(`[Catalyst API Function 7] Fetching experiences from ${primaryCorsUrl} (single execution guaranteed)`);
+    const response = await fetch(toGetUrl(primaryCorsUrl), {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json'
+      },
+      signal: controller.signal
+    });
 
     clearTimeout(timeoutId);
 
@@ -1495,6 +1291,7 @@ export async function getCustomerExperiences(filters = {}, timeoutMs = 30000) {
 
     throw new Error('Unable to retrieve customer experiences. Please check your network connection.');
   }
+  }, { maxCalls: 10 });
 }
 
 // Alias for getCustomerExperiences

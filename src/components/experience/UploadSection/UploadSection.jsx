@@ -317,10 +317,9 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
           handleStatusPublished(fn5Result);
         } else {
           // Poll silently while remaining on the ProcessingState screen with Step 5 active!
-          // Each poll waits for the previous one to finish before scheduling the next, so a
-          // slow/timed-out call can never stack up overlapping in-flight requests.
-          const maxPolls = 20;
-          const pollIntervalMs = 2500;
+          // Guarded status check: maximum 3 checks, and halts immediately on ANY error
+          const maxPolls = 3;
+          const pollIntervalMs = 3000;
           const perPollTimeoutMs = 10000;
 
           const runPoll = async (pollCount) => {
@@ -353,10 +352,10 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
                 return;
               }
             } catch (pErr) {
-              if (pollCount >= maxPolls) {
-                handleStatusPublished(fn5Result);
-                return;
-              }
+              console.warn('[UploadSection] Status check halted due to error (no repeat attempts allowed):', pErr?.message);
+              // Halt immediately on error - do NOT reschedule polling
+              handleStatusPublished(fn5Result);
+              return;
             }
 
             statusPollTimerRef.current = setTimeout(() => runPoll(pollCount + 1), pollIntervalMs);
