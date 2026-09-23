@@ -20,7 +20,6 @@ import {
 } from 'lucide-react';
 import {
   processDiscoveryPackage,
-  createDiscoverySession,
   runProposalAgent,
   getProposal,
   listProposals,
@@ -499,19 +498,10 @@ export default function CreateProposal({ onNavigate, onViewProposal, onToast, on
       // Step 1 active — Validating
       advanceStep(0);
 
-      // Step 2 active — Creating Session
+      // Step 2 active — Creating Session (package_id doubles as the session identifier;
+      // there is no separate session-creation endpoint on the backend).
       advanceStep(1);
-      console.log('[Workspace 2] Creating discovery session for package:', packageId);
-      let sessionId = null;
-      try {
-        const sessionRes = await createDiscoverySession(packageId, {
-          customer_name: pkg?.customer_name || pkg?.package_name || ''
-        });
-        sessionId = sessionRes?.session_id || sessionRes?.data?.session_id || null;
-        console.log('[Workspace 2] Session created:', sessionId);
-      } catch (sessionErr) {
-        console.warn('[Workspace 2] Session notice (non-blocking):', sessionErr?.message);
-      }
+      const sessionId = packageId;
 
       // Step 3 active — Extracting Content (running agent)
       advanceStep(2);
