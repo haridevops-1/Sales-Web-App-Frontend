@@ -5,7 +5,6 @@ import DiscoveryPackageReview from '@/components/proposal/DiscoveryPackageReview
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft,
-  ArrowRight,
   Clock,
   CheckCircle2,
   Loader2,
@@ -594,62 +593,24 @@ export default function CreateProposal({ onNavigate, onViewProposal, onToast, on
   return (
     <div className="create-proposal-page animate-fade-in">
       <div className="container create-proposal-container">
-        {/* Navigation Choice Bar: Left to Sales Workspace & Far Right to All Proposals */}
-        <div className="create-proposal-nav-bar">
-          <motion.button
-            type="button"
-            className="btn-nav-choice btn-nav-left"
-            onClick={handleGoToWorkspace}
-            whileHover={{ x: -3, scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-            title="Go to Sales Workspace"
-          >
-            <ArrowLeft size={15} className="btn-nav-arrow-left" />
-            <span>Go to Sales Workspace</span>
-          </motion.button>
-
-          <motion.button
-            type="button"
-            className="btn-nav-choice btn-nav-right"
-            onClick={handleBackToProposals}
-            whileHover={{ x: 3, scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-            title="Go to All Proposals"
-          >
-            <span>Go to All Proposals</span>
-            <ArrowRight size={15} className="btn-nav-arrow-right" />
-          </motion.button>
-        </div>
-
-        {/* Hero Header */}
+        {/* Hero Header - matches Workspace 1 style */}
         <section className="proposal-hero-section" aria-labelledby="proposal-hero-heading">
-          <motion.div
-            className="proposal-hero-badge"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, ease: 'easeOut' }}
-          >
-            <FileText size={13} className="hero-badge-icon" />
-            <span>Workspace 2 • Solution Proposal</span>
-          </motion.div>
-
           <motion.h1
             id="proposal-hero-heading"
             className="proposal-hero-title"
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: 'easeOut', delay: 0.05 }}
+            transition={{ duration: 0.4, ease: 'easeOut' }}
           >
-            Solution Proposal
+            Turn Discovery Documents Into a
+            <span className="proposal-hero-title-accent"> Professional Proposal</span>
           </motion.h1>
 
           <motion.p
             className="proposal-hero-subtext"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: 'easeOut', delay: 0.1 }}
+            transition={{ duration: 0.4, ease: 'easeOut', delay: 0.08 }}
           >
             Upload customer discovery documents and materials to generate a structured, client-ready solution proposal.
           </motion.p>

@@ -16,101 +16,48 @@
   padding: 0 1.5rem;
 }
 
-/* Nav Bar / Breadcrumb */
-.create-proposal-nav-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  margin-bottom: 1.5rem;
-  gap: 1rem;
-}
-
-.btn-nav-choice {
+/* Simple back link (back to workspace) */
+.create-proposal-back-link {
   display: inline-flex;
   align-items: center;
-  gap: 0.55rem;
-  padding: 0.44rem 1.15rem;
-  border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(226, 232, 240, 0.95);
-  color: #475569;
-  font-family: var(--font-family-display, 'Poppins', sans-serif);
+  gap: 0.4rem;
+  color: #64748B;
   font-size: 0.82rem;
-  font-weight: 600;
+  font-weight: 500;
+  background: none;
+  border: none;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  backdrop-filter: blur(8px);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  padding: 0;
+  margin-bottom: 1.5rem;
+  transition: color 0.15s ease;
 }
 
-.btn-nav-left:hover {
-  background: #FFFFFF;
+.create-proposal-back-link:hover {
   color: #0F172A;
-  border-color: #CBD5E1;
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
-}
-
-.btn-nav-left:hover .btn-nav-arrow-left {
-  transform: translateX(-3px);
-}
-
-.btn-nav-right:hover {
-  background: #FFFFFF;
-  color: #FF7A1A;
-  border-color: #FFD2A8;
-  box-shadow: 0 4px 14px rgba(255, 122, 26, 0.16);
-}
-
-.btn-nav-right:hover .btn-nav-arrow-right {
-  transform: translateX(3px);
-}
-
-.btn-nav-arrow-left,
-.btn-nav-arrow-right {
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  display: inline-flex;
-  align-items: center;
 }
 
 /* Hero Header Section */
 .proposal-hero-section {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
+  align-items: flex-start;
+  text-align: left;
   margin-bottom: 2rem;
-}
-
-.proposal-hero-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  padding: 0.28rem 0.85rem;
-  border-radius: 9999px;
-  background: #F8FAFC;
-  border: 1px solid #E2E8F0;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #475569;
-  margin-bottom: 0.85rem;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
-  letter-spacing: 0.01em;
-}
-
-.hero-badge-icon {
-  color: #FF7A1A;
 }
 
 .proposal-hero-title {
   font-family: var(--font-family-display, 'Poppins', sans-serif);
-  font-size: 2.35rem;
+  font-size: 2.2rem;
   font-weight: 800;
-  line-height: 1.22;
+  line-height: 1.2;
   max-width: 660px;
-  margin: 0 0 0.85rem 0;
+  margin: 0 0 0.75rem 0;
   color: #0B192C;
-  letter-spacing: -0.035em;
+  letter-spacing: -0.03em;
+}
+
+.proposal-hero-title-accent {
+  color: #FF7A1A;
 }
 
 .proposal-hero-gradient-text {

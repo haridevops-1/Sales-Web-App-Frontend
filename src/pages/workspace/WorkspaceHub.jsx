@@ -49,6 +49,13 @@ export default function WorkspaceHub({
                     <span className="status-dot-green" />
                     <span>{experiencesCount} Live Showcases</span>
                   </span>
+                  <button
+                    type="button"
+                    className="btn-card-view-all"
+                    onClick={() => onNavigate && onNavigate('experience', 'history')}
+                  >
+                    View All →
+                  </button>
                 </div>
               </div>
 
@@ -86,6 +93,13 @@ export default function WorkspaceHub({
                     <span className="status-dot-blue" />
                     <span>{proposalsCount} Customer Proposals</span>
                   </span>
+                  <button
+                    type="button"
+                    className="btn-card-view-all"
+                    onClick={() => onNavigate && onNavigate('proposal', 'proposal-list')}
+                  >
+                    View All →
+                  </button>
                 </div>
               </div>
 
