@@ -180,6 +180,14 @@ export default function App() {
     loadProposals();
   }, [loadExperiences, loadProposals]);
 
+  // Stable reference (must not change every render) - WorkspaceHub calls this from a
+  // useEffect keyed on this prop, so a new function identity each render would refire
+  // that effect forever, updating state and forcing another render in an infinite loop.
+  const refreshWorkspaceCounts = useCallback(() => {
+    loadExperiences({}, true);
+    loadProposals();
+  }, [loadExperiences, loadProposals]);
+
   // Handle newly created proposal
   const handleProposalCreated = (newProp) => {
     if (!newProp) return;
@@ -317,10 +325,7 @@ export default function App() {
                 experiencesCount={experiences.length}
                 proposalsCount={proposals.length}
                 currentUser={currentUser}
-                onRefresh={() => {
-                  loadExperiences({}, true);
-                  loadProposals();
-                }}
+                onRefresh={refreshWorkspaceCounts}
               />
             }
           />
