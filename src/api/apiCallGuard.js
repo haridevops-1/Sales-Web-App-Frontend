@@ -173,6 +173,11 @@ export async function executeGuardedApiCall(key, callFn, { maxCalls = 1 } = {}) 
       const result = await callFn();
       return result;
     } catch (err) {
+      // User-initiated cancellation is not a failure of the operation itself - permanently
+      // locking the key here would block a perfectly legitimate retry later.
+      if (err?.name === 'CancelledError' || err?.name === 'AbortError') {
+        throw err;
+      }
       // Record failure permanently: this key is never allowed to be called again!
       markApiAsFailed(key, err);
       throw err;

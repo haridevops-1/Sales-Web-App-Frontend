@@ -48,8 +48,11 @@ class ProposalApiError extends Error {
 }
 
 async function requestJson(path, { method = 'GET', body, timeoutMs = 45000, signal: externalSignal } = {}) {
+  // Only the AI-triggering endpoints get a hard call cap, to avoid duplicate generation
+  // requests for the same package - everything else (status/list/read calls, polled and
+  // refreshed repeatedly across a normal session) must stay uncapped.
   const isAiOperation = path.includes('/processor/process') || path.includes('/agent') || path.includes('/session');
-  const maxCalls = isAiOperation ? 1 : 25;
+  const maxCalls = isAiOperation ? 1 : Infinity;
   const paramKey = body ? (body.package_id || body.proposal_id || JSON.stringify(body).slice(0, 80)) : null;
   const apiKey = getApiKey(method, path, paramKey);
 
@@ -97,6 +100,13 @@ async function requestJson(path, { method = 'GET', body, timeoutMs = 45000, sign
       data = text ? JSON.parse(text) : {};
     } catch {
       data = {};
+    }
+
+    // still_processing is an expected, non-error outcome the caller polls/tolerates - never a
+    // failure to throw (and never something the guard should permanently lock this key over).
+    if (response.ok && data.success === false && data.still_processing === true) {
+      console.log('[Workspace 2] ' + path + ' still processing:', data);
+      return data;
     }
 
     if (!response.ok || data.success === false) {

@@ -258,10 +258,39 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
       const analysisController = new AbortController();
       analysisAbortControllerRef.current = analysisController;
 
-      fn3Result = await analyzeDocument({
-        documentId: fn1Result.documentId,
-        signal: analysisController.signal
-      });
+      // Analysis can genuinely take longer than one request for larger documents - the backend
+      // reports { stillProcessing: true } rather than a real result in that case, and this polls
+      // the same endpoint every ~7s until it reports done, fails for real, or the user cancels.
+      const pollIntervalMs = 7000;
+      const maxAttempts = 40; // ~5 minutes, matching the single-request timeout used elsewhere
+
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        const result = await analyzeDocument({
+          documentId: fn1Result.documentId,
+          signal: analysisController.signal
+        });
+
+        if (!result?.stillProcessing) {
+          fn3Result = result;
+          break;
+        }
+
+        if (attempt >= maxAttempts) {
+          throw new Error('Document analysis is taking longer than expected. Please try again.');
+        }
+
+        await new Promise((resolve, reject) => {
+          const timer = setTimeout(resolve, pollIntervalMs);
+          const onAbort = () => {
+            clearTimeout(timer);
+            const cancelErr = new Error('Analysis was cancelled.');
+            cancelErr.name = 'CancelledError';
+            reject(cancelErr);
+          };
+          if (analysisController.signal.aborted) onAbort();
+          else analysisController.signal.addEventListener('abort', onAbort, { once: true });
+        });
+      }
 
       analysisAbortControllerRef.current = null;
       setAnalysisResult(fn3Result);

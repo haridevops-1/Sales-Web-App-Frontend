@@ -444,11 +444,6 @@ export function sanitizeBackendErrorMessage(rawMsg) {
  * @param {number} [params.timeoutMs=300000] - Request timeout in ms (5 min for deep AI analysis on multi-section documents)
  * @returns {Promise<Object>} Real response containing processing_status: "COMPLETED", job_status: "COMPLETED"
  */
-// Documents currently being analyzed, keyed by document_id. A second analyzeDocument() call for
-// a document already in flight piggybacks on the same in-progress request instead of firing a new
-// one - the main client-side defense against duplicate Zia Agent invocations for one document.
-const inFlightAnalysisRequests = new Map();
-
 export async function analyzeDocument({ documentId, timeoutMs = 300000, signal: externalSignal }) {
   // 1. Validate parameter
   const cleanDocumentId = documentId ? String(documentId).trim() : '';
@@ -459,9 +454,14 @@ export async function analyzeDocument({ documentId, timeoutMs = 300000, signal: 
 
   const apiKey = getApiKey('POST', '/spikra/document/analyze', cleanDocumentId);
 
+  // The backend can report "still processing" for a document more than once before it actually
+  // finishes - that's a normal, expected outcome the caller polls on, never a failure. maxCalls
+  // must stay effectively unlimited here so those repeat polls aren't rejected by the guard's
+  // call-count limit; the guard's own in-flight map still prevents two simultaneous calls for the
+  // same document, which is the real defense against duplicate Zia Agent invocations.
   return executeGuardedApiCall(apiKey, async () => {
     return runAnalyzeDocumentRequest(cleanDocumentId, timeoutMs, externalSignal);
-  }, { maxCalls: 1 });
+  }, { maxCalls: Infinity });
 }
 
 async function runAnalyzeDocumentRequest(cleanDocumentId, timeoutMs, externalSignal) {
@@ -554,8 +554,17 @@ async function runAnalyzeDocumentRequest(cleanDocumentId, timeoutMs, externalSig
         responseData.message.includes('still in progress')
       ));
 
+    // Still-processing is an expected, non-error outcome the caller polls on - never a failure
+    // to throw (and never something the guard should permanently lock this document out over).
     if (isAsyncProcessing) {
-      console.info('[Catalyst API Function 3] Analysis started asynchronously by backend. Single execution recorded.');
+      console.info('[Catalyst API Function 3] Analysis started asynchronously by backend. Polling for completion...');
+      return {
+        success: false,
+        stillProcessing: true,
+        documentId: cleanDocumentId,
+        message: responseData?.message || 'Analysis started. Larger documents or certain models can take a while.',
+        raw: responseData
+      };
     }
 
     // Check if backend returned explicit failure in payload
@@ -1123,7 +1132,10 @@ export async function getProcessStatus({
 
     throw new Error('Unable to retrieve process status. Please check your network connection.');
   }
-  }, { maxCalls: 5 });
+  // This is a read-only status check meant to be polled repeatedly until publication
+  // completes - a hard call-count limit here would abandon a legitimate, still-running
+  // deployment as if it had failed.
+  }, { maxCalls: Infinity });
 }
 
 /**
@@ -1291,7 +1303,10 @@ export async function getCustomerExperiences(filters = {}, timeoutMs = 30000) {
 
     throw new Error('Unable to retrieve customer experiences. Please check your network connection.');
   }
-  }, { maxCalls: 10 });
+  // A read-only list call, refetched on every hub/page visit and refresh for the whole
+  // session - a session-wide call-count cap would eventually lock salespeople out of
+  // seeing their own experiences after ordinary navigation, not just abuse.
+  }, { maxCalls: Infinity });
 }
 
 // Alias for getCustomerExperiences
