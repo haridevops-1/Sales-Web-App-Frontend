@@ -543,14 +543,17 @@ export default function DiscoveryUploadCard({ onContinue, onGenerate, disabled =
         {/* Footer Actions */}
         <div className="discovery-footer-row">
           {selectedFiles.length > 0 && onContinue && (
-            <button
+            <motion.button
               type="button"
               className="btn-discovery-secondary"
               onClick={handleReviewClick}
               disabled={!isFormValid || disabled || isCreating}
+              whileHover={isFormValid && !isCreating ? { y: -1 } : {}}
+              whileTap={isFormValid && !isCreating ? { scale: 0.97 } : {}}
+              transition={{ duration: 0.15 }}
             >
               <span>Review Details First</span>
-            </button>
+            </motion.button>
           )}
 
           <motion.button
@@ -558,18 +561,19 @@ export default function DiscoveryUploadCard({ onContinue, onGenerate, disabled =
             className="btn-discovery-continue"
             onClick={handleGenerateClick}
             disabled={!isFormValid || disabled || isCreating}
-            whileHover={isFormValid && !isCreating ? { scale: 1.02, y: -1 } : {}}
-            whileTap={isFormValid && !isCreating ? { scale: 0.98 } : {}}
+            whileHover={isFormValid && !isCreating ? { y: -1.5, scale: 1.01 } : {}}
+            whileTap={isFormValid && !isCreating ? { scale: 0.97 } : {}}
+            transition={{ duration: 0.15 }}
           >
             {isCreating ? (
               <>
-                <Loader2 size={16} className="discovery-spin" />
+                <Loader2 size={15} className="discovery-spin" />
                 <span>Generating Proposal…</span>
               </>
             ) : (
               <>
                 <span>Generate Proposal</span>
-                <ArrowRight size={16} strokeWidth={2.2} className="btn-arrow-icon" />
+                <ArrowRight size={15} strokeWidth={2.4} className="btn-arrow-icon" />
               </>
             )}
           </motion.button>

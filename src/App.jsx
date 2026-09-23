@@ -153,16 +153,18 @@ export default function App() {
 
       const res = await listProposals();
       const backendList = Array.isArray(res?.proposals) ? res.proposals : [];
-      if (backendList.length === 0) {
-        setProposals([]);
-        try {
-          localStorage.removeItem('spikra_proposals');
-        } catch (e) {}
-      } else {
+      if (backendList.length > 0) {
         setProposals(backendList);
         try {
           localStorage.setItem('spikra_proposals', JSON.stringify(backendList));
         } catch (e) {}
+      } else {
+        const local = JSON.parse(localStorage.getItem('spikra_proposals') || '[]');
+        if (Array.isArray(local) && local.length > 0) {
+          setProposals(local);
+        } else {
+          setProposals([]);
+        }
       }
     } catch (err) {
       console.warn('[App] Could not load proposals:', err);
@@ -315,6 +317,10 @@ export default function App() {
                 experiencesCount={experiences.length}
                 proposalsCount={proposals.length}
                 currentUser={currentUser}
+                onRefresh={() => {
+                  loadExperiences({}, true);
+                  loadProposals();
+                }}
               />
             }
           />

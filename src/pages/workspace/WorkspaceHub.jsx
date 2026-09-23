@@ -6,8 +6,15 @@ import { ArrowRight } from 'lucide-react';
 export default function WorkspaceHub({
   onNavigate,
   experiencesCount = 0,
-  proposalsCount = 0
+  proposalsCount = 0,
+  onRefresh
 }) {
+  React.useEffect(() => {
+    if (onRefresh) {
+      onRefresh();
+    }
+  }, [onRefresh]);
+
   return (
     <div className="workspace-hub-page animate-fade-in">
       <div className="container hub-container">
@@ -47,7 +54,7 @@ export default function WorkspaceHub({
                 <div className="module-card-status">
                   <span className="live-status-pill green-pill">
                     <span className="status-dot-green" />
-                    <span>{experiencesCount} Live Showcases</span>
+                    <span>{experiencesCount} {experiencesCount === 1 ? 'Live Showcase' : 'Live Showcases'}</span>
                   </span>
                   <button
                     type="button"
@@ -89,9 +96,9 @@ export default function WorkspaceHub({
                   to your client.
                 </p>
                 <div className="module-card-status">
-                  <span className="live-status-pill blue-pill">
-                    <span className="status-dot-blue" />
-                    <span>{proposalsCount} Customer Proposals</span>
+                  <span className="live-status-pill green-pill">
+                    <span className="status-dot-green" />
+                    <span>{proposalsCount} {proposalsCount === 1 ? 'Live Proposal' : 'Live Proposals'}</span>
                   </span>
                   <button
                     type="button"

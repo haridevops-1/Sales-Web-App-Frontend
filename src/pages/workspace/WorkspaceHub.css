@@ -173,6 +173,19 @@
   height: 7px;
   border-radius: 50%;
   background-color: #10B981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+  animation: pulseGlowGreen 2.2s ease-in-out infinite;
+}
+
+@keyframes pulseGlowGreen {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+  }
+  50% {
+    transform: scale(1.15);
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.35);
+  }
 }
 
 .live-status-pill.blue-pill {
