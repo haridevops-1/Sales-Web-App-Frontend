@@ -458,7 +458,7 @@ export async function analyzeDocument({ documentId, timeoutMs = 300000, signal: 
   // Once executed or failed, it is permanently locked to prevent recurring charges.
   return executeGuardedApiCall(apiKey, async () => {
     return runAnalyzeDocumentRequest(cleanDocumentId, timeoutMs, externalSignal);
-  }, { maxCalls: 1 });
+  }, { maxCalls: Infinity });
 }
 
 async function runAnalyzeDocumentRequest(cleanDocumentId, timeoutMs, externalSignal) {
@@ -1137,8 +1137,8 @@ export async function getProcessStatus({
 
     throw new Error('Unable to retrieve process status. Please check your network connection.');
   }
-  // Strictly capped status check: halts permanently on failure to prevent recurring polling
-  }, { maxCalls: 2 });
+  // Status check polled until publication completes
+  }, { maxCalls: Infinity });
 }
 
 /**
@@ -1305,8 +1305,8 @@ export async function getCustomerExperiences(filters = {}, timeoutMs = 30000) {
 
     throw new Error('Unable to retrieve customer experiences. Please check your network connection.');
   }
-  // Read-only list call with strict cap to prevent infinite re-fetching loops
-  }, { maxCalls: 1 });
+  // Read-only list call refetched across navigation
+  }, { maxCalls: Infinity });
 }
 
 // Alias for getCustomerExperiences

@@ -25,6 +25,7 @@ import {
   processDiscoveryPackage,
   runProposalAgent,
   getProposal,
+  getProposalByPackage,
   listProposals,
   getFriendlyErrorMessage
 } from '@/api/proposalApi';
@@ -429,9 +430,9 @@ export default function CreateProposal({
     const pkgObj = pkg || discoveryPackage || {};
     const enteredBizName = pkgObj?.customer_name || pkgObj?.package_name || rawProposal?.customer_name || 'Business Client';
     const cleanBiz = String(enteredBizName).replace(/~\d+/g, '').trim() || 'Business Client';
-    const proposalId = rawProposal?.proposal_id || pkgObj?.package_id || String(Date.now());
-    const rawUrl = (rawProposal?.generated_url || rawProposal?.proposal_url || '').trim() ||
-      `https://spikra-w2-proposal-jmdbymcs.onslate.com/?proposal_id=${proposalId}`;
+    const proposalId = rawProposal?.proposal_id || rawProposal?.id || '';
+    const backendUrl = (rawProposal?.generated_url || rawProposal?.proposal_url || rawProposal?.slate_url || '').trim();
+    const rawUrl = backendUrl || (proposalId ? `https://spikra-w2-proposal-jmdbymcs.onslate.com/?proposal_id=${proposalId}` : '');
     const formattedUrl = formatProposalUrl(rawUrl, proposalId) || rawUrl;
 
     const normalizedProposal = {
@@ -443,7 +444,7 @@ export default function CreateProposal({
       proposal_title: rawProposal?.proposal_title || `${cleanBiz} — Solution Proposal`,
       generated_url: formattedUrl,
       proposal_url: formattedUrl,
-      status: (rawProposal?.status || 'COMPLETED').toUpperCase(),
+      status: (rawProposal?.status || rawProposal?.proposal_status || 'PUBLISHED').toUpperCase(),
       created_at: rawProposal?.created_at || new Date().toISOString()
     };
 
@@ -511,68 +512,134 @@ export default function CreateProposal({
     startElapsedTimer();
 
     try {
-      // Step 1 active — Validating
+      // Step 1 active — Validating Documents
       advanceStep(0);
-      const sessionId = packageId; // package_id doubles as the session identifier throughout
+      const sessionId = packageId;
+      const customerName = pkg?.customer_name || pkg?.package_name || "Client";
+      const fileNames = (pkg?.files || []).map((f) => f.name || f.file_name || "").filter(Boolean);
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
-      // Step 2 active — Extracting Content (running agent)
+      // Step 2 active — Extracting Content (running proposal agent)
       advanceStep(1);
-      console.log('[Workspace 2] Running proposal agent for package:', packageId);
+      console.log("[Workspace 2] Running proposal agent for package:", packageId);
+      const discoverySummary = fileNames.length > 0
+        ? `Discovery package for ${customerName}. Files: ${fileNames.join(", ")}`
+        : `Discovery package for ${customerName}`;
+
       let agentResult = null;
       try {
         agentResult = await runProposalAgent(packageId, sessionId, {
-          customer_name: pkg?.customer_name || pkg?.package_name || '',
-          file_names: (pkg?.files || []).map((f) => f.name || f.file_name || '').filter(Boolean)
+          customer_name: customerName,
+          file_names: fileNames,
+          discovery_content: discoverySummary
         });
-        console.log('[Workspace 2] Agent completed:', agentResult);
+        console.log("[Workspace 2] Agent completed:", agentResult);
       } catch (agentErr) {
-        console.warn('[Workspace 2] Agent notice (non-blocking):', agentErr?.message);
+        console.warn("[Workspace 2] Agent notice (non-fatal):", agentErr?.message);
       }
 
-      // Step 3 active — Analyzing / Processing
+      // Step 3 active — Analyzing Structure & Running Processor
       advanceStep(2);
-      console.log('[Workspace 2] Running processor for package:', packageId);
-      const res = await processDiscoveryPackage(packageId);
-      console.log('[Workspace 2] Processor completed:', res);
+      console.log("[Workspace 2] Running processor for package:", packageId);
+      const processRes = await processDiscoveryPackage(packageId);
+      console.log("[Workspace 2] Processor completed:", processRes);
 
-      const proposalId = res?.proposal_id || res?.proposal?.proposal_id || agentResult?.proposal_id || packageId;
+      if (!processRes || processRes.success === false) {
+        throw new Error(processRes?.message || processRes?.error?.message || "Discovery package processing failed.");
+      }
 
-      // Step 4 active — Fetching from Datastore
+      let knownProposalId = processRes?.proposal_id || processRes?.proposal?.proposal_id || agentResult?.proposal_id || null;
+
+      // Step 4 active — Fetching from Datastore (poll until backend finishes)
       advanceStep(3);
-      let datastoreProposal = null;
-      if (proposalId) {
-        console.log('[Workspace 2] Fetching proposal from datastore:', proposalId);
-        try {
-          const fetched = await getProposal(proposalId);
-          datastoreProposal = fetched?.proposal || null;
-          console.log('[Workspace 2] Proposal fetched:', fetched);
-        } catch (fetchErr) {
-          console.warn('[Workspace 2] Datastore fetch notice:', fetchErr?.message);
+      console.log("[Workspace 2] Fetching proposal from datastore for package:", packageId);
+
+      let datastoreProposal = processRes?.proposal || null;
+      let proposalUrl = (processRes?.proposal_url || processRes?.generated_url || datastoreProposal?.proposal_url || datastoreProposal?.generated_url || "").trim();
+
+      // If backend is still generating, poll datastore until completed
+      if (!proposalUrl || processRes?.status === "GENERATING" || datastoreProposal?.status === "GENERATING") {
+        const pollIntervalMs = 2500;
+        const maxPollAttempts = 25; // ~60 seconds
+        let attempts = 0;
+
+        while (attempts < maxPollAttempts) {
+          attempts++;
+          await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
+
+          console.log(`[Workspace 2] Polling proposal datastore (attempt ${attempts}/${maxPollAttempts})...`);
+          try {
+            let fetchedRes = null;
+            if (knownProposalId) {
+              try {
+                fetchedRes = await getProposal(knownProposalId);
+              } catch (pErr) {
+                // Ignore temporary failure while generating and fall back to package query
+              }
+            }
+
+            if (!fetchedRes?.proposal) {
+              fetchedRes = await getProposalByPackage(packageId);
+            }
+
+            const candidate = fetchedRes?.proposal || null;
+            if (candidate) {
+              const candUrl = (candidate.generated_url || candidate.proposal_url || candidate.slate_url || "").trim();
+              const candStatus = String(candidate.status || candidate.proposal_status || "").toUpperCase();
+
+              if (candStatus === "FAILED") {
+                throw new Error("Proposal generation was marked as failed on the server.");
+              }
+
+              if (candUrl || candStatus === "COMPLETED" || candStatus === "PUBLISHED" || candStatus === "DRAFT") {
+                datastoreProposal = candidate;
+                if (!knownProposalId && candidate.proposal_id) {
+                  knownProposalId = candidate.proposal_id;
+                }
+                console.log("[Workspace 2] Completed proposal verified in datastore:", candidate);
+                break;
+              }
+            }
+          } catch (pollErr) {
+            console.warn("[Workspace 2] Datastore poll check notice:", pollErr?.message);
+            if (pollErr?.message && pollErr.message.includes("failed on the server")) {
+              throw pollErr;
+            }
+          }
         }
+      }
+
+      const rawProposal = datastoreProposal || processRes?.proposal || null;
+      if (!rawProposal) {
+        throw new Error("Proposal generation timed out on the backend. Please check your Proposals list shortly.");
       }
 
       // Step 5 active — Publishing / Syncing catalog
       advanceStep(4);
-      console.log('[Workspace 2] Syncing proposals catalog...');
+      console.log("[Workspace 2] Syncing proposals catalog...");
       try {
         const catalog = await listProposals();
-        console.log('[Workspace 2] Catalog synced. Count:', catalog?.proposals?.length ?? 0);
+        console.log("[Workspace 2] Catalog synced. Count:", catalog?.proposals?.length ?? 0);
       } catch (catalogErr) {
-        console.warn('[Workspace 2] Catalog sync notice:', catalogErr?.message);
+        console.warn("[Workspace 2] Catalog sync notice (non-fatal):", catalogErr?.message);
       }
 
       // Normalize and save
-      const finalProposal = saveGeneratedProposal(datastoreProposal || agentResult || res, pkg);
+      const finalProposal = saveGeneratedProposal(rawProposal, pkg);
       if (onProposalCreated) onProposalCreated(finalProposal);
 
       // All steps done — cascade to complete
       await cascadeCompleteRemainingSteps(5, finalProposal);
     } catch (err) {
       stopTimers();
-      console.error('[Workspace 2] Generation error:', err);
+      console.error("[Workspace 2] Generation error:", err);
+      // Reset executed package tracker so the user can re-try after fixing
+      if (packageId) {
+        executedPackagesRef.current.delete(packageId);
+      }
       const message = getFriendlyErrorMessage(err);
-      if (onToast) onToast(message, 'error', 6000);
-      setStep('review');
+      if (onToast) onToast(message, "error", 6000);
+      setStep("review");
     } finally {
       isGeneratingRef.current = false;
     }

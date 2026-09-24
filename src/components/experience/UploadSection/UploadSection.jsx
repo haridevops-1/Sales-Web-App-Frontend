@@ -258,16 +258,41 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
       const analysisController = new AbortController();
       analysisAbortControllerRef.current = analysisController;
 
-      // Strictly single execution: call analyzeDocument once with no retries or recurring polling loops
-      const result = await analyzeDocument({
-        documentId: fn1Result.documentId,
-        signal: analysisController.signal
-      });
+      // Backend reports { stillProcessing: true } while analyzing in background.
+      // Polls with proper timing, but if an actual error occurs, stops immediately.
+      const pollIntervalMs = 5000;
+      const maxAttempts = 30;
 
-      if (!result || result.success === false) {
-        throw new Error(result?.message || 'Document analysis failed.');
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        const result = await analyzeDocument({
+          documentId: fn1Result.documentId,
+          signal: analysisController.signal
+        });
+
+        if (!result?.stillProcessing) {
+          if (!result || result.success === false) {
+            throw new Error(result?.message || "Document analysis failed.");
+          }
+          fn3Result = result;
+          break;
+        }
+
+        if (attempt >= maxAttempts) {
+          throw new Error("Document analysis is taking longer than expected. Please check back shortly.");
+        }
+
+        await new Promise((resolve, reject) => {
+          const timer = setTimeout(resolve, pollIntervalMs);
+          const onAbort = () => {
+            clearTimeout(timer);
+            const cancelErr = new Error("Analysis was cancelled.");
+            cancelErr.name = "CancelledError";
+            reject(cancelErr);
+          };
+          if (analysisController.signal.aborted) onAbort();
+          else analysisController.signal.addEventListener("abort", onAbort, { once: true });
+        });
       }
-      fn3Result = result;
 
       analysisAbortControllerRef.current = null;
       setAnalysisResult(fn3Result);
@@ -322,34 +347,51 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
         if (immediateUrl || fn5Result?.status === 'PUBLISHED') {
           handleStatusPublished(fn5Result);
         } else {
-          // Strictly single status check: zero recurring callbacks or interval polling
-          try {
-            const statusResponse = await getProcessStatus({
-              projectId: fn1Result.projectId,
-              documentId: fn1Result.documentId,
-              experienceId: fn4Result.experienceId,
-              timeoutMs: 15000
-            });
+          // Poll for publication status with proper intervals; halts immediately on failure
+          const maxPolls = 10;
+          const pollIntervalMs = 3000;
 
-            const polledUrl = (statusResponse?.experience?.generated_url || '').trim();
-            const currentStatus = String(statusResponse?.current_stage || '').toUpperCase();
+          const runPoll = async (pollCount) => {
+            const controller = new AbortController();
+            statusPollAbortRef.current = controller;
 
-            if (currentStatus === 'FAILED') {
+            try {
+              const statusResponse = await getProcessStatus({
+                projectId: fn1Result.projectId,
+                documentId: fn1Result.documentId,
+                experienceId: fn4Result.experienceId,
+                timeoutMs: 15000,
+                signal: controller.signal
+              });
+
+              const polledUrl = (statusResponse?.experience?.generated_url || "").trim();
+              const currentStatus = String(statusResponse?.current_stage || "").toUpperCase();
+
+              if (currentStatus === "FAILED") {
+                updateStage(UPLOAD_STAGES.FAILED);
+                if (onError) onError("Publication failed. Execution stopped.");
+                return;
+              }
+
+              if (currentStatus === "PUBLISHED" || polledUrl) {
+                handleStatusPublished(statusResponse);
+                return;
+              }
+
+              if (pollCount >= maxPolls) {
+                handleStatusPublished(statusResponse || fn5Result);
+                return;
+              }
+
+              statusPollTimerRef.current = setTimeout(() => runPoll(pollCount + 1), pollIntervalMs);
+            } catch (pErr) {
+              console.warn("[UploadSection] Status check notice:", pErr?.message);
               updateStage(UPLOAD_STAGES.FAILED);
-              if (onError) onError('Publication failed. All retries stopped.');
-              return;
+              if (onError) onError(pErr?.message || "Publication failed.");
             }
+          };
 
-            if (currentStatus === 'PUBLISHED' || polledUrl) {
-              handleStatusPublished(statusResponse);
-              return;
-            }
-
-            handleStatusPublished(statusResponse || fn5Result);
-          } catch (pErr) {
-            console.warn('[UploadSection] Status check notice:', pErr?.message);
-            handleStatusPublished(fn5Result);
-          }
+          runPoll(1);
         }
       } catch (fn5Err) {
         console.error('[Experience Deploy Failed]', fn5Err);

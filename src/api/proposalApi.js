@@ -51,9 +51,20 @@ async function requestJson(path, { method = 'GET', body, timeoutMs = 45000, sign
   // Only the AI-triggering endpoints get a hard call cap, to avoid duplicate generation
   // requests for the same package - everything else (status/list/read calls, polled and
   // refreshed repeatedly across a normal session) must stay uncapped.
-  // Strictly single call limit across all endpoints with zero retries
-  const maxCalls = 1;
-  const paramKey = body ? (body.package_id || body.proposal_id || JSON.stringify(body).slice(0, 80)) : null;
+  // AI/processor triggers get a single execution limit per package.
+  // Read-only catalog, status, and detail fetches stay uncapped so normal polling/navigation works.
+  const isAiTrigger = method === 'POST' && (path.includes('/processor/process') || path.includes('/agent'));
+  const maxCalls = isAiTrigger ? 1 : Infinity;
+
+  let paramKey = null;
+  if (body) {
+    paramKey = body.package_id || body.proposal_id || JSON.stringify(body).slice(0, 80);
+  } else if (path.includes('?')) {
+    try {
+      const urlParams = new URLSearchParams(path.split('?')[1]);
+      paramKey = urlParams.get('proposal_id') || urlParams.get('package_id') || urlParams.get('session_id') || urlParams.get('resource') || null;
+    } catch {}
+  }
   const apiKey = getApiKey(method, path, paramKey);
 
   return executeGuardedApiCall(apiKey, async () => {
@@ -102,16 +113,16 @@ async function requestJson(path, { method = 'GET', body, timeoutMs = 45000, sign
       data = {};
     }
 
-    // still_processing is an expected, non-error outcome the caller polls/tolerates - never a
-    // failure to throw (and never something the guard should permanently lock this key over).
-    if (response.ok && data.success === false && data.still_processing === true) {
+    // still_processing or pending generation is an expected outcome during async proposal generation
+    const isPending = data?.still_processing === true || (typeof data?.message === 'string' && data.message.includes('No proposal generated yet'));
+    if (response.ok && data.success === false && isPending) {
       console.log('[Workspace 2] ' + path + ' still processing:', data);
       return data;
     }
 
     if (!response.ok || data.success === false) {
       const code = data?.error?.code || null;
-      const message = data?.error?.message || ('Request failed with status ' + response.status + '.');
+      const message = data?.error?.message || data?.message || ('Request failed with status ' + response.status + '.');
       console.error('[Workspace 2] ' + response.status + ' error on ' + path + ':', data);
       if (response.status === 401) {
         clearSessionToken();
@@ -125,7 +136,7 @@ async function requestJson(path, { method = 'GET', body, timeoutMs = 45000, sign
 }
 
 async function requestFormData(path, formData, { signal: externalSignal, timeoutMs = 90000 } = {}) {
-  const pkgName = formData?.get ? formData.get('package_name') : 'form_upload';
+  const pkgName = (formData?.get && (formData.get('package_name') || formData.get('package_id'))) || String(Date.now());
   const apiKey = getApiKey('POST', path, pkgName);
 
   return executeGuardedApiCall(apiKey, async () => {
@@ -365,6 +376,11 @@ function sanitizeProposalObj(p) {
 export function getProposal(proposalId, signal) {
   console.log('[Workspace 2] GET /proposal/api?resource=proposals&proposal_id=' + proposalId);
   return requestJson('/proposal/api?resource=proposals&proposal_id=' + encodeURIComponent(proposalId), { signal });
+}
+
+export function getProposalByPackage(packageId, signal) {
+  console.log('[Workspace 2] GET /proposal/api?resource=proposals&package_id=' + packageId);
+  return requestJson('/proposal/api?resource=proposals&package_id=' + encodeURIComponent(packageId), { signal });
 }
 
 export function updateProposalStatus(proposalId, status) {
