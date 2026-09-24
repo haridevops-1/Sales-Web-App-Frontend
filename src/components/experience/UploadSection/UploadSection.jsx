@@ -9,6 +9,7 @@ import SpotlightCard from '@/reactbits/SpotlightCard';
 import { AnimatePresence, motion } from 'framer-motion';
 import { validateFile, inferBusinessName, validateLogoFile } from '@/utils/helpers';
 import { uploadTechnicalDocument, processDocument, analyzeDocument, generateCustomerExperience, deployCustomerExperience, getProcessStatus } from '@/api/catalystApi';
+import { resetApiGuard } from '@/api/apiCallGuard';
 import { UPLOAD_STAGES } from '@/utils/constants';
 
 export default function UploadSection({ onStageChange, onUploadSuccess, onExperienceCreated, onError }) {
@@ -177,6 +178,7 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
       }
     }
 
+    resetApiGuard();
     setInlineError(null);
     setGenerationError(null);
     setDeployError(null);
@@ -261,7 +263,7 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
       // Backend reports { stillProcessing: true } while analyzing in background.
       // Polls with proper timing, but if an actual error occurs, stops immediately.
       const pollIntervalMs = 5000;
-      const maxAttempts = 30;
+      const maxAttempts = 60; // 5 minutes max wait for Zia Agent analysis
 
       for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         const result = await analyzeDocument({
@@ -306,6 +308,9 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
           projectName: cleanProj
         });
       }
+
+      // Allow brief moment for backend Stratus synchronization
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       // Automatically chain to Function 4 (Experience Generation)
       updateStage(UPLOAD_STAGES.GENERATING_EXPERIENCE);

@@ -33,7 +33,14 @@ try {
     const toRemove = [];
     for (let i = 0; i < sessionStorage.length; i++) {
       const key = sessionStorage.key(i);
-      if (key && (key.startsWith("spikra_app_") || key.startsWith("spikra_guard_"))) {
+      if (
+        key &&
+        (key.startsWith("spikra_app_") ||
+          key.startsWith("spikra_guard_") ||
+          key.startsWith(STORAGE_PREFIX) ||
+          key.startsWith(COUNT_PREFIX) ||
+          key.startsWith("spikra_"))
+      ) {
         toRemove.push(key);
       }
     }

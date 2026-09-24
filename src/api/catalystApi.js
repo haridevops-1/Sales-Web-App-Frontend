@@ -551,23 +551,20 @@ async function runAnalyzeDocumentRequest(cleanDocumentId, timeoutMs, externalSig
         responseData.message.includes('still in progress')
       ));
 
-    // When backend accepts the job or reports analysis started, treat as complete for the single-execution pipeline
-    // so no recurring polling callbacks or repeated fetch calls occur.
+    // When backend reports analysis is still in progress, return stillProcessing: true
+    // so the frontend polls with proper intervals until analysis JSON is written to Stratus.
     if (isAsyncProcessing) {
-      console.info('[Catalyst API Function 3] Analysis started asynchronously by backend. Single execution guaranteed, completing stage.');
+      console.info('[Catalyst API Function 3] Analysis is in progress on backend. Polling for completion...');
       return {
-        success: true,
+        success: false,
+        stillProcessing: true,
         projectId: responseData?.data?.project_id || responseData?.project_id || '',
         documentId: responseData?.data?.document_id || responseData?.document_id || cleanDocumentId,
         jobId: responseData?.data?.processing_job_id || responseData?.data?.job_id || responseData?.job_id || '',
-        processingStatus: 'COMPLETED',
-        jobStatus: 'COMPLETED',
+        processingStatus: 'PROCESSING',
+        jobStatus: 'RUNNING',
         analysisObjectKey: responseData?.data?.analysis_object_key || '',
-        chunkCount: responseData?.data?.chunk_count || 1,
-        keywordCount: responseData?.data?.keyword_count || 0,
-        keyphraseCount: responseData?.data?.keyphrase_count || 0,
-        entityCount: responseData?.data?.entity_count || 0,
-        message: responseData?.message || 'AI analysis completed.',
+        message: responseData?.message || 'AI analysis is in progress. Please check back shortly.',
         raw: responseData
       };
     }

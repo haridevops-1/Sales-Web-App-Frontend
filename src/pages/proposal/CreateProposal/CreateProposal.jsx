@@ -29,6 +29,7 @@ import {
   listProposals,
   getFriendlyErrorMessage
 } from '@/api/proposalApi';
+import { resetApiGuard } from '@/api/apiCallGuard';
 import { formatDate, formatProposalUrl } from '@/utils/helpers';
 
 /**
@@ -504,6 +505,7 @@ export default function CreateProposal({
 
     isGeneratingRef.current = true;
     executedPackagesRef.current.add(packageId);
+    resetApiGuard();
 
     setStep('processing');
     setActiveStepIndex(0);
