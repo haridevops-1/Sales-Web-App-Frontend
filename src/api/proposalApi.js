@@ -295,11 +295,12 @@ export function removeFileFromPackage(packageId, fileId) {
 // Processing (proposal-processor).
 // ---------------------------------------------------------------------------
 
-export function processDiscoveryPackage(packageId) {
-  console.log('[Workspace 2] POST /proposal/processor/process — package_id: ' + packageId);
-  return requestJson('/proposal/processor/process?package_id=' + encodeURIComponent(packageId), {
+export function processDiscoveryPackage(packageId, options = {}) {
+  console.log('[Workspace 2] POST /proposal/processor/process?session_id=' + packageId);
+  return requestJson('/proposal/processor/process?session_id=' + encodeURIComponent(packageId), {
     method: 'POST',
-    timeoutMs: 180000
+    timeoutMs: options.timeoutMs || 180000,
+    signal: options.signal
   });
 }
 
@@ -321,27 +322,13 @@ export function getDiscoverySession(sessionId, signal) {
 }
 
 // ---------------------------------------------------------------------------
-// Proposal Agent (proposal-agent-api)
+// Proposal Processor / Legacy Agent Delegate
+// POST /proposal/agent was removed from backend - delegates to processor
 // ---------------------------------------------------------------------------
 
 export function runProposalAgent(packageId, sessionId, extraData = {}) {
-  const qs = sessionId
-    ? 'package_id=' + encodeURIComponent(packageId) + '&session_id=' + encodeURIComponent(sessionId)
-    : 'package_id=' + encodeURIComponent(packageId);
-  console.log('[Workspace 2] POST /proposal/agent — ' + qs);
-  const body = {
-    package_id: packageId,
-    discovery_content: extraData.file_names?.length
-      ? 'Discovery package for ' + (extraData.customer_name || 'client') + '. Files: ' + extraData.file_names.join(', ')
-      : 'Discovery package for ' + (extraData.customer_name || 'client'),
-    customer_name: extraData.customer_name || '',
-    ...extraData
-  };
-  return requestJson('/proposal/agent?' + qs, {
-    method: 'POST',
-    body,
-    timeoutMs: 180000
-  });
+  console.warn('[Workspace 2] POST /proposal/agent superseded by /proposal/processor/process');
+  return processDiscoveryPackage(packageId);
 }
 
 // ---------------------------------------------------------------------------
@@ -361,8 +348,7 @@ export function listProposals(packageId, signal) {
 
 function sanitizeProposalObj(p) {
   if (!p) return p;
-  const id = p.proposal_id || p.ROWID || '';
-  let url = p.generated_url || p.proposal_url || p.slate_url || `https://spikra-w2-proposal-jmdbymcs.onslate.com/?proposal_id=${id}`;
+  let url = (p.generated_url || p.proposal_url || p.slate_url || '').trim();
   if (url.includes('spikra-customer-prop-msdrrgbk.onslate.com')) {
     url = url.replace('spikra-customer-prop-msdrrgbk.onslate.com', 'spikra-w2-proposal-jmdbymcs.onslate.com');
   }

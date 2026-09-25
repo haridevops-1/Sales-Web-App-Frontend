@@ -592,6 +592,7 @@ async function runAnalyzeDocumentRequest(cleanDocumentId, timeoutMs, externalSig
       keywordCount: dataObj.keyword_count || 0,
       keyphraseCount: dataObj.keyphrase_count || 0,
       entityCount: dataObj.entity_count || 0,
+      capabilities: dataObj.capabilities || responseData?.capabilities || dataObj.analysis?.capabilities || [],
       message: responseData?.message || 'AI analysis completed successfully.',
       raw: responseData
     };

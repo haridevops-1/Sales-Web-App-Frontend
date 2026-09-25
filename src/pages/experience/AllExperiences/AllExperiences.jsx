@@ -8,7 +8,8 @@ import SpikraExperienceSearch from '@/components/ui/SpikraExperienceSearch';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Clock, Copy, Check, ExternalLink, FolderKanban, Plus, ArrowLeft } from 'lucide-react';
+import { Clock, Copy, Check, ExternalLink, FolderKanban, Plus, ArrowLeft, Eye } from 'lucide-react';
+import CustomerExperiencePreview from '@/components/experience/CustomerExperiencePreview/CustomerExperiencePreview';
 
 export default function AllExperiences({
   onNavigate,
@@ -18,6 +19,7 @@ export default function AllExperiences({
   onRefresh = null
 }) {
   const [copiedId, setCopiedId] = useState(null);
+  const [previewExperience, setPreviewExperience] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
 
   const totalCount = experiences.length;
@@ -387,6 +389,16 @@ export default function AllExperiences({
 
                             <Button
                               variant="outline"
+                              className="exp-btn-preview"
+                              onClick={() => setPreviewExperience(exp)}
+                              title="Preview showcase architecture"
+                            >
+                              <Eye size={14} />
+                              <span>Preview</span>
+                            </Button>
+
+                            <Button
+                              variant="outline"
                               className="exp-btn-copy"
                               onClick={() => handleCopyLink(cardId, generatedUrl)}
                               disabled={!isPublished || !generatedUrl}
@@ -456,6 +468,39 @@ export default function AllExperiences({
           </div>
         )}
       </div>
+
+      {/* Interactive Showcase Preview Modal */}
+      {previewExperience && (
+        <div
+          className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md"
+          onClick={() => setPreviewExperience(null)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="relative w-full max-w-5xl max-h-[92vh] overflow-y-auto bg-slate-900 rounded-2xl border border-slate-700 shadow-2xl p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="absolute top-4 right-4 z-20 w-8 h-8 rounded-full bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center border border-slate-700 cursor-pointer"
+              onClick={() => setPreviewExperience(null)}
+              aria-label="Close preview"
+            >
+              ✕
+            </button>
+            <CustomerExperiencePreview
+              businessName={previewExperience.business_name || previewExperience.businessName}
+              projectName={previewExperience.project_name || previewExperience.projectName}
+              experienceTitle={previewExperience.experience_title || previewExperience.experienceTitle}
+              businessLogoPreview={previewExperience.business_logo_url || previewExperience.logo_url}
+              status={previewExperience.status}
+              generatedUrl={previewExperience.generated_url}
+              analysisData={previewExperience.analysis_data || previewExperience.analysis || previewExperience}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

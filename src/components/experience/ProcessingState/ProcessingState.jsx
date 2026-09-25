@@ -99,7 +99,7 @@ export default function ProcessingState({
 
       {isAnalyzing && (
         <p className="processing-analyzing-notice">
-          Analyzing your document — this can take a while for larger documents.
+          Analyzing your document - larger documents or certain models can take a few minutes
         </p>
       )}
 

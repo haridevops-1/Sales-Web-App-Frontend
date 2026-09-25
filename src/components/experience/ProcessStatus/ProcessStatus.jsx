@@ -12,8 +12,10 @@ import {
   Plus,
   Globe,
   Link2,
-  FileCheck2
+  FileCheck2,
+  Eye
 } from 'lucide-react';
+import CustomerExperiencePreview from '../CustomerExperiencePreview/CustomerExperiencePreview';
 
 const formatCleanText = (text) => {
   if (!text || typeof text !== 'string') return '';
@@ -76,6 +78,7 @@ export default function ProcessStatus({
   const [currentStage, setCurrentStage] = useState(propGeneratedUrl ? 'PUBLISHED' : 'DEPLOYING');
   const [fetchError, setFetchError] = useState(null);
   const [copiedUrl, setCopiedUrl] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   const isMountedRef = useRef(true);
   const timerRef = useRef(null);
@@ -334,6 +337,18 @@ export default function ProcessStatus({
                 </span>
               </motion.button>
 
+              <motion.button
+                type="button"
+                className="btn-secondary-create-another"
+                onClick={() => setIsPreviewOpen(true)}
+                whileHover={{ y: -2 }}
+                whileTap={{ y: 0, scale: 0.98 }}
+                title="Preview interactive customer showcase"
+              >
+                <Eye size={16} className="btn-plus-icon" />
+                <span>Preview Showcase</span>
+              </motion.button>
+
               {onUploadAnother && (
                 <motion.button
                   type="button"
@@ -389,6 +404,39 @@ export default function ProcessStatus({
           </div>
         )}
       </div>
+
+      {/* Interactive Showcase Preview Modal */}
+      {isPreviewOpen && (
+        <div
+          className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md"
+          onClick={() => setIsPreviewOpen(false)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="relative w-full max-w-5xl max-h-[92vh] overflow-y-auto bg-slate-900 rounded-2xl border border-slate-700 shadow-2xl p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="absolute top-4 right-4 z-20 w-8 h-8 rounded-full bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center border border-slate-700 cursor-pointer"
+              onClick={() => setIsPreviewOpen(false)}
+              aria-label="Close preview"
+            >
+              ✕
+            </button>
+            <CustomerExperiencePreview
+              businessName={displayBusinessName}
+              projectName={displayProjectName}
+              experienceTitle={experienceTitle}
+              businessLogoPreview={businessLogoPreview}
+              status={currentStage}
+              generatedUrl={generatedUrl}
+              analysisData={analysisData}
+            />
+          </div>
+        </div>
+      )}
     </SpotlightCard>
   );
 }

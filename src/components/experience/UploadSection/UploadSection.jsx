@@ -3,7 +3,6 @@ import './UploadSection.css';
 import UploadDropzone from '../UploadDropzone/UploadDropzone';
 import FilePreview from '../FilePreview/FilePreview';
 import ProcessingState from '../ProcessingState/ProcessingState';
-import UploadResultCard from '../UploadResultCard/UploadResultCard';
 import ProcessStatus from '../ProcessStatus/ProcessStatus';
 import SpotlightCard from '@/reactbits/SpotlightCard';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -261,9 +260,9 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
       analysisAbortControllerRef.current = analysisController;
 
       // Backend reports { stillProcessing: true } while analyzing in background.
-      // Polls with proper timing, but if an actual error occurs, stops immediately.
-      const pollIntervalMs = 5000;
-      const maxAttempts = 60; // 5 minutes max wait for Zia Agent analysis
+      // Polls sequentially with proper ~6-10s interval; halts immediately on failure.
+      const pollIntervalMs = 8000;
+      const maxAttempts = 60; // Up to ~8 minutes for deep AI analysis
 
       for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         const result = await analyzeDocument({

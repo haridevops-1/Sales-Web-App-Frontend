@@ -182,49 +182,25 @@ export async function copyToClipboard(text) {
 
 /**
  * Format and sanitize a proposal or experience showcase URL.
- * Zoho Slate (onslate.com) hosts static assets and does not rewrite deep subpaths
- * to index.html. A path-based URL like https://spikra-ai-proposal.onslate.com/abc-pvt-ltd_proposal
- * returns Slate's 404 "Oops..Page not found".
- * Converting it to query-based format: https://spikra-ai-proposal.onslate.com/?slug=abc-pvt-ltd_proposal
- * allows Slate's index.html to load with HTTP 200, parse the slug, and fetch the proposal from Catalyst.
+ * Workspace 1 (Customer Showcases):
+ *   https://spikra-ai-proposal.onslate.com/?slug=<slug>&experience_id=<id>&project_id=<id>
+ * Workspace 2 (Solution Proposals):
+ *   https://spikra-w2-proposal-jmdbymcs.onslate.com/?proposal_id=<id>
+ * Both generated_url values come back fully-formed from the backend.
+ * Never construct either URL manually, and never assume they share a domain or URL pattern.
  */
 export function formatProposalUrl(rawUrl, proposalOrExpId = '') {
   if (!rawUrl || typeof rawUrl !== 'string') return '';
   let trimmed = rawUrl.trim();
   if (!trimmed) return '';
 
+  // Handle legacy domain replacement if an older saved record in local storage has it
   if (trimmed.includes('spikra-customer-prop-msdrrgbk.onslate.com')) {
     trimmed = trimmed.replace('spikra-customer-prop-msdrrgbk.onslate.com', 'spikra-w2-proposal-jmdbymcs.onslate.com');
   }
 
-  try {
-    const parsed = new URL(trimmed);
-    if (parsed.hostname.toLowerCase().includes('onslate.com')) {
-      // Workspace 2 Solution Proposal handling
-      if (parsed.hostname.includes('spikra-w2-proposal') || parsed.searchParams.has('proposal_id') || String(rawUrl).includes('proposal')) {
-        if (proposalOrExpId && !parsed.searchParams.has('proposal_id')) {
-          parsed.searchParams.set('proposal_id', String(proposalOrExpId).trim());
-        }
-        return parsed.toString();
-      }
-
-      // Workspace 1 Interactive Experience handling
-      const pathname = parsed.pathname.replace(/^\/+|\/+$/g, '');
-      if (pathname && pathname.toLowerCase() !== 'index.html' && pathname.toLowerCase() !== '404.html') {
-        if (!parsed.searchParams.has('slug')) {
-          parsed.searchParams.set('slug', pathname);
-        }
-        parsed.pathname = '/';
-      }
-      if (proposalOrExpId && !parsed.searchParams.has('experience_id')) {
-        parsed.searchParams.set('experience_id', String(proposalOrExpId).trim());
-      }
-      return parsed.toString();
-    }
-    return trimmed;
-  } catch {
-    return trimmed;
-  }
+  // Always return the exact fully-formed URL string returned by the backend
+  return trimmed;
 }
 
 /**

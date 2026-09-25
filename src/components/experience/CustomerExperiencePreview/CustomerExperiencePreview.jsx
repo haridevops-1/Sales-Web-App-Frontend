@@ -14,6 +14,49 @@ export default function CustomerExperiencePreview({
 }) {
   const [activeTab, setActiveTab] = useState('summary');
   const [openAccordions, setOpenAccordions] = useState({ 0: true, 1: false });
+  const [openCapabilityAccordions, setOpenCapabilityAccordions] = useState({ 0: true });
+
+  const toggleCapabilityAccordion = (index) => {
+    setOpenCapabilityAccordions((prev) => ({
+      ...prev,
+      [index]: !prev[index]
+    }));
+  };
+
+  // Read real capabilities from analysisData without hardcoding or filler fallbacks
+  const rawCapabilities = (
+    analysisData?.capabilities ||
+    analysisData?.data?.capabilities ||
+    analysisData?.raw?.capabilities ||
+    analysisData?.raw?.data?.capabilities ||
+    analysisData?.analysis?.capabilities ||
+    []
+  );
+
+  const capabilitiesList = Array.isArray(rawCapabilities) ? rawCapabilities.map((item, idx) => {
+    if (typeof item === 'string') {
+      const trimmed = item.trim();
+      return {
+        id: idx,
+        code: `CAP-${String(idx + 1).padStart(2, '0')}`,
+        title: trimmed,
+        description: '',
+        hasDescription: false,
+        tags: []
+      };
+    }
+    const title = (item?.title || item?.name || item?.capability_name || item?.module_name || `Capability ${idx + 1}`).trim();
+    const description = (item?.description || item?.desc || item?.details || '').trim();
+    const tags = Array.isArray(item?.tags) ? item.tags : (item?.category ? [item.category] : []);
+    return {
+      id: item?.id ?? idx,
+      code: item?.code || `CAP-${String(idx + 1).padStart(2, '0')}`,
+      title,
+      description,
+      hasDescription: Boolean(description),
+      tags
+    };
+  }) : [];
 
   // Clean values with strictly neutral fallbacks
   const displayBusinessName = businessName?.trim() || 'Business Name';
@@ -271,48 +314,78 @@ export default function CustomerExperiencePreview({
               <div className="exp-section-head">
                 <span className="exp-section-eyebrow">SYSTEM SPECIFICATIONS</span>
                 <h3 className="exp-section-title">Core Capabilities & Feature Modules</h3>
+                <p className="exp-section-subtitle">
+                  {capabilitiesList.length > 0
+                    ? `${capabilitiesList.length} verified system architectural module${capabilitiesList.length === 1 ? '' : 's'} defined for ${displayBusinessName}.`
+                    : 'System capabilities and module definitions.'}
+                </p>
               </div>
 
-              <div className="exp-modules-grid">
-                <div className="exp-module-card">
-                  <div className="exp-module-head">
-                    <span className="exp-module-icon">⚡</span>
-                    <span className="exp-module-code">MOD-01</span>
-                  </div>
-                  <h4 className="exp-module-title">Core Orchestration Engine</h4>
-                  <p className="exp-module-desc">Central workflow and event routing pipeline for business operations.</p>
-                  <div className="exp-module-tags">
-                    <span className="exp-tag">Automation</span>
-                    <span className="exp-tag">Event Routing</span>
-                  </div>
-                </div>
+              {capabilitiesList.length > 0 ? (
+                <div className="exp-capabilities-accordion-list">
+                  {capabilitiesList.map((cap, idx) => {
+                    const isOpen = Boolean(openCapabilityAccordions[idx]);
+                    const canExpand = cap.hasDescription;
 
-                <div className="exp-module-card">
-                  <div className="exp-module-head">
-                    <span className="exp-module-icon">🔗</span>
-                    <span className="exp-module-code">MOD-02</span>
-                  </div>
-                  <h4 className="exp-module-title">Integration Hub</h4>
-                  <p className="exp-module-desc">Standardized connectors for external API endpoints and databases.</p>
-                  <div className="exp-module-tags">
-                    <span className="exp-tag">REST APIs</span>
-                    <span className="exp-tag">Webhooks</span>
-                  </div>
-                </div>
+                    return (
+                      <div
+                        key={cap.id}
+                        className={`exp-capability-accordion-item ${isOpen && canExpand ? 'is-open' : ''} ${!canExpand ? 'no-desc' : ''}`}
+                      >
+                        <div
+                          className={`exp-capability-accordion-header ${canExpand ? 'clickable' : 'static'}`}
+                          onClick={() => canExpand && toggleCapabilityAccordion(idx)}
+                          role={canExpand ? 'button' : undefined}
+                          tabIndex={canExpand ? 0 : undefined}
+                          onKeyDown={(e) => {
+                            if (canExpand && (e.key === 'Enter' || e.key === ' ')) {
+                              e.preventDefault();
+                              toggleCapabilityAccordion(idx);
+                            }
+                          }}
+                          aria-expanded={canExpand ? isOpen : undefined}
+                        >
+                          <div className="exp-capability-header-left">
+                            <span className="exp-capability-code">{cap.code}</span>
+                            <h4 className="exp-capability-title">{cap.title}</h4>
+                          </div>
 
-                <div className="exp-module-card">
-                  <div className="exp-module-head">
-                    <span className="exp-module-icon">🛡️</span>
-                    <span className="exp-module-code">MOD-03</span>
-                  </div>
-                  <h4 className="exp-module-title">Security & Audit Layer</h4>
-                  <p className="exp-module-desc">Role-based access control and continuous transaction auditing.</p>
-                  <div className="exp-module-tags">
-                    <span className="exp-tag">Encryption</span>
-                    <span className="exp-tag">Compliance</span>
-                  </div>
+                          <div className="exp-capability-header-right">
+                            {cap.tags.length > 0 && (
+                              <div className="exp-capability-tags">
+                                {cap.tags.slice(0, 3).map((tag, tIdx) => (
+                                  <span key={tIdx} className="exp-tag">{tag}</span>
+                                ))}
+                              </div>
+                            )}
+                            {/* Gracefully hide dropdown arrow if description is missing */}
+                            {canExpand && (
+                              <span className="exp-capability-arrow" aria-hidden="true">
+                                {isOpen ? '▲' : '▼'}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Accordion body: renders 2-3 real sentences description returned by backend */}
+                        {isOpen && canExpand && (
+                          <div className="exp-capability-accordion-body animate-fade-in">
+                            <p className="exp-capability-description-text">
+                              {cap.description}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-              </div>
+              ) : (
+                <div className="exp-empty-capabilities">
+                  <div className="exp-empty-icon">📋</div>
+                  <h4>No Specific Capabilities Listed</h4>
+                  <p>The document analysis did not identify any discrete capability modules for this document.</p>
+                </div>
+              )}
             </div>
           )}
 

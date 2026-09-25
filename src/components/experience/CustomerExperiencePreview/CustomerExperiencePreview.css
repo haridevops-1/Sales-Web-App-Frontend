@@ -581,6 +581,146 @@
 .tech-dot.green { background: #10B981; }
 .tech-dot.orange { background: var(--spikra-orange, #FF7A1A); }
 
+/* Capabilities Accordions */
+.exp-capabilities-accordion-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.exp-capability-accordion-item {
+  background: #ffffff;
+  border: 1px solid var(--spikra-border, #E2E8F0);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.exp-capability-accordion-item.is-open {
+  border-color: rgba(255, 122, 26, 0.35);
+  box-shadow: 0 4px 12px rgba(255, 122, 26, 0.06);
+}
+
+.exp-capability-accordion-header {
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  user-select: none;
+  background: #ffffff;
+}
+
+.exp-capability-accordion-header.clickable {
+  cursor: pointer;
+}
+
+.exp-capability-accordion-header.clickable:hover {
+  background: #FAFAFC;
+}
+
+.exp-capability-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.exp-capability-code {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(11, 25, 44, 0.06);
+  color: var(--spikra-navy, #0B192C);
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+}
+
+.exp-capability-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--spikra-navy, #0B192C);
+  line-height: 1.35;
+}
+
+.exp-capability-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.exp-capability-tags {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.exp-capability-arrow {
+  font-size: 0.75rem;
+  color: #94A3B8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: #F1F5F9;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.exp-capability-accordion-item.is-open .exp-capability-arrow {
+  background: rgba(255, 122, 26, 0.12);
+  color: var(--spikra-orange, #FF7A1A);
+}
+
+.exp-capability-accordion-body {
+  padding: 0 20px 18px 20px;
+  border-top: 1px solid #F1F5F9;
+  background: #FDFEFE;
+}
+
+.exp-capability-description-text {
+  margin: 12px 0 0 0;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: #475569;
+}
+
+.exp-empty-capabilities {
+  padding: 40px 20px;
+  text-align: center;
+  background: #ffffff;
+  border: 1px dashed var(--spikra-border, #CBD5E1);
+  border-radius: 12px;
+  margin-top: 16px;
+}
+
+.exp-empty-capabilities .exp-empty-icon {
+  font-size: 2rem;
+  margin-bottom: 8px;
+}
+
+.exp-empty-capabilities h4 {
+  margin: 0 0 6px 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--spikra-navy, #0B192C);
+}
+
+.exp-empty-capabilities p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #64748B;
+}
+
 /* Governance Accordions */
 .exp-governance-grid {
   display: flex;
