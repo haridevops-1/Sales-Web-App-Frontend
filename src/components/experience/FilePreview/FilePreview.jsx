@@ -33,7 +33,7 @@ export default function FilePreview({
     Boolean(businessName?.trim()) &&
     Boolean(projectName?.trim()) &&
     Boolean(file) &&
-    file.size > 0 &&
+    (file.isWorkdrive || file.size > 0) &&
     !businessLogoError &&
     !disabled;
 
@@ -98,11 +98,18 @@ export default function FilePreview({
             <span>{fileTypeLabel}</span>
           </div>
           <div className="file-titles">
-            <h4 className="file-main-name" title={file.name}>
-              {file.name}
-            </h4>
+            <div className="flex items-center gap-2">
+              <h4 className="file-main-name" title={file.name}>
+                {file.name}
+              </h4>
+              {file.isWorkdrive && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-orange-500/15 text-orange-400 border border-orange-500/30">
+                  ☁️ Zoho WorkDrive
+                </span>
+              )}
+            </div>
             <div className="file-sub-meta">
-              <span className="file-size-info">{formatBytes(file.size)}</span>
+              <span className="file-size-info">{file.size > 0 ? formatBytes(file.size) : 'WorkDrive File'}</span>
               <span className="meta-dot">•</span>
               <span className="file-status-text">Ready to Process</span>
             </div>
@@ -173,7 +180,15 @@ export default function FilePreview({
             </div>
           </div>
 
-          {/* Business Logo Upload Field */}
+          {/* Business Logo notice for WorkDrive path */}
+          {file.isWorkdrive ? (
+            <div className="form-field-group full-width">
+              <div className="p-3 rounded-lg bg-slate-900/60 border border-slate-800 text-xs text-slate-400 flex items-center gap-2">
+                <span>☁️</span>
+                <span>WorkDrive document selected. Logo branding is managed via default templates. To supply a custom logo image file, use local upload.</span>
+              </div>
+            </div>
+          ) : (
           <div className="form-field-group full-width">
             <div className="label-with-hint">
               <label htmlFor="business-logo-input" className="form-field-label">
@@ -298,6 +313,7 @@ export default function FilePreview({
               </div>
             )}
           </div>
+          )}
 
           {/* Optional Project Description */}
           <div className="form-field-group full-width">

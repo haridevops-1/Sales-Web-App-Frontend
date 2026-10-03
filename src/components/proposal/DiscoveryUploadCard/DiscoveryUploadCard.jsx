@@ -13,12 +13,14 @@ import {
   Trash2,
   Folder,
   CheckCircle2,
-  Info
+  Info,
+  Cloud
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SpotlightCard from '@/reactbits/SpotlightCard';
 import { createDiscoveryPackage, getFriendlyErrorMessage } from '@/api/proposalApi';
 import { formatBytes } from '@/utils/helpers';
+import WorkDrivePickerModal from '@/components/shared/WorkDrivePicker/WorkDrivePickerModal';
 
 const SUPPORTED_EXTENSIONS = ['.pdf', '.docx', '.doc', '.xlsx', '.xls', '.txt'];
 
@@ -66,9 +68,39 @@ export default function DiscoveryUploadCard({ onContinue, onGenerate, disabled =
   const [isDragging, setIsDragging] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState(null);
+  const [isWorkDrivePickerOpen, setIsWorkDrivePickerOpen] = useState(false);
 
   const fileInputRef = useRef(null);
   const folderInputRef = useRef(null);
+
+  const handleWorkDriveSelect = useCallback((pickedItems) => {
+    if (!pickedItems || pickedItems.length === 0) return;
+    const mapped = pickedItems.map((item) => ({
+      name: item.name,
+      size: item.size || 0,
+      isWorkdrive: true,
+      workdrive_file_id: item.id,
+      file_type: (item.extension || '').replace('.', '')
+    }));
+
+    setSelectedFiles((prev) => {
+      const existingIds = new Set(prev.map((f) => f.workdrive_file_id || `${f.name}_${f.size}`));
+      const newItems = mapped.filter((m) => !existingIds.has(m.workdrive_file_id));
+      return [...prev, ...newItems];
+    });
+
+    setPackageName((prev) => {
+      if (prev.trim()) return prev;
+      if (mapped[0]) {
+        return mapped[0].name.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ');
+      }
+      return 'Discovery Package';
+    });
+
+    if (onToast) {
+      onToast(`Added ${mapped.length} file${mapped.length === 1 ? '' : 's'} from Zoho WorkDrive.`, 'success', 3000);
+    }
+  }, [onToast]);
 
   // Helper to add files and suggest package name if not yet set
   const appendFiles = useCallback((newFiles, suggestedFolder = '') => {
@@ -289,6 +321,29 @@ export default function DiscoveryUploadCard({ onContinue, onGenerate, disabled =
           aria-label="Upload entire folder"
         />
 
+        {/* Source Options Tabs */}
+        <div className="upload-source-tabs" role="tablist" aria-label="Discovery Document Source Options">
+          <button
+            type="button"
+            className="upload-source-tab active"
+            role="tab"
+            aria-selected="true"
+          >
+            <UploadCloud size={14} />
+            <span>Upload from computer</span>
+          </button>
+          <button
+            type="button"
+            className="upload-source-tab"
+            onClick={() => setIsWorkDrivePickerOpen(true)}
+            role="tab"
+            aria-selected="false"
+          >
+            <Cloud size={14} className="text-orange-500" />
+            <span>Pick from WorkDrive</span>
+          </button>
+        </div>
+
         {/* Enhanced Drag and Drop Zone */}
         <motion.div
           className={`discovery-dropzone ${isDragging ? 'is-dragging' : ''} ${disabled ? 'is-disabled' : ''}`}
@@ -364,6 +419,18 @@ export default function DiscoveryUploadCard({ onContinue, onGenerate, disabled =
               <FolderUp size={16} className="btn-icon-accent" />
               <span>Upload Folder</span>
             </motion.button>
+
+            <motion.button
+              type="button"
+              className="btn-dropzone-action btn-workdrive-picker"
+              onClick={() => setIsWorkDrivePickerOpen(true)}
+              disabled={disabled || isCreating}
+              whileHover={{ scale: 1.02, y: -1 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <Cloud size={16} className="btn-icon-accent text-orange-500" />
+              <span>Pick from WorkDrive</span>
+            </motion.button>
           </div>
         </motion.div>
 
@@ -415,6 +482,17 @@ export default function DiscoveryUploadCard({ onContinue, onGenerate, disabled =
 
                   <button
                     type="button"
+                    className="btn-staged-action btn-add-workdrive"
+                    onClick={() => setIsWorkDrivePickerOpen(true)}
+                    disabled={disabled || isCreating}
+                    title="Pick more files from Zoho WorkDrive"
+                  >
+                    <Cloud size={13} className="text-orange-500" />
+                    <span>Pick WorkDrive</span>
+                  </button>
+
+                  <button
+                    type="button"
                     className="btn-staged-action btn-clear-staged"
                     onClick={handleClearAll}
                     disabled={disabled || isCreating}
@@ -452,6 +530,12 @@ export default function DiscoveryUploadCard({ onContinue, onGenerate, disabled =
                             <span className="selected-file-name" title={fileName}>
                               {fileName}
                             </span>
+                            {file.isWorkdrive && (
+                              <span className="selected-file-folder-chip workdrive-chip" title="Picked from Zoho WorkDrive">
+                                <Cloud size={11} className="folder-chip-icon text-orange-500" />
+                                <span>WorkDrive</span>
+                              </span>
+                            )}
                             {folderPath && (
                               <span className="selected-file-folder-chip" title={`From: ${folderPath}`}>
                                 <Folder size={11} className="folder-chip-icon" />
@@ -579,6 +663,18 @@ export default function DiscoveryUploadCard({ onContinue, onGenerate, disabled =
           </motion.button>
         </div>
       </div>
+
+      {/* Reusable WorkDrive Picker Modal (Workspace 2 Multi-File) */}
+      <WorkDrivePickerModal
+        isOpen={isWorkDrivePickerOpen}
+        onClose={() => setIsWorkDrivePickerOpen(false)}
+        onSelect={handleWorkDriveSelect}
+        multiple={true}
+        allowedExtensions={['.pdf', '.docx', '.doc', '.xlsx', '.xls', '.txt', '.csv', '.md']}
+        title="Pick Discovery Documents"
+        subtitle="Select client discovery notes, proposals, or spreadsheets from Zoho WorkDrive"
+        confirmLabel="Add Selected Files"
+      />
     </SpotlightCard>
   );
 }

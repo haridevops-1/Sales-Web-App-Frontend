@@ -317,6 +317,27 @@
   transform: translateY(-1px);
 }
 
+.btn-workdrive-picker {
+  background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%);
+  color: #EA580C;
+  border: 1.5px solid #FDBA74;
+  box-shadow: 0 2px 6px rgba(234, 88, 12, 0.12);
+}
+
+.btn-workdrive-picker:hover:not(:disabled) {
+  border-color: #EA580C;
+  background: #FFEDD5;
+  color: #C2410C;
+  box-shadow: 0 6px 16px rgba(234, 88, 12, 0.22);
+  transform: translateY(-1px);
+}
+
+.workdrive-chip {
+  background: #FFF7ED !important;
+  color: #EA580C !important;
+  border: 1px solid #FFEDD5 !important;
+}
+
 .btn-icon-accent {
   flex-shrink: 0;
 }

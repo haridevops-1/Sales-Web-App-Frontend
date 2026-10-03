@@ -6,6 +6,7 @@
 
 import { formatProposalUrl } from '../utils/helpers';
 import { executeGuardedApiCall, getApiKey } from './apiCallGuard';
+import { getWorkdriveSessionToken } from '../utils/workdriveSession';
 
 export const DEFAULT_CATALYST_BASE_URL = 'https://spikra-ai-proposal-698386704.development.catalystserverless.com';
 
@@ -142,7 +143,10 @@ export async function uploadTechnicalDocument({
   businessName,
   projectName,
   projectDescription = '',
-  file,
+  file = null,
+  workdriveFileId = null,
+  workdriveFileName = '',
+  workdriveFileSize = 0,
   businessLogo = null,
   timeoutMs = 300000
 }) {
@@ -159,11 +163,11 @@ export async function uploadTechnicalDocument({
     throw new Error('Project name is required.');
   }
 
-  if (!file) {
-    throw new Error('Document file is required.');
+  if (!workdriveFileId && !file) {
+    throw new Error('Document file or Zoho WorkDrive file is required.');
   }
 
-  if (file.size === 0) {
+  if (file && file.size === 0) {
     throw new Error('The selected file is empty.');
   }
 
@@ -171,108 +175,128 @@ export async function uploadTechnicalDocument({
 
   return executeGuardedApiCall(apiKey, async () => {
     // 2. Check API Endpoint Configuration
-  const uploadApiUrl = getCatalystUploadApiUrl();
-  const base = getCatalystBaseUrl() || DEFAULT_CATALYST_BASE_URL;
-  const endpointUrl = uploadApiUrl || `${base}/spikra/document/upload`;
+    const uploadApiUrl = getCatalystUploadApiUrl();
+    const base = getCatalystBaseUrl() || DEFAULT_CATALYST_BASE_URL;
+    const endpointUrl = uploadApiUrl || `${base}/spikra/document/upload`;
 
-  // 3. Build multipart/form-data
-  const formData = new FormData();
-  formData.append('business_name', cleanBusinessName);
-  formData.append('project_name', cleanProjectName);
-  if (cleanProjectDescription) {
-    formData.append('description', cleanProjectDescription);
-  }
-  formData.append('document', file);
+    // 3. Setup abort controller for timeout handling
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-  // Append actual business logo file if provided (do not append empty field if omitted)
-  if (businessLogo && typeof businessLogo === 'object' && businessLogo.size > 0) {
-    formData.append('business_logo', businessLogo);
-  }
+    let requestBody;
+    const requestHeaders = {};
 
-  // 4. Setup abort controller for timeout handling
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
-  try {
-    console.info(`[Catalyst API Function 1] POST ${endpointUrl} (single execution guaranteed)`);
-
-    const response = await fetch(endpointUrl, {
-      method: 'POST',
-      body: formData,
-      signal: controller.signal
-    });
-
-    clearTimeout(timeoutId);
-
-    // 5. Parse response safely
-    let responseData = null;
-    const contentType = response.headers.get('content-type') || '';
-
-    if (contentType.includes('application/json')) {
-      try {
-        responseData = await response.json();
-      } catch (jsonErr) {
-        console.error('[Catalyst API Function 1] Failed to parse JSON response:', jsonErr);
-        throw new Error('Invalid JSON response received from Catalyst server.');
+    if (workdriveFileId) {
+      // JSON body with Bearer token for Pick from WorkDrive path
+      requestHeaders['Content-Type'] = 'application/json';
+      requestHeaders['Accept'] = 'application/json';
+      const token = getWorkdriveSessionToken();
+      if (token) {
+        requestHeaders['Authorization'] = `Bearer ${token}`;
       }
+      requestBody = JSON.stringify({
+        workdrive_file_id: workdriveFileId,
+        business_name: cleanBusinessName,
+        project_name: cleanProjectName,
+        description: cleanProjectDescription
+      });
     } else {
-      const rawText = await response.text();
-      console.warn('[Catalyst API Function 1] Non-JSON response received:', rawText);
-      try {
-        responseData = JSON.parse(rawText);
-      } catch {
-        responseData = { message: rawText };
+      // Existing multipart/form-data for Upload from computer path
+      const formData = new FormData();
+      formData.append('business_name', cleanBusinessName);
+      formData.append('project_name', cleanProjectName);
+      if (cleanProjectDescription) {
+        formData.append('description', cleanProjectDescription);
       }
+      formData.append('document', file);
+
+      if (businessLogo && typeof businessLogo === 'object' && businessLogo.size > 0) {
+        formData.append('business_logo', businessLogo);
+      }
+      requestBody = formData;
     }
 
-    // 6. Check HTTP status
-    if (!response.ok) {
-      const statusMsg = responseData?.data?.message || responseData?.message || responseData?.error || `Server returned error (${response.status})`;
-      console.error(`[Catalyst API Function 1] Request failed with HTTP ${response.status}:`, responseData);
-      throw new Error(statusMsg);
-    }
+    try {
+      console.info(`[Catalyst API Function 1] POST ${endpointUrl} (${workdriveFileId ? 'WorkDrive JSON' : 'Multipart File'})`);
 
-    // 7. Parse and normalize real returned fields
-    const dataObj = responseData?.data || responseData || {};
+      const response = await fetch(endpointUrl, {
+        method: 'POST',
+        headers: requestHeaders,
+        body: requestBody,
+        signal: controller.signal
+      });
 
-    const rawLogoObj = dataObj.business_logo || responseData?.business_logo || null;
-    let normalizedLogo = null;
-    if (rawLogoObj && typeof rawLogoObj === 'object') {
-      normalizedLogo = {
-        uploaded: Boolean(rawLogoObj.uploaded ?? true),
-        fileName: rawLogoObj.file_name || rawLogoObj.fileName || (businessLogo ? businessLogo.name : ''),
-        mimeType: rawLogoObj.mime_type || rawLogoObj.mimeType || (businessLogo ? businessLogo.type : ''),
-        fileSize: rawLogoObj.file_size || rawLogoObj.fileSize || (businessLogo ? businessLogo.size : 0)
+      clearTimeout(timeoutId);
+
+      // 5. Parse response safely
+      let responseData = null;
+      const contentType = response.headers.get('content-type') || '';
+
+      if (contentType.includes('application/json')) {
+        try {
+          responseData = await response.json();
+        } catch (jsonErr) {
+          console.error('[Catalyst API Function 1] Failed to parse JSON response:', jsonErr);
+          throw new Error('Invalid JSON response received from Catalyst server.');
+        }
+      } else {
+        const rawText = await response.text();
+        console.warn('[Catalyst API Function 1] Non-JSON response received:', rawText);
+        try {
+          responseData = JSON.parse(rawText);
+        } catch {
+          responseData = { message: rawText };
+        }
+      }
+
+      // 6. Check HTTP status
+      if (!response.ok) {
+        const statusMsg = responseData?.data?.message || responseData?.message || responseData?.error || `Server returned error (${response.status})`;
+        console.error(`[Catalyst API Function 1] Request failed with HTTP ${response.status}:`, responseData);
+        throw new Error(statusMsg);
+      }
+
+      // 7. Parse and normalize real returned fields
+      const dataObj = responseData?.data || responseData || {};
+
+      const rawLogoObj = dataObj.business_logo || responseData?.business_logo || null;
+      let normalizedLogo = null;
+      if (rawLogoObj && typeof rawLogoObj === 'object') {
+        normalizedLogo = {
+          uploaded: Boolean(rawLogoObj.uploaded ?? true),
+          fileName: rawLogoObj.file_name || rawLogoObj.fileName || (businessLogo ? businessLogo.name : ''),
+          mimeType: rawLogoObj.mime_type || rawLogoObj.mimeType || (businessLogo ? businessLogo.type : ''),
+          fileSize: rawLogoObj.file_size || rawLogoObj.fileSize || (businessLogo ? businessLogo.size : 0)
+        };
+      } else if (businessLogo && businessLogo.size > 0) {
+        normalizedLogo = {
+          uploaded: true,
+          fileName: businessLogo.name,
+          mimeType: businessLogo.type,
+          fileSize: businessLogo.size
+        };
+      }
+
+      const result = {
+        success: responseData?.success ?? true,
+        projectId: dataObj.project_id || dataObj.projectId || '',
+        documentId: dataObj.document_id || dataObj.documentId || '',
+        jobId: dataObj.processing_job_id || dataObj.job_id || dataObj.jobId || '',
+        experienceId: dataObj.experience_id || dataObj.experienceId || '',
+        message: responseData?.message || 'Document uploaded successfully',
+        businessName: dataObj.business_name || cleanBusinessName,
+        projectName: dataObj.project_name || cleanProjectName,
+        fileName: dataObj.file_name || (file ? file.name : workdriveFileName) || 'WorkDrive Document',
+        fileSize: dataObj.file_size || (file ? file.size : workdriveFileSize) || 0,
+        businessLogo: normalizedLogo,
+        raw: responseData
       };
-    } else if (businessLogo && businessLogo.size > 0) {
-      // Local client tracking when backend returns standard success without logo object
-      normalizedLogo = {
-        uploaded: true,
-        fileName: businessLogo.name,
-        mimeType: businessLogo.type,
-        fileSize: businessLogo.size
-      };
-    }
 
-    const result = {
-      success: responseData?.success ?? true,
-      projectId: dataObj.project_id || dataObj.projectId || '',
-      documentId: dataObj.document_id || dataObj.documentId || '',
-      jobId: dataObj.processing_job_id || dataObj.job_id || dataObj.jobId || '',
-      message: responseData?.message || 'Document uploaded successfully',
-      businessName: dataObj.business_name || cleanBusinessName,
-      projectName: dataObj.project_name || cleanProjectName,
-      fileName: dataObj.file_name || file.name,
-      fileSize: dataObj.file_size || file.size,
-      businessLogo: normalizedLogo,
-      raw: responseData
-    };
+      console.info('[Catalyst API Function 1] Upload successful:', result);
+      return result;
 
-    console.info('[Catalyst API Function 1] Upload successful:', result);
-    return result;
-
-  } catch (err) {
-    clearTimeout(timeoutId);
+    } catch (err) {
+      clearTimeout(timeoutId);
 
     if (err.name === 'AbortError') {
       console.error('[Catalyst API Function 1] Request timed out after', timeoutMs, 'ms');

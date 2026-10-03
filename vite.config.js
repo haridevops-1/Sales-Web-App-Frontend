@@ -40,6 +40,12 @@ export default defineConfig(({ mode }) => {
           target: catalystTarget,
           changeOrigin: true,
           secure: false
+        },
+        // Zoho WorkDrive shared auth and file browsing routes (/workdrive/status, /workdrive/authorize, etc.)
+        '/workdrive': {
+          target: catalystTarget,
+          changeOrigin: true,
+          secure: false
         }
       }
     }

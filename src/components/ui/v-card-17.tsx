@@ -1,18 +1,25 @@
 "use client";
 
-import { BellIcon, CreditCardIcon, ShieldIcon, UserIcon, CheckIcon, SparklesIcon, X } from "lucide-react";
+import { BellIcon, CreditCardIcon, ShieldIcon, UserIcon, CheckIcon, SparklesIcon, X, Cloud } from "lucide-react";
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/v-card-17-utils/card";
 import { motion, AnimatePresence } from "framer-motion";
+import { useWorkDrive } from "@/context/WorkDriveContext";
 
 const defaultSections = [
   { icon: UserIcon, id: "profile", label: "Profile" },
+  { icon: Cloud, id: "workdrive", label: "WorkDrive" },
   { icon: BellIcon, id: "notifications", label: "Notifications" },
   { icon: CreditCardIcon, id: "billing", label: "Billing" },
   { icon: ShieldIcon, id: "security", label: "Security" },
 ];
 
 const defaultContent: Record<string, { description: string; title: string; meta?: string }> = {
+  workdrive: {
+    description: "Connect your Zoho WorkDrive account to pick documents across Customer Showcases and Solution Proposals.",
+    title: "Zoho WorkDrive",
+    meta: "Shared Connection"
+  },
   billing: {
     description: "Manage your subscription, invoices, and payment methods for the Spikra sales engine.",
     title: "Billing & Plans",
@@ -43,7 +50,13 @@ export interface PatternProps {
 
 export function Pattern({ className = "", theme = "spikra", onClose }: PatternProps) {
   const [active, setActive] = useState("profile");
-  const panel = defaultContent[active];
+  const { isConnected, email, connect, disconnect, isConnecting } = useWorkDrive();
+
+  const panel = active === "workdrive" ? {
+    title: "Zoho WorkDrive",
+    description: "Shared Zoho OAuth connection for picking discovery files and technical proposals across both Spikra workspaces.",
+    meta: isConnected ? `Connected: ${email || 'Active'}` : "Not connected"
+  } : defaultContent[active];
 
   const isSpikra = theme === "spikra";
 
@@ -136,14 +149,30 @@ export function Pattern({ className = "", theme = "spikra", onClose }: PatternPr
           </AnimatePresence>
 
           <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end">
-            <button
-              type="button"
-              className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-[#FF7A1A] hover:bg-orange-50 dark:hover:bg-orange-950/30 rounded transition-colors"
-              onClick={() => {}}
-            >
-              <span>Configure</span>
-              <span>→</span>
-            </button>
+            {active === "workdrive" ? (
+              <button
+                type="button"
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+                  isConnected
+                    ? "text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 border border-red-200 dark:border-red-900/50"
+                    : "text-white bg-[#FF7A1A] hover:bg-[#ff8c3a]"
+                }`}
+                onClick={isConnected ? disconnect : connect}
+                disabled={isConnecting}
+              >
+                <span>{isConnecting ? "Connecting…" : isConnected ? "Disconnect WorkDrive" : "Connect WorkDrive"}</span>
+                <span>→</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-[#FF7A1A] hover:bg-orange-50 dark:hover:bg-orange-950/30 rounded transition-colors"
+                onClick={() => {}}
+              >
+                <span>Configure</span>
+                <span>→</span>
+              </button>
+            )}
           </div>
         </div>
       </CardContent>

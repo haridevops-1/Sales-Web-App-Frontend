@@ -1,0 +1,188 @@
+.workdrive-status-badge-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Disconnected Button */
+.btn-workdrive-connect {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 14px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #f1f5f9;
+  background: linear-gradient(135deg, rgba(255, 122, 26, 0.18), rgba(255, 154, 77, 0.08));
+  border: 1px solid rgba(255, 122, 26, 0.35);
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 8px rgba(255, 122, 26, 0.12);
+  white-space: nowrap;
+}
+
+.btn-workdrive-connect:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(255, 122, 26, 0.28), rgba(255, 154, 77, 0.18));
+  border-color: rgba(255, 122, 26, 0.55);
+  box-shadow: 0 4px 14px rgba(255, 122, 26, 0.25);
+  transform: translateY(-1px);
+  color: #ffffff;
+}
+
+.btn-workdrive-connect:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Connected Pill */
+.workdrive-connected-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px 5px 10px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #e2e8f0;
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(51, 65, 85, 0.6);
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(8px);
+}
+
+.workdrive-connected-pill:hover,
+.workdrive-connected-pill.is-open {
+  background: rgba(30, 41, 59, 0.85);
+  border-color: rgba(94, 234, 212, 0.4);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+}
+
+.workdrive-indicator-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.8);
+  flex-shrink: 0;
+  animation: wd-pulse 2.4s infinite ease-in-out;
+}
+
+@keyframes wd-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.55; transform: scale(0.85); }
+}
+
+.workdrive-email-label {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workdrive-chevron {
+  opacity: 0.6;
+  transition: transform 0.2s ease;
+}
+
+.workdrive-connected-pill.is-open .workdrive-chevron {
+  transform: rotate(180deg);
+}
+
+/* Checking Pill */
+.workdrive-checking-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(51, 65, 85, 0.3);
+  border-radius: 9999px;
+}
+
+/* Spin Animation */
+.workdrive-spin {
+  animation: wd-spin 1s linear infinite;
+}
+
+@keyframes wd-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Popover Dropdown */
+.workdrive-status-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 270px;
+  padding: 14px;
+  background: #0f172a;
+  border: 1px solid rgba(51, 65, 85, 0.75);
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  z-index: 1000;
+  backdrop-filter: blur(16px);
+  animation: wd-pop-in 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes wd-pop-in {
+  from { opacity: 0; transform: translateY(-4px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.wd-popover-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.wd-popover-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #f8fafc;
+}
+
+.wd-popover-email {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  word-break: break-all;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+}
+
+.wd-popover-note {
+  font-size: 0.7rem;
+  color: #64748b;
+  line-height: 1.35;
+  margin-bottom: 12px;
+}
+
+.btn-workdrive-disconnect {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-workdrive-disconnect:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+}

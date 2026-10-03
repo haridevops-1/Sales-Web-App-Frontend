@@ -17,6 +17,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { getCustomerExperiences } from '@/api/catalystApi';
 import { listProposals } from '@/api/proposalApi';
 import { formatProposalUrl } from '@/utils/helpers';
+import { WorkDriveProvider } from '@/context/WorkDriveContext';
 
 // Helper component to extract URL proposal ID param
 function ProposalDetailsRoute({ onNavigate, onToast }) {
@@ -283,9 +284,10 @@ export default function App() {
   };
 
   return (
-    <div className="spikra-app-root">
-      {/* Interactive Spotlight Cursor for Light Theme */}
-      <SpotlightCursor config={{ radius: 260, brightness: 0.08, color: '#FF7A1A', smoothing: 0.15 }} />
+    <WorkDriveProvider>
+      <div className="spikra-app-root">
+        {/* Interactive Spotlight Cursor for Light Theme */}
+        <SpotlightCursor config={{ radius: 260, brightness: 0.08, color: '#FF7A1A', smoothing: 0.15 }} />
 
       {/* Enterprise Collapsible Sidebar */}
       <Sidebar
@@ -427,6 +429,7 @@ export default function App() {
           onClose={() => setToast(null)}
         />
       )}
-    </div>
+      </div>
+    </WorkDriveProvider>
   );
 }

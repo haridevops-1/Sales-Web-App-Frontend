@@ -1,0 +1,202 @@
+/**
+ * Zoho WorkDrive API Client for Spikra
+ * 
+ * Centralized API service for communicating with the shared "workdrive-auth" Catalyst function.
+ * Shared by both Workspace 1 (Customer Showcases) and Workspace 2 (Solution Proposals).
+ */
+
+import { resolveEndpointUrl, getCatalystBaseUrl, DEFAULT_CATALYST_BASE_URL } from './catalystApi';
+import {
+  getWorkdriveSessionToken,
+  setWorkdriveSessionToken,
+  clearWorkdriveSessionToken
+} from '../utils/workdriveSession';
+
+export class WorkDriveApiError extends Error {
+  constructor(message, { status, code, data } = {}) {
+    super(message);
+    this.name = 'WorkDriveApiError';
+    this.status = status || 0;
+    this.code = code || null;
+    this.data = data || null;
+  }
+}
+
+/**
+ * Returns the backend origin for OAuth popup validation.
+ */
+export function getWorkDriveBackendOrigins() {
+  const trusted = new Set();
+  if (typeof window !== 'undefined') {
+    trusted.add(window.location.origin);
+  }
+
+  const base = getCatalystBaseUrl() || DEFAULT_CATALYST_BASE_URL;
+  try {
+    trusted.add(new URL(base).origin);
+  } catch {}
+
+  const defaultOrigin = new URL(DEFAULT_CATALYST_BASE_URL).origin;
+  trusted.add(defaultOrigin);
+
+  return trusted;
+}
+
+/**
+ * Check if a postMessage origin is trusted for the WorkDrive OAuth callback.
+ */
+export function isTrustedWorkDriveOrigin(origin) {
+  if (!origin) return false;
+  const origins = getWorkDriveBackendOrigins();
+  if (origins.has(origin)) return true;
+
+  try {
+    const parsed = new URL(origin);
+    const host = parsed.hostname.toLowerCase();
+    if (host.endsWith('catalystserverless.com') || host.endsWith('zohocatalyst.com') || host.endsWith('zoho.com')) {
+      return true;
+    }
+  } catch {}
+
+  return false;
+}
+
+/**
+ * Shared fetch helper for WorkDrive endpoints.
+ */
+async function workdriveRequest(path, { method = 'GET', body, timeoutMs = 30000, signal: externalSignal } = {}) {
+  const url = resolveEndpointUrl(path, null);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  if (externalSignal) {
+    if (externalSignal.aborted) controller.abort();
+    else externalSignal.addEventListener('abort', () => controller.abort(), { once: true });
+  }
+
+  const headers = { Accept: 'application/json' };
+  const token = getWorkdriveSessionToken();
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  if (body !== undefined) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  let response;
+  try {
+    response = await fetch(url, {
+      method,
+      headers,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+      signal: controller.signal
+    });
+  } catch (fetchErr) {
+    clearTimeout(timeoutId);
+    if (fetchErr.name === 'AbortError') {
+      throw new WorkDriveApiError('WorkDrive request timed out.', { status: 408 });
+    }
+    throw new WorkDriveApiError('Unable to connect to WorkDrive service. Please check your connection.', { status: 0 });
+  }
+  clearTimeout(timeoutId);
+
+  let data = null;
+  try {
+    const text = await response.text();
+    data = text ? JSON.parse(text) : {};
+  } catch {
+    data = {};
+  }
+
+  // Handle 401 Unauthorized: token expired or revoked per specification
+  if (response.status === 401) {
+    console.warn('[WorkDrive API] 401 Unauthorized - clearing session token');
+    clearWorkdriveSessionToken(true);
+    const message = data?.message || data?.error?.message || 'WorkDrive session expired. Please reconnect.';
+    throw new WorkDriveApiError(message, { status: 401, data });
+  }
+
+  if (!response.ok || (data && data.success === false)) {
+    const message = data?.message || data?.error?.message || `WorkDrive request failed with status ${response.status}.`;
+    throw new WorkDriveApiError(message, { status: response.status, data });
+  }
+
+  return data;
+}
+
+/**
+ * GET /workdrive/status
+ * No auth needed. Returns { success, connected, email? }
+ */
+export async function getWorkdriveStatus(signal) {
+  try {
+    const res = await workdriveRequest('/workdrive/status', { method: 'GET', signal });
+    return {
+      success: true,
+      connected: Boolean(res?.connected),
+      email: res?.email || res?.user?.email || null,
+      raw: res
+    };
+  } catch (err) {
+    // If not connected or error, return friendly fallback
+    if (err.status === 401) {
+      return { success: true, connected: false, email: null };
+    }
+    throw err;
+  }
+}
+
+/**
+ * GET /workdrive/authorize
+ * No auth needed. Returns { success, authorize_url }
+ */
+export async function getWorkdriveAuthorizeUrl(signal) {
+  return workdriveRequest('/workdrive/authorize', { method: 'GET', signal });
+}
+
+/**
+ * POST /workdrive/disconnect
+ * Needs bearer session token. Returns { success, connected: false }
+ */
+export async function disconnectWorkdrive() {
+  try {
+    const res = await workdriveRequest('/workdrive/disconnect', { method: 'POST' });
+    clearWorkdriveSessionToken(false);
+    return res;
+  } catch (err) {
+    // Even if disconnect fails on backend, ensure local session is cleared
+    clearWorkdriveSessionToken(false);
+    throw err;
+  }
+}
+
+/**
+ * GET /workdrive/list?folder_id=<id>
+ * Needs bearer session token. Omit folder_id for root items.
+ * Returns { success, folder_id, items }
+ */
+export async function listWorkdriveItems(folderId = null, signal) {
+  const query = folderId ? `?folder_id=${encodeURIComponent(folderId)}` : '';
+  const res = await workdriveRequest(`/workdrive/list${query}`, { method: 'GET', signal });
+  return {
+    success: true,
+    folderId: res?.folder_id || folderId || null,
+    items: Array.isArray(res?.items) ? res.items : (Array.isArray(res?.data) ? res.data : [])
+  };
+}
+
+/**
+ * GET /workdrive/metadata?file_id=<id>
+ * Needs bearer session token.
+ * Returns { success, file }
+ */
+export async function getWorkdriveMetadata(fileId, signal) {
+  if (!fileId) {
+    throw new WorkDriveApiError('File ID is required to retrieve WorkDrive metadata.');
+  }
+  const res = await workdriveRequest(`/workdrive/metadata?file_id=${encodeURIComponent(fileId)}`, { method: 'GET', signal });
+  return {
+    success: true,
+    file: res?.file || res?.data || res
+  };
+}

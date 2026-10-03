@@ -10,6 +10,13 @@
 import { getCatalystBaseUrl, resolveEndpointUrl, DEFAULT_CATALYST_BASE_URL } from './catalystApi';
 import { getSessionToken, clearSessionToken } from '../utils/proposalSession';
 import { executeGuardedApiCall, getApiKey } from './apiCallGuard';
+import {
+  getWorkdriveStatus as fetchWorkdriveStatus,
+  getWorkdriveAuthorizeUrl as fetchWorkdriveAuthorizeUrl,
+  disconnectWorkdrive as apiDisconnectWorkdrive,
+  listWorkdriveItems,
+  getWorkdriveMetadata
+} from './workdriveApi';
 
 export function getProposalBackendOrigin() {
   const base = getCatalystBaseUrl();
@@ -196,39 +203,76 @@ async function requestFormData(path, formData, { signal: externalSignal, timeout
 }
 
 // ---------------------------------------------------------------------------
-// Connection status check (returns connected: true for direct upload)
+// Connection status check (shared Zoho WorkDrive backend)
 // ---------------------------------------------------------------------------
 
 export function getWorkdriveStatus(signal) {
-  return requestJson('/proposal/workdrive/status', { signal }).catch(() => ({
-    success: true,
-    connected: true,
-    provider: 'Local Direct Upload',
-    email: 'local-user@spikra.com'
-  }));
+  return fetchWorkdriveStatus(signal);
 }
 
 export function getWorkdriveAuthorizeUrl(signal) {
-  return requestJson('/proposal/workdrive/authorize?action=authorize', { signal });
+  return fetchWorkdriveAuthorizeUrl(signal);
 }
 
 export function disconnectWorkdrive() {
-  return requestJson('/proposal/workdrive/disconnect?action=disconnect', { method: 'POST' });
+  return apiDisconnectWorkdrive();
 }
 
-export function listWorkdriveFolders() {
-  return Promise.resolve({ success: true, folders: [] });
+export function listWorkdriveFolders(folderId = null, signal) {
+  return listWorkdriveItems(folderId, signal);
 }
 
-export function getWorkdriveFile() {
-  return Promise.resolve({ success: true, file: null });
+export function getWorkdriveFile(fileId, signal) {
+  return getWorkdriveMetadata(fileId, signal);
 }
 
 // ---------------------------------------------------------------------------
 // Discovery packages (proposal-discovery)
 // ---------------------------------------------------------------------------
 
-export function createDiscoveryPackage(packageName, files) {
+/**
+ * Create a new discovery package from Zoho WorkDrive file IDs.
+ */
+export function createDiscoveryPackageFromWorkdrive(packageName, fileIds) {
+  const ids = Array.isArray(fileIds) ? fileIds : [fileIds];
+  console.log('[Workspace 2] POST /proposal/discovery (add_from_workdrive) — new package: ' + packageName, ids);
+  const body = {
+    action: 'add_from_workdrive',
+    package_name: packageName
+  };
+  if (ids.length === 1) {
+    body.file_id = ids[0];
+  } else {
+    body.file_ids = ids;
+  }
+  return requestJson('/proposal/discovery', {
+    method: 'POST',
+    body
+  });
+}
+
+/**
+ * Add Zoho WorkDrive files to an existing discovery package.
+ */
+export function addWorkdriveFilesToPackage(packageId, fileIds) {
+  const ids = Array.isArray(fileIds) ? fileIds : [fileIds];
+  console.log('[Workspace 2] POST /proposal/discovery (add_from_workdrive) — package_id: ' + packageId, ids);
+  const body = {
+    action: 'add_from_workdrive',
+    package_id: packageId
+  };
+  if (ids.length === 1) {
+    body.file_id = ids[0];
+  } else {
+    body.file_ids = ids;
+  }
+  return requestJson('/proposal/discovery', {
+    method: 'POST',
+    body
+  });
+}
+
+export async function createDiscoveryPackage(packageName, files) {
   console.log('[Workspace 2] Creating discovery package: ' + packageName);
   if (files instanceof FormData) {
     if (packageName && !files.has('package_name')) {
@@ -237,15 +281,45 @@ export function createDiscoveryPackage(packageName, files) {
     return requestFormData('/proposal/discovery', files);
   }
 
-  if (Array.isArray(files) && files.length > 0 && (files[0] instanceof File || (files[0] && files[0].file instanceof File))) {
-    const formData = new FormData();
-    formData.append('package_name', packageName);
-    files.forEach((item) => {
-      const realFile = item instanceof File ? item : item.file;
-      const customName = (item && item.path) ? item.path : realFile.name;
-      formData.append('files', realFile, customName);
-    });
-    return requestFormData('/proposal/discovery', formData);
+  if (Array.isArray(files) && files.length > 0) {
+    const workdriveItems = files.filter((f) => f && (f.isWorkdrive || f.workdrive_file_id));
+    const localItems = files.filter((f) => f instanceof File || (f && f.file instanceof File));
+
+    // Case 1: Pure WorkDrive files
+    if (workdriveItems.length > 0 && localItems.length === 0) {
+      const fileIds = workdriveItems.map((f) => f.workdrive_file_id || f.id);
+      return createDiscoveryPackageFromWorkdrive(packageName, fileIds);
+    }
+
+    // Case 2: Mixed files (local + WorkDrive)
+    if (workdriveItems.length > 0 && localItems.length > 0) {
+      const formData = new FormData();
+      formData.append('package_name', packageName);
+      localItems.forEach((item) => {
+        const realFile = item instanceof File ? item : item.file;
+        const customName = (item && item.path) ? item.path : realFile.name;
+        formData.append('files', realFile, customName);
+      });
+      const initialRes = await requestFormData('/proposal/discovery', formData);
+      const pkgId = initialRes?.package?.package_id || initialRes?.session_id;
+      if (pkgId) {
+        const fileIds = workdriveItems.map((f) => f.workdrive_file_id || f.id);
+        return addWorkdriveFilesToPackage(pkgId, fileIds);
+      }
+      return initialRes;
+    }
+
+    // Case 3: Pure local files
+    if (localItems.length > 0) {
+      const formData = new FormData();
+      formData.append('package_name', packageName);
+      localItems.forEach((item) => {
+        const realFile = item instanceof File ? item : item.file;
+        const customName = (item && item.path) ? item.path : realFile.name;
+        formData.append('files', realFile, customName);
+      });
+      return requestFormData('/proposal/discovery', formData);
+    }
   }
 
   return requestJson('/proposal/discovery', {
@@ -262,21 +336,48 @@ export function getDiscoveryPackage(packageId, signal) {
   return requestJson(`/proposal/discovery?package_id=${encodeURIComponent(packageId)}`, { signal });
 }
 
-export function addFilesToPackage(packageId, files) {
+export async function addFilesToPackage(packageId, files) {
   if (files instanceof FormData) {
     return requestFormData(`/proposal/discovery?package_id=${encodeURIComponent(packageId)}&action=add_files`, files);
   }
 
-  if (Array.isArray(files) && files.length > 0 && (files[0] instanceof File || (files[0] && files[0].file instanceof File))) {
-    const formData = new FormData();
-    formData.append('action', 'add_files');
-    formData.append('package_id', packageId);
-    files.forEach((item) => {
-      const realFile = item instanceof File ? item : item.file;
-      const customName = (item && item.path) ? item.path : realFile.name;
-      formData.append('files', realFile, customName);
-    });
-    return requestFormData(`/proposal/discovery?package_id=${encodeURIComponent(packageId)}&action=add_files`, formData);
+  if (Array.isArray(files) && files.length > 0) {
+    const workdriveItems = files.filter((f) => f && (f.isWorkdrive || f.workdrive_file_id));
+    const localItems = files.filter((f) => f instanceof File || (f && f.file instanceof File));
+
+    // Pure WorkDrive
+    if (workdriveItems.length > 0 && localItems.length === 0) {
+      const fileIds = workdriveItems.map((f) => f.workdrive_file_id || f.id);
+      return addWorkdriveFilesToPackage(packageId, fileIds);
+    }
+
+    // Mixed
+    if (workdriveItems.length > 0 && localItems.length > 0) {
+      const formData = new FormData();
+      formData.append('action', 'add_files');
+      formData.append('package_id', packageId);
+      localItems.forEach((item) => {
+        const realFile = item instanceof File ? item : item.file;
+        const customName = (item && item.path) ? item.path : realFile.name;
+        formData.append('files', realFile, customName);
+      });
+      await requestFormData(`/proposal/discovery?package_id=${encodeURIComponent(packageId)}&action=add_files`, formData);
+      const fileIds = workdriveItems.map((f) => f.workdrive_file_id || f.id);
+      return addWorkdriveFilesToPackage(packageId, fileIds);
+    }
+
+    // Pure local
+    if (localItems.length > 0) {
+      const formData = new FormData();
+      formData.append('action', 'add_files');
+      formData.append('package_id', packageId);
+      localItems.forEach((item) => {
+        const realFile = item instanceof File ? item : item.file;
+        const customName = (item && item.path) ? item.path : realFile.name;
+        formData.append('files', realFile, customName);
+      });
+      return requestFormData(`/proposal/discovery?package_id=${encodeURIComponent(packageId)}&action=add_files`, formData);
+    }
   }
 
   return requestJson(`/proposal/discovery?package_id=${encodeURIComponent(packageId)}&action=add_files`, {

@@ -6,16 +6,19 @@ import ProcessingState from '../ProcessingState/ProcessingState';
 import ProcessStatus from '../ProcessStatus/ProcessStatus';
 import SpotlightCard from '@/reactbits/SpotlightCard';
 import { AnimatePresence, motion } from 'framer-motion';
+import { Cloud, Upload } from 'lucide-react';
 import { validateFile, inferBusinessName, validateLogoFile } from '@/utils/helpers';
 import { uploadTechnicalDocument, processDocument, analyzeDocument, generateCustomerExperience, deployCustomerExperience, getProcessStatus } from '@/api/catalystApi';
 import { resetApiGuard } from '@/api/apiCallGuard';
 import { UPLOAD_STAGES } from '@/utils/constants';
+import WorkDrivePickerModal from '@/components/shared/WorkDrivePicker/WorkDrivePickerModal';
 
 export default function UploadSection({ onStageChange, onUploadSuccess, onExperienceCreated, onError }) {
   const [selectedFile, setSelectedFile] = useState(null);
   const [businessName, setBusinessName] = useState('');
   const [projectName, setProjectName] = useState('');
   const [projectDescription, setProjectDescription] = useState('');
+  const [isWorkDrivePickerOpen, setIsWorkDrivePickerOpen] = useState(false);
 
   // Business Logo State
   const [businessLogoFile, setBusinessLogoFile] = useState(null);
@@ -75,6 +78,22 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
     if (inferred && !businessName) {
       setBusinessName(inferred);
     }
+  };
+
+  const handleWorkDriveSelect = (selectedItems) => {
+    if (!selectedItems || selectedItems.length === 0) return;
+    const item = selectedItems[0];
+    setSelectedFile({
+      name: item.name,
+      size: item.size || 0,
+      isWorkdrive: true,
+      workdriveFileId: item.id
+    });
+    const inferred = inferBusinessName(item.name);
+    if (inferred && !businessName) {
+      setBusinessName(inferred);
+    }
+    setInlineError(null);
   };
 
   const handleLogoSelected = (file) => {
@@ -144,10 +163,12 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
       return;
     }
 
-    const fileValidation = validateFile(selectedFile);
-    if (!fileValidation.valid) {
-      setInlineError(fileValidation.error);
-      return;
+    if (!selectedFile.isWorkdrive) {
+      const fileValidation = validateFile(selectedFile);
+      if (!fileValidation.valid) {
+        setInlineError(fileValidation.error);
+        return;
+      }
     }
 
     const cleanBiz = businessName ? businessName.trim() : '';
@@ -168,7 +189,7 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
       return;
     }
 
-    if (businessLogoFile) {
+    if (businessLogoFile && !selectedFile.isWorkdrive) {
       const logoValidation = validateLogoFile(businessLogoFile);
       if (!logoValidation.valid) {
         setBusinessLogoError(logoValidation.error);
@@ -197,13 +218,24 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
 
     let fn1Result = null;
     try {
-      fn1Result = await uploadTechnicalDocument({
-        businessName: cleanBiz,
-        projectName: cleanProj,
-        projectDescription: projectDescription ? projectDescription.trim() : '',
-        file: selectedFile,
-        businessLogo: businessLogoFile
-      });
+      if (selectedFile.isWorkdrive) {
+        fn1Result = await uploadTechnicalDocument({
+          businessName: cleanBiz,
+          projectName: cleanProj,
+          projectDescription: projectDescription ? projectDescription.trim() : '',
+          workdriveFileId: selectedFile.workdriveFileId,
+          workdriveFileName: selectedFile.name,
+          workdriveFileSize: selectedFile.size
+        });
+      } else {
+        fn1Result = await uploadTechnicalDocument({
+          businessName: cleanBiz,
+          projectName: cleanProj,
+          projectDescription: projectDescription ? projectDescription.trim() : '',
+          file: selectedFile,
+          businessLogo: businessLogoFile
+        });
+      }
 
       setUploadResult(fn1Result);
 
@@ -812,10 +844,47 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
                         disabled={isWorking}
                       />
                     ) : (
-                      <UploadDropzone
-                        onFileSelected={handleFileSelected}
-                        disabled={isWorking}
-                      />
+                      <div>
+                        {/* Visible Source Options: Upload from computer / Pick from WorkDrive */}
+                        <div className="upload-source-tabs" role="tablist" aria-label="Document Source Options">
+                          <button
+                            type="button"
+                            className="upload-source-tab active"
+                            role="tab"
+                            aria-selected="true"
+                          >
+                            <Upload size={14} />
+                            <span>Upload from computer</span>
+                          </button>
+                          <button
+                            type="button"
+                            className="upload-source-tab"
+                            onClick={() => setIsWorkDrivePickerOpen(true)}
+                            role="tab"
+                            aria-selected="false"
+                          >
+                            <Cloud size={14} className="text-orange-500" />
+                            <span>Pick from WorkDrive</span>
+                          </button>
+                        </div>
+
+                        <UploadDropzone
+                          onFileSelected={handleFileSelected}
+                          disabled={isWorking}
+                        />
+
+                        <div className="mt-3 flex justify-center">
+                          <button
+                            type="button"
+                            className="inline-flex items-center gap-2 text-xs font-medium text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100 border border-orange-200 px-3.5 py-1.5 rounded-full transition-all cursor-pointer"
+                            onClick={() => setIsWorkDrivePickerOpen(true)}
+                            disabled={isWorking}
+                          >
+                            <Cloud size={13} />
+                            <span>Or pick directly from Zoho WorkDrive</span>
+                          </button>
+                        </div>
+                      </div>
                     )}
                   </motion.div>
                 </AnimatePresence>
@@ -823,6 +892,18 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
             </SpotlightCard>
           </div>
         )}
+
+        {/* Reusable WorkDrive Picker Modal (Workspace 1 Single File) */}
+        <WorkDrivePickerModal
+          isOpen={isWorkDrivePickerOpen}
+          onClose={() => setIsWorkDrivePickerOpen(false)}
+          onSelect={handleWorkDriveSelect}
+          multiple={false}
+          allowedExtensions={['.pdf', '.docx', '.doc']}
+          title="Select Technical Document"
+          subtitle="Choose a PDF or Word document from your Zoho WorkDrive"
+          confirmLabel="Select Document"
+        />
       </div>
     </section>
   );

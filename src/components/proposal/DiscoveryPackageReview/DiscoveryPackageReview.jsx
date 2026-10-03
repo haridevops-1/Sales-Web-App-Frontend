@@ -1,9 +1,10 @@
 import React, { useState, useRef } from 'react';
 import './DiscoveryPackageReview.css';
-import { FileText, X as XIcon, FileUp, FolderUp, ArrowRight, Loader2 } from 'lucide-react';
+import { FileText, X as XIcon, FileUp, FolderUp, ArrowRight, Loader2, Cloud } from 'lucide-react';
 import SpotlightCard from '@/reactbits/SpotlightCard';
 import { addFilesToPackage, removeFileFromPackage, getFriendlyErrorMessage } from '@/api/proposalApi';
 import { formatBytes } from '@/utils/helpers';
+import WorkDrivePickerModal from '@/components/shared/WorkDrivePicker/WorkDrivePickerModal';
 
 const STATUS_LABEL = {
   PENDING: 'Pending',
@@ -27,6 +28,7 @@ export default function DiscoveryPackageReview({ discoveryPackage, onPackageUpda
   const [busyFileId, setBusyFileId] = useState(null);
   const [isAdding, setIsAdding] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isWorkDrivePickerOpen, setIsWorkDrivePickerOpen] = useState(false);
   const [error, setError] = useState(null);
 
   const fileInputRef = useRef(null);
@@ -34,6 +36,31 @@ export default function DiscoveryPackageReview({ discoveryPackage, onPackageUpda
 
   const files = discoveryPackage?.files || [];
   const packageId = discoveryPackage?.package_id;
+
+  const handleWorkDriveSelect = async (selectedItems) => {
+    if (!selectedItems || selectedItems.length === 0) return;
+    setIsAdding(true);
+    setError(null);
+    try {
+      const mapped = selectedItems.map((item) => ({
+        name: item.name,
+        size: item.size || 0,
+        isWorkdrive: true,
+        workdrive_file_id: item.id
+      }));
+      const res = await addFilesToPackage(packageId, mapped);
+      if (res?.package) {
+        onPackageUpdated(res.package);
+      }
+      if (onToast) onToast(`Added ${selectedItems.length} file${selectedItems.length === 1 ? '' : 's'} from Zoho WorkDrive.`, 'success', 3500);
+    } catch (err) {
+      const message = getFriendlyErrorMessage(err);
+      setError(message);
+      if (onToast) onToast(message, 'error', 6000);
+    } finally {
+      setIsAdding(false);
+    }
+  };
 
   const handleAddFiles = async (fileList) => {
     if (!fileList || fileList.length === 0) return;
@@ -150,6 +177,16 @@ export default function DiscoveryPackageReview({ discoveryPackage, onPackageUpda
               <FolderUp size={13} />
               <span>Add folder</span>
             </button>
+            <button
+              type="button"
+              className="btn-review-add-files"
+              onClick={() => setIsWorkDrivePickerOpen(true)}
+              disabled={isAdding || isGenerating}
+              title="Pick files from Zoho WorkDrive"
+            >
+              <Cloud size={13} className="text-orange-500" />
+              <span>Pick from WorkDrive</span>
+            </button>
           </div>
         </div>
 
@@ -190,6 +227,18 @@ export default function DiscoveryPackageReview({ discoveryPackage, onPackageUpda
           </button>
         </div>
       </div>
+
+      {/* Reusable WorkDrive Picker Modal */}
+      <WorkDrivePickerModal
+        isOpen={isWorkDrivePickerOpen}
+        onClose={() => setIsWorkDrivePickerOpen(false)}
+        onSelect={handleWorkDriveSelect}
+        multiple={true}
+        allowedExtensions={['.pdf', '.docx', '.doc', '.xlsx', '.xls', '.txt', '.csv', '.md']}
+        title="Add Files from Zoho WorkDrive"
+        subtitle="Select additional discovery files to add to this package"
+        confirmLabel="Add to Package"
+      />
     </SpotlightCard>
   );
 }

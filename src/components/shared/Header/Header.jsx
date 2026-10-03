@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import BrandLogo from '../BrandLogo/BrandLogo';
 import HamburgerMenu from '../HamburgerMenu/HamburgerMenu';
 import UserProfile from '../UserProfile/UserProfile';
+import WorkDriveStatusBadge from '../WorkDriveStatus/WorkDriveStatusBadge';
 import CountUp from '@/reactbits/CountUp';
 
 export default function Header({
@@ -140,8 +141,9 @@ export default function Header({
           </nav>
         )}
 
-        {/* Right Section: User Profile Badge */}
+        {/* Right Section: Zoho WorkDrive Status & User Profile Badge */}
         <div className="header-right">
+          <WorkDriveStatusBadge />
           <UserProfile
             currentUser={currentUser}
             theme="dark"
