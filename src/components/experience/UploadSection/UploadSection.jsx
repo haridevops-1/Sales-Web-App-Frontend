@@ -471,7 +471,16 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
   // ==========================================
   const handleStatusPublished = (response) => {
     updateStage(UPLOAD_STAGES.PUBLISHED);
-    const pubUrl = (response?.experience?.generated_url || '').trim();
+    // Called from two different shapes: the immediate deployCustomerExperience() result
+    // (flat - generatedUrl/generated_url at the top level) and the Function 6 status-poll
+    // result (nested under response.experience.generated_url). Check both so an immediate
+    // successful deploy isn't mistaken for "no URL yet" and left stuck on this screen.
+    const pubUrl = (
+      response?.generatedUrl ||
+      response?.generated_url ||
+      response?.experience?.generated_url ||
+      ''
+    ).trim();
     const cleanBiz = (response?.project?.business_name || uploadResult?.businessName || businessName || '').trim();
     const cleanProj = (response?.project?.project_name || uploadResult?.projectName || projectName || '').trim();
     const expTitle = (response?.experience?.experience_title || `${cleanBiz} — Technical Proposal`).trim();
