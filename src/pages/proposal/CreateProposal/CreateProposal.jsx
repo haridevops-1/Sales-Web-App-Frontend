@@ -156,10 +156,7 @@ function ProposalResultCard({
   const fileCount = proposal?.content?.sources?.length || discoveryPackage?.files?.length || 1;
   const createdAt = proposal?.created_at ? formatDate(proposal.created_at) : formatDate();
 
-  let targetUrl = (proposal?.proposal_url || proposal?.generated_url || proposal?.slate_url || '').trim();
-  if (targetUrl && targetUrl.includes('spikra-customer-prop-msdrrgbk.onslate.com')) {
-    targetUrl = targetUrl.replace('spikra-customer-prop-msdrrgbk.onslate.com', 'spikra-w2-proposal-jmdbymcs.onslate.com');
-  }
+  const targetUrl = (proposal?.proposal_url || proposal?.generated_url || proposal?.slate_url || '').trim();
 
   const handleCopyUrl = async () => {
     if (!targetUrl) return;

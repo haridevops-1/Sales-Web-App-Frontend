@@ -423,16 +423,6 @@ export function getDiscoverySession(sessionId, signal) {
 }
 
 // ---------------------------------------------------------------------------
-// Proposal Processor / Legacy Agent Delegate
-// POST /proposal/agent was removed from backend - delegates to processor
-// ---------------------------------------------------------------------------
-
-export function runProposalAgent(packageId, sessionId, extraData = {}) {
-  console.warn('[Workspace 2] POST /proposal/agent superseded by /proposal/processor/process');
-  return processDiscoveryPackage(packageId);
-}
-
-// ---------------------------------------------------------------------------
 // Proposals (proposal-api?resource=proposals)
 // ---------------------------------------------------------------------------
 
@@ -447,12 +437,11 @@ export function listProposals(packageId, signal) {
   });
 }
 
+// The backend's own generated_url/proposal_url is always used verbatim - never guessed,
+// rebuilt, or patched to a different domain on the frontend.
 function sanitizeProposalObj(p) {
   if (!p) return p;
-  let url = (p.generated_url || p.proposal_url || p.slate_url || '').trim();
-  if (url.includes('spikra-customer-prop-msdrrgbk.onslate.com')) {
-    url = url.replace('spikra-customer-prop-msdrrgbk.onslate.com', 'spikra-w2-proposal-jmdbymcs.onslate.com');
-  }
+  const url = (p.generated_url || p.proposal_url || p.slate_url || '').trim();
   return {
     ...p,
     generated_url: url,

@@ -33,10 +33,7 @@ export default function ProposalCard({
   const rawStatus = (proposal.status || proposal.proposal_status || 'PUBLISHED').toUpperCase();
   const createdAt = proposal.created_at || proposal.createdAt || null;
 
-  let rawUrl = (proposal.generated_url || proposal.proposal_url || proposal.slate_url || '').trim();
-  if (rawUrl.includes('spikra-customer-prop-msdrrgbk.onslate.com')) {
-    rawUrl = rawUrl.replace('spikra-customer-prop-msdrrgbk.onslate.com', 'spikra-w2-proposal-jmdbymcs.onslate.com');
-  }
+  const rawUrl = (proposal.generated_url || proposal.proposal_url || proposal.slate_url || '').trim();
   const targetUrl = formatProposalUrl(rawUrl, proposalId) || rawUrl;
 
   const isPublished = rawStatus === 'COMPLETED' || rawStatus === 'PUBLISHED' || rawStatus === 'APPROVED' || Boolean(targetUrl);

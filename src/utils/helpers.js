@@ -191,16 +191,9 @@ export async function copyToClipboard(text) {
  */
 export function formatProposalUrl(rawUrl, proposalOrExpId = '') {
   if (!rawUrl || typeof rawUrl !== 'string') return '';
-  let trimmed = rawUrl.trim();
-  if (!trimmed) return '';
-
-  // Handle legacy domain replacement if an older saved record in local storage has it
-  if (trimmed.includes('spikra-customer-prop-msdrrgbk.onslate.com')) {
-    trimmed = trimmed.replace('spikra-customer-prop-msdrrgbk.onslate.com', 'spikra-w2-proposal-jmdbymcs.onslate.com');
-  }
-
-  // Always return the exact fully-formed URL string returned by the backend
-  return trimmed;
+  // Always return the exact fully-formed URL string returned by the backend - never
+  // rewritten, guessed, or patched to a different domain on the frontend.
+  return rawUrl.trim();
 }
 
 /**
