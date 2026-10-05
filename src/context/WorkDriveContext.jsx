@@ -122,26 +122,53 @@ export function WorkDriveProvider({ children }) {
     popupRef.current = popup;
 
     const handleMessage = async (event) => {
-      const data = event.data;
+      let data = event.data;
+      if (!data) return;
+
+      // Handle cases where data is serialized as a JSON string
+      if (typeof data === 'string') {
+        try {
+          data = JSON.parse(data);
+        } catch {
+          return;
+        }
+      }
+
       if (!data || data.type !== 'workdrive-auth') return;
+
+      // Validate origin against trusted domains if origin is provided
+      if (event.origin && !isTrustedWorkDriveOrigin(event.origin)) {
+        console.warn('[WorkDriveContext] Ignoring message from untrusted origin:', event.origin);
+        return;
+      }
 
       cleanupPopup();
 
-      if (data.success && data.sessionToken) {
-        console.log('WorkDrive Connected as:', data.email);
-        const sessionToken = data.sessionToken;
+      const sessionToken = data.sessionToken || data.session_token || data.token || data.accessToken;
+      const userEmail = data.email || data.user_email || data.user?.email || null;
+
+      if (data.success && sessionToken) {
+        console.log('[WorkDriveContext] Connected successfully as:', userEmail);
 
         // Save sessionToken for subsequent API calls
         localStorage.setItem('workdrive_session_token', sessionToken);
-        setWorkdriveSessionToken(sessionToken, data.email || null);
+        setWorkdriveSessionToken(sessionToken, userEmail);
 
-        if (data.email) setEmail(data.email);
+        if (userEmail) setEmail(userEmail);
         setStatus('connected');
         setError(null);
       } else {
-        alert('Failed to connect Zoho WorkDrive. Please try again.');
-        setError(data.error || 'Failed to connect Zoho WorkDrive. Please try again.');
+        const errorDetail =
+          (typeof data.error === 'string' && data.error) ||
+          data.error?.message ||
+          data.message ||
+          data.reason ||
+          'Failed to connect Zoho WorkDrive. Please try again.';
+
+        console.error('[WorkDriveContext] OAuth callback error payload:', errorDetail, data);
+        setError(errorDetail);
         setStatus('disconnected');
+        alert(`Zoho WorkDrive Connection: ${errorDetail}`);
       }
     };
 

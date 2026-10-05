@@ -15,7 +15,7 @@ import WorkDrivePickerModal from '@/components/shared/WorkDrivePicker/WorkDriveP
 import { useWorkDrive } from '@/context/WorkDriveContext';
 
 export default function UploadSection({ onStageChange, onUploadSuccess, onExperienceCreated, onError }) {
-  const { isConnected, handleOpenWorkDrive } = useWorkDrive();
+  const { isConnected, error: authError, handleOpenWorkDrive } = useWorkDrive();
   const [selectedFile, setSelectedFile] = useState(null);
   const [businessName, setBusinessName] = useState('');
   const [projectName, setProjectName] = useState('');
@@ -40,6 +40,13 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
   const [inlineError, setInlineError] = useState(null);
   const [generationError, setGenerationError] = useState(null);
   const [deployError, setDeployError] = useState(null);
+
+  // Surface WorkDrive authentication errors to the user
+  useEffect(() => {
+    if (authError) {
+      setInlineError(`Zoho WorkDrive Connection: ${authError}`);
+    }
+  }, [authError]);
 
   // Lets the user cancel the client-side wait for Function 3 (AI analysis) without touching the
   // backend job - it just stops this tab from polling; analyzeDocument()'s own in-flight guard is

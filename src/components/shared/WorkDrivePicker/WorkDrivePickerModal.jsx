@@ -47,7 +47,7 @@ export default function WorkDrivePickerModal({
   subtitle = 'Browse your WorkDrive folders and select files',
   confirmLabel = null
 }) {
-  const { isConnected, isConnecting, connect } = useWorkDrive();
+  const { isConnected, isConnecting, error: authError, connect } = useWorkDrive();
 
   // Navigation Stack: [{ id: null, name: 'My WorkDrive' }, { id, name }, ...]
   const [pathStack, setPathStack] = useState([{ id: null, name: 'My WorkDrive' }]);
@@ -263,6 +263,11 @@ export default function WorkDrivePickerModal({
             <p className="wd-prompt-desc">
               To pick files directly from your company workspace, please connect your Zoho WorkDrive account.
             </p>
+            {authError && (
+              <p className="wd-prompt-desc" style={{ color: '#EF4444', fontWeight: 500, margin: '0.25rem 0 0.75rem' }}>
+                Connection failed: {authError}
+              </p>
+            )}
             <button
               type="button"
               className="btn-picker-confirm"

@@ -53,7 +53,17 @@ export function isTrustedWorkDriveOrigin(origin) {
   try {
     const parsed = new URL(origin);
     const host = parsed.hostname.toLowerCase();
-    if (host.endsWith('catalystserverless.com') || host.endsWith('zohocatalyst.com') || host.endsWith('zoho.com')) {
+    if (
+      host.endsWith('catalystserverless.com') ||
+      host.endsWith('zohocatalyst.com') ||
+      host.endsWith('zoho.com') ||
+      host.endsWith('zoho.in') ||
+      host.endsWith('zoho.eu') ||
+      host.endsWith('zoho.com.au') ||
+      host.endsWith('onslate.com') ||
+      host === 'localhost' ||
+      host === '127.0.0.1'
+    ) {
       return true;
     }
   } catch {}

@@ -20,7 +20,8 @@ import {
   Trash2,
   FolderUp,
   FileUp,
-  Info
+  Info,
+  AlertCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SpotlightCard from '@/reactbits/SpotlightCard';
@@ -57,8 +58,10 @@ export default function DiscoveryUploadCard({ onGenerate, disabled = false, onTo
     isConnected,
     isConnecting,
     email,
+    error: authError,
     handleOpenWorkDrive,
-    disconnect
+    disconnect,
+    clearError
   } = useWorkDrive();
 
   // Mode: ONLY 'local' or 'workdrive'
@@ -430,6 +433,36 @@ export default function DiscoveryUploadCard({ onGenerate, disabled = false, onTo
                 <p className="workdrive-auth-desc">
                   Click below to authorize your Zoho WorkDrive account and pick files or folders.
                 </p>
+
+                {authError && (
+                  <div className="discovery-inline-error mb-4 animate-fade-in" role="alert" style={{ maxWidth: '460px', margin: '0 auto 1.25rem' }}>
+                    <AlertCircle size={16} className="shrink-0 text-red-600" />
+                    <div style={{ flex: 1, textAlign: 'left', wordBreak: 'break-word' }}>
+                      <span className="font-semibold text-red-700">Connection Error: </span>
+                      <span>{authError}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        clearError?.();
+                        handleOpenWorkDrive();
+                      }}
+                      style={{
+                        background: '#DC2626',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '6px',
+                        padding: '4px 10px',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
+                      Retry
+                    </button>
+                  </div>
+                )}
 
                 <div className="workdrive-auth-action-row">
                   <button
