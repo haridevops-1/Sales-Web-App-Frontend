@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import {
+  WORKDRIVE_AUTH_URL,
   getWorkdriveStatus,
-  getWorkdriveAuthorizeUrl,
   disconnectWorkdrive,
   isTrustedWorkDriveOrigin
 } from '../api/workdriveApi';
@@ -15,7 +15,7 @@ import {
 const WorkDriveContext = createContext(null);
 
 export function WorkDriveProvider({ children }) {
-  const [status, setStatus] = useState('checking'); // 'checking' | 'connected' | 'disconnected'
+  const [status, setStatus] = useState(() => (getWorkdriveSessionToken() ? 'connected' : 'disconnected'));
   const [email, setEmail] = useState(() => getWorkdriveSessionEmail());
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState(null);
@@ -45,36 +45,23 @@ export function WorkDriveProvider({ children }) {
     }
   }, []);
 
-  const checkStatus = useCallback(async (signal) => {
+  const checkStatus = useCallback(async () => {
     setError(null);
-    try {
-      const res = await getWorkdriveStatus(signal);
-      if (!isMountedRef.current) return;
+    const localToken = getWorkdriveSessionToken();
+    const localEmail = getWorkdriveSessionEmail();
 
-      const hasLocalToken = Boolean(getWorkdriveSessionToken());
-      if (res.connected && (hasLocalToken || res.email)) {
-        setStatus('connected');
-        const resolvedEmail = res.email || getWorkdriveSessionEmail();
-        setEmail(resolvedEmail);
-      } else {
-        setStatus('disconnected');
-        setEmail(null);
-        clearWorkdriveSessionToken(false);
-      }
-    } catch (err) {
-      if (!isMountedRef.current || err.name === 'AbortError') return;
-      console.warn('[WorkDriveContext] Status check error:', err);
-      // If error occurs, keep last known state or mark disconnected if checking
-      if (status === 'checking') {
-        setStatus('disconnected');
-      }
+    if (localToken) {
+      setStatus('connected');
+      if (localEmail) setEmail(localEmail);
+    } else {
+      setStatus('disconnected');
+      setEmail(null);
     }
-  }, [status]);
+  }, []);
 
   useEffect(() => {
     isMountedRef.current = true;
-    const controller = new AbortController();
-    checkStatus(controller.signal);
+    checkStatus();
 
     const handleSessionExpired = () => {
       if (!isMountedRef.current) return;
@@ -101,7 +88,6 @@ export function WorkDriveProvider({ children }) {
 
     return () => {
       isMountedRef.current = false;
-      controller.abort();
       cleanupPopup();
       window.removeEventListener('workdrive:session_expired', handleSessionExpired);
       window.removeEventListener('workdrive:session_updated', handleSessionUpdated);
@@ -109,33 +95,22 @@ export function WorkDriveProvider({ children }) {
     };
   }, [checkStatus, cleanupPopup]);
 
-  const connect = useCallback(async () => {
+  /**
+   * "Open WorkDrive" Handler - Opens OAuth screen in clean 600x700 popup
+   */
+  const handleOpenWorkDrive = useCallback(() => {
     setError(null);
     setIsConnecting(true);
 
-    let authorizeUrl;
-    try {
-      const res = await getWorkdriveAuthorizeUrl();
-      authorizeUrl = res?.authorize_url;
-      if (!authorizeUrl) {
-        throw new Error('WorkDrive did not return an authorization URL.');
-      }
-    } catch (err) {
-      const msg = err.message || 'Failed to initiate Zoho WorkDrive authorization.';
-      setError(msg);
-      setIsConnecting(false);
-      return;
-    }
+    const width = 600;
+    const height = 700;
+    const left = window.screen.width / 2 - width / 2;
+    const top = window.screen.height / 2 - height / 2;
 
-    // Open OAuth popup window
-    const width = 640;
-    const height = 740;
-    const left = window.screenX + (window.outerWidth - width) / 2;
-    const top = window.screenY + (window.outerHeight - height) / 2;
     const popup = window.open(
-      authorizeUrl,
-      'zoho_workdrive_oauth',
-      `width=${width},height=${height},left=${left},top=${top},status=0,toolbar=0,menubar=0,location=1`
+      WORKDRIVE_AUTH_URL,
+      'ZohoWorkDriveAuth',
+      `width=${width},height=${height},top=${top},left=${left},status=no,resizable=yes`
     );
 
     if (!popup) {
@@ -147,34 +122,26 @@ export function WorkDriveProvider({ children }) {
     popupRef.current = popup;
 
     const handleMessage = async (event) => {
-      // 1. Origin verification
-      if (!isTrustedWorkDriveOrigin(event.origin)) {
-        console.warn('[WorkDrive OAuth] Received message from untrusted origin:', event.origin);
-        return;
-      }
-
-      // 2. Validate payload shape
       const data = event.data;
       if (!data || data.type !== 'workdrive-auth') return;
 
       cleanupPopup();
 
-      if (!data.success || !data.sessionToken) {
-        setError(data.error || 'WorkDrive authorization was cancelled or failed.');
-        return;
-      }
+      if (data.success && data.sessionToken) {
+        console.log('WorkDrive Connected as:', data.email);
+        const sessionToken = data.sessionToken;
 
-      // 3. Store session token & update status
-      setWorkdriveSessionToken(data.sessionToken, data.email || null);
-      if (data.email) setEmail(data.email);
-      setStatus('connected');
+        // Save sessionToken for subsequent API calls
+        localStorage.setItem('workdrive_session_token', sessionToken);
+        setWorkdriveSessionToken(sessionToken, data.email || null);
 
-      // 4. Re-check status from backend to verify token works
-      try {
-        await checkStatus();
-      } catch {
-        // Fallback to connected if token was received
+        if (data.email) setEmail(data.email);
         setStatus('connected');
+        setError(null);
+      } else {
+        alert('Failed to connect Zoho WorkDrive. Please try again.');
+        setError(data.error || 'Failed to connect Zoho WorkDrive. Please try again.');
+        setStatus('disconnected');
       }
     };
 
@@ -186,8 +153,8 @@ export function WorkDriveProvider({ children }) {
       if (popup.closed) {
         cleanupPopup();
       }
-    }, 600);
-  }, [cleanupPopup, checkStatus]);
+    }, 500);
+  }, [cleanupPopup]);
 
   const disconnect = useCallback(async () => {
     setError(null);
@@ -208,7 +175,8 @@ export function WorkDriveProvider({ children }) {
     isConnecting,
     isConnected: status === 'connected' && Boolean(getWorkdriveSessionToken()),
     error,
-    connect,
+    connect: handleOpenWorkDrive,
+    handleOpenWorkDrive,
     disconnect,
     checkStatus,
     clearError: () => setError(null)

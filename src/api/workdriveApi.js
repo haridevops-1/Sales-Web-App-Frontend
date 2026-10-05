@@ -146,12 +146,14 @@ export async function getWorkdriveStatus(signal) {
   }
 }
 
+export const WORKDRIVE_AUTH_URL =
+  'https://spikra-ai-proposal-698386704.development.catalystserverless.com/workdrive/authorize?action=authorize&dc=in';
+
 /**
- * GET /workdrive/authorize
- * No auth needed. Returns { success, authorize_url }
+ * GET /workdrive/authorize?action=authorize&dc=in
  */
 export async function getWorkdriveAuthorizeUrl(signal) {
-  return workdriveRequest('/workdrive/authorize', { method: 'GET', signal });
+  return { success: true, authorize_url: WORKDRIVE_AUTH_URL };
 }
 
 /**
@@ -171,12 +173,14 @@ export async function disconnectWorkdrive() {
 }
 
 /**
- * GET /workdrive/list?folder_id=<id>
+ * GET /workdrive/list?action=list&folder_id=<id>
  * Needs bearer session token. Omit folder_id for root items.
  * Returns { success, folder_id, items }
  */
 export async function listWorkdriveItems(folderId = null, signal) {
-  const query = folderId ? `?folder_id=${encodeURIComponent(folderId)}` : '';
+  const query = folderId
+    ? `?action=list&folder_id=${encodeURIComponent(folderId)}`
+    : '?action=list';
   const res = await workdriveRequest(`/workdrive/list${query}`, { method: 'GET', signal });
   return {
     success: true,

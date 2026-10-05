@@ -95,7 +95,7 @@ export default function WorkDriveStatusBadge({ className = '' }) {
         ) : (
           <>
             <Cloud size={14} className="text-orange-400" />
-            <span>Connect WorkDrive</span>
+            <span>Open WorkDrive</span>
           </>
         )}
       </button>

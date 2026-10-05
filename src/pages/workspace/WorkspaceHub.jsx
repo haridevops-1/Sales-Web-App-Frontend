@@ -88,8 +88,7 @@ export default function WorkspaceHub({
                 <h2 className="module-card-title">Solution Proposals</h2>
                 <p className="module-card-description">
                   Turn customer notes and requirements into a clear, professional proposal.
-                  Organize the scope, pricing, and details in one place, ready to send
-                  to your client.
+                  Connect your Zoho WorkDrive to select discovery folders, scope, and documents.
                 </p>
                 <div className="module-card-status">
                   <span className="live-status-pill green-pill">
@@ -112,7 +111,7 @@ export default function WorkspaceHub({
                   className="btn-workspace-cta"
                   onClick={() => onNavigate && onNavigate('proposal', 'proposal-create')}
                 >
-                  <span>Create Proposal</span>
+                  <span>Open WorkDrive</span>
                   <ArrowRight size={16} strokeWidth={2.4} className="btn-cta-arrow" />
                 </button>
               </div>

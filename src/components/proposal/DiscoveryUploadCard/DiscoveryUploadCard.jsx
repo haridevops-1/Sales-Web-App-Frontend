@@ -1,287 +1,293 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import './DiscoveryUploadCard.css';
 import {
-  UploadCloud,
-  FolderUp,
-  FileUp,
-  FolderOpen,
-  X as XIcon,
+  Cloud,
+  Folder,
   FileText,
   FileSpreadsheet,
-  ArrowRight,
+  File as FileIcon,
+  ChevronLeft,
+  RefreshCw,
+  Search,
+  Check,
+  X as XIcon,
   Loader2,
-  Trash2,
-  Folder,
+  ExternalLink,
+  FolderOpen,
+  ArrowRight,
+  UploadCloud,
   CheckCircle2,
-  Info,
-  Cloud
+  Trash2,
+  FolderUp,
+  FileUp,
+  Info
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SpotlightCard from '@/reactbits/SpotlightCard';
+import { useWorkDrive } from '@/context/WorkDriveContext';
+import { listWorkdriveItems } from '@/api/workdriveApi';
+import { normalizeWorkdriveItems } from '@/components/shared/WorkDrivePicker/workdriveItem';
 import { createDiscoveryPackage, getFriendlyErrorMessage } from '@/api/proposalApi';
-import { formatBytes } from '@/utils/helpers';
-import WorkDrivePickerModal from '@/components/shared/WorkDrivePicker/WorkDrivePickerModal';
+import { formatBytes, formatDate } from '@/utils/helpers';
+import { getWorkdriveSessionToken } from '@/utils/workdriveSession';
 
-const SUPPORTED_EXTENSIONS = ['.pdf', '.docx', '.doc', '.xlsx', '.xls', '.txt'];
+const SUPPORTED_EXTENSIONS = ['.pdf', '.docx', '.doc', '.xlsx', '.xls', '.csv', '.txt', '.md'];
 
-function isSupportedFile(file) {
-  const name = file.name.toLowerCase();
+function getFileIcon(extension) {
+  const ext = String(extension || '').toLowerCase();
+  if (['.xlsx', '.xls', '.csv'].includes(ext)) {
+    return { Icon: FileSpreadsheet, badgeClass: 'badge-sheet', label: 'XLSX' };
+  }
+  if (ext === '.pdf') {
+    return { Icon: FileText, badgeClass: 'badge-pdf', label: 'PDF' };
+  }
+  if (['.docx', '.doc'].includes(ext)) {
+    return { Icon: FileText, badgeClass: 'badge-doc', label: 'DOC' };
+  }
+  return { Icon: FileText, badgeClass: 'badge-text', label: 'TXT' };
+}
+
+function isFileSupported(filename) {
+  const name = String(filename || '').toLowerCase();
   return SUPPORTED_EXTENSIONS.some((ext) => name.endsWith(ext));
 }
 
-function getFileBadgeInfo(filename) {
-  const name = String(filename || '').toLowerCase();
-  if (name.endsWith('.pdf')) {
-    return { label: 'PDF', badgeClass: 'badge-pdf', icon: FileText };
-  }
-  if (name.endsWith('.docx') || name.endsWith('.doc')) {
-    return { label: 'DOC', badgeClass: 'badge-doc', icon: FileText };
-  }
-  if (name.endsWith('.xlsx') || name.endsWith('.xls') || name.endsWith('.csv')) {
-    return { label: 'XLSX', badgeClass: 'badge-sheet', icon: FileSpreadsheet };
-  }
-  return { label: 'TXT', badgeClass: 'badge-text', icon: FileText };
-}
+export default function DiscoveryUploadCard({ onGenerate, disabled = false, onToast }) {
+  const {
+    isConnected,
+    isConnecting,
+    email,
+    handleOpenWorkDrive,
+    disconnect
+  } = useWorkDrive();
 
-/**
- * Cleanly split a webkitRelativePath into { folderPath, fileName }
- */
-function parseFilePath(file) {
-  const rel = file.webkitRelativePath || '';
-  if (rel && rel.includes('/')) {
-    const parts = rel.split('/');
-    const fileName = parts[parts.length - 1];
-    const folderPath = parts.slice(0, -1).join(' / ');
-    return { folderPath, fileName };
-  }
-  return { folderPath: '', fileName: file.name };
-}
-
-/**
- * Create Proposal - Step 1: Upload local discovery files and/or folders.
- * Features drag-and-drop, folder recursion, format badges, micro-animations,
- * and a high-end enterprise SaaS aesthetic.
- */
-export default function DiscoveryUploadCard({ onContinue, onGenerate, disabled = false, onToast }) {
-  const [selectedFiles, setSelectedFiles] = useState([]);
-  const [packageName, setPackageName] = useState('');
+  // Mode: ONLY 'local' or 'workdrive'
+  const [uploadMode, setUploadMode] = useState('local');
   const [isDragging, setIsDragging] = useState(false);
-  const [isCreating, setIsCreating] = useState(false);
-  const [createError, setCreateError] = useState(null);
-  const [isWorkDrivePickerOpen, setIsWorkDrivePickerOpen] = useState(false);
 
+  // WorkDrive navigation state
+  const [pathStack, setPathStack] = useState([{ id: null, name: 'My WorkDrive' }]);
+  const [workdriveItems, setWorkdriveItems] = useState([]);
+  const [isLoadingWorkDrive, setIsLoadingWorkDrive] = useState(false);
+  const [workdriveError, setWorkdriveError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Staged files for proposal generation
+  const [stagedFiles, setStagedFiles] = useState([]);
+  const [packageName, setPackageName] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
+
+  // Local upload refs
   const fileInputRef = useRef(null);
   const folderInputRef = useRef(null);
 
-  const handleWorkDriveSelect = useCallback((pickedItems) => {
-    if (!pickedItems || pickedItems.length === 0) return;
-    const mapped = pickedItems.map((item) => ({
+  const currentFolder = pathStack[pathStack.length - 1];
+
+  // Fetch WorkDrive items for current folder
+  const loadFolder = useCallback(async (folderId = null, signal) => {
+    const token = getWorkdriveSessionToken();
+    if (!token) return;
+
+    setIsLoadingWorkDrive(true);
+    setWorkdriveError(null);
+
+    try {
+      const res = await listWorkdriveItems(folderId, signal);
+      if (res && res.items) {
+        const normalized = normalizeWorkdriveItems(res.items);
+        setWorkdriveItems(normalized);
+      } else {
+        setWorkdriveItems([]);
+      }
+    } catch (err) {
+      if (err.name === 'AbortError') return;
+      console.warn('[DiscoveryUploadCard] Load WorkDrive failed:', err);
+      setWorkdriveError(err.message || 'Unable to load items from Zoho WorkDrive.');
+      setWorkdriveItems([]);
+    } finally {
+      setIsLoadingWorkDrive(false);
+    }
+  }, []);
+
+  // When WorkDrive becomes connected or folder changes, load items
+  useEffect(() => {
+    if (!isConnected) {
+      setWorkdriveItems([]);
+      return;
+    }
+    const controller = new AbortController();
+    loadFolder(currentFolder.id, controller.signal);
+    return () => controller.abort();
+  }, [isConnected, currentFolder.id, loadFolder]);
+
+  // Navigate deeper into a WorkDrive folder
+  const openFolder = (folderItem) => {
+    setSearchQuery('');
+    setPathStack((prev) => [...prev, { id: folderItem.id, name: folderItem.name }]);
+  };
+
+  const goBackFolder = () => {
+    if (pathStack.length > 1) {
+      setSearchQuery('');
+      setPathStack((prev) => prev.slice(0, -1));
+    }
+  };
+
+  const goToBreadcrumb = (index) => {
+    setSearchQuery('');
+    setPathStack((prev) => prev.slice(0, index + 1));
+  };
+
+  // Toggle selection of a WorkDrive file
+  const handleToggleWorkDriveFile = (item) => {
+    const isAlreadyStaged = stagedFiles.some((f) => f.workdrive_file_id === item.id);
+
+    if (isAlreadyStaged) {
+      setStagedFiles((prev) => prev.filter((f) => f.workdrive_file_id !== item.id));
+    } else {
+      const newItem = {
+        name: item.name,
+        size: item.size || 0,
+        isWorkdrive: true,
+        workdrive_file_id: item.id,
+        extension: item.extension || '',
+        folderPath: pathStack.length > 1 ? pathStack.map((p) => p.name).join(' / ') : ''
+      };
+
+      setStagedFiles((prev) => [...prev, newItem]);
+
+      setPackageName((prev) => {
+        if (prev.trim()) return prev;
+        const clean = item.name.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ').trim();
+        return clean || 'Solution Proposal';
+      });
+    }
+  };
+
+  // Stage all supported files in current folder
+  const handleSelectAllInFolder = () => {
+    const supportedFilesInFolder = workdriveItems.filter((i) => !i.isFolder && isFileSupported(i.name));
+    if (supportedFilesInFolder.length === 0) return;
+
+    const newItems = supportedFilesInFolder.map((item) => ({
       name: item.name,
       size: item.size || 0,
       isWorkdrive: true,
       workdrive_file_id: item.id,
-      file_type: (item.extension || '').replace('.', '')
+      extension: item.extension || '',
+      folderPath: pathStack.length > 1 ? pathStack.map((p) => p.name).join(' / ') : ''
     }));
 
-    setSelectedFiles((prev) => {
-      const existingIds = new Set(prev.map((f) => f.workdrive_file_id || `${f.name}_${f.size}`));
-      const newItems = mapped.filter((m) => !existingIds.has(m.workdrive_file_id));
-      return [...prev, ...newItems];
+    setStagedFiles((prev) => {
+      const existingIds = new Set(prev.map((f) => f.workdrive_file_id).filter(Boolean));
+      const filteredNew = newItems.filter((m) => !existingIds.has(m.workdrive_file_id));
+      return [...prev, ...filteredNew];
     });
 
     setPackageName((prev) => {
       if (prev.trim()) return prev;
-      if (mapped[0]) {
-        return mapped[0].name.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ');
+      if (currentFolder.name && currentFolder.name !== 'My WorkDrive') {
+        return currentFolder.name.replace(/[_-]/g, ' ');
       }
-      return 'Discovery Package';
+      return 'Solution Proposal';
     });
 
     if (onToast) {
-      onToast(`Added ${mapped.length} file${mapped.length === 1 ? '' : 's'} from Zoho WorkDrive.`, 'success', 3000);
+      onToast(`Added ${newItems.length} files from "${currentFolder.name}".`, 'success', 3000);
     }
-  }, [onToast]);
+  };
 
-  // Helper to add files and suggest package name if not yet set
-  const appendFiles = useCallback((newFiles, suggestedFolder = '') => {
-    const validFiles = Array.from(newFiles).filter(isSupportedFile);
-    if (validFiles.length === 0) {
-      if (onToast) onToast('Please select supported documents (.pdf, .docx, .doc, .xlsx, .xls, .txt).', 'warning', 4500);
+  // Local file / folder additions
+  const handleLocalFiles = (filesList, folderName = '') => {
+    const valid = Array.from(filesList).filter((f) => isFileSupported(f.name));
+    if (valid.length === 0) {
+      if (onToast) onToast('Please select supported documents (.pdf, .docx, .xlsx, .txt).', 'warning', 4000);
       return;
     }
 
-    setSelectedFiles((prev) => {
+    setStagedFiles((prev) => {
       const existingKeys = new Set(prev.map((f) => `${f.name}_${f.size}`));
-      const filtered = validFiles.filter((f) => !existingKeys.has(`${f.name}_${f.size}`));
-      return [...prev, ...filtered];
+      const newLocal = valid.filter((f) => !existingKeys.has(`${f.name}_${f.size}`));
+      return [...prev, ...newLocal];
     });
 
     setPackageName((prev) => {
       if (prev.trim()) return prev;
-      if (suggestedFolder) return suggestedFolder.replace(/[_-]/g, ' ');
-      if (validFiles[0]) {
-        return validFiles[0].name.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ');
-      }
-      return 'Discovery Package';
+      if (folderName) return folderName.replace(/[_-]/g, ' ');
+      if (valid[0]) return valid[0].name.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ');
+      return 'Solution Proposal';
     });
-  }, [onToast]);
-
-  // File input change handler (multiple files)
-  const handleFilesSelect = (e) => {
-    if (e.target.files && e.target.files.length > 0) {
-      appendFiles(e.target.files);
-      e.target.value = '';
-    }
-  };
-
-  // Folder input change handler
-  const handleFolderSelect = (e) => {
-    if (e.target.files && e.target.files.length > 0) {
-      let folderName = '';
-      const firstRel = e.target.files[0]?.webkitRelativePath;
-      if (firstRel && firstRel.includes('/')) {
-        folderName = firstRel.split('/')[0];
-      }
-      appendFiles(e.target.files, folderName);
-      e.target.value = '';
-    }
   };
 
   // Drag and drop handlers
   const handleDragOver = (e) => {
     e.preventDefault();
-    e.stopPropagation();
-    if (!disabled && !isDragging) setIsDragging(true);
+    if (!isDragging) setIsDragging(true);
   };
 
   const handleDragLeave = (e) => {
     e.preventDefault();
-    e.stopPropagation();
     if (e.currentTarget.contains(e.relatedTarget)) return;
     setIsDragging(false);
   };
 
-  const handleDrop = async (e) => {
+  const handleDrop = (e) => {
     e.preventDefault();
-    e.stopPropagation();
     setIsDragging(false);
-    if (disabled || isCreating) return;
-
-    const items = e.dataTransfer.items;
-    if (items && items.length > 0) {
-      const collectedFiles = [];
-      const entryPromises = [];
-
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i];
-        if (typeof item.webkitGetAsEntry === 'function') {
-          const entry = item.webkitGetAsEntry();
-          if (entry) {
-            entryPromises.push(readEntryRecursively(entry, collectedFiles));
-            continue;
-          }
-        }
-        if (item.kind === 'file') {
-          const file = item.getAsFile();
-          if (file) collectedFiles.push(file);
-        }
-      }
-
-      if (entryPromises.length > 0) {
-        await Promise.all(entryPromises);
-      }
-
-      if (collectedFiles.length > 0) {
-        appendFiles(collectedFiles);
-        return;
-      }
-    }
-
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      appendFiles(e.dataTransfer.files);
+    if (e.dataTransfer.files?.length) {
+      handleLocalFiles(e.dataTransfer.files);
     }
   };
 
-  // Recursively read directories from drag-and-drop
-  const readEntryRecursively = (entry, outArray) => {
-    return new Promise((resolve) => {
-      if (entry.isFile) {
-        entry.file((file) => {
-          outArray.push(file);
-          resolve();
-        }, () => resolve());
-      } else if (entry.isDirectory) {
-        const dirReader = entry.createReader();
-        dirReader.readEntries(async (entries) => {
-          const childPromises = entries.map((child) => readEntryRecursively(child, outArray));
-          await Promise.all(childPromises);
-          resolve();
-        }, () => resolve());
-      } else {
-        resolve();
-      }
-    });
+  const handleRemoveStagedItem = (index) => {
+    setStagedFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleRemoveFile = (index) => {
-    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+  const handleClearAllStaged = () => {
+    setStagedFiles([]);
   };
 
-  const handleClearAll = () => {
-    setSelectedFiles([]);
-  };
+  // Submit and start proposal generation
+  const handleGenerate = async () => {
+    if (stagedFiles.length === 0 || !packageName.trim() || isSubmitting) return;
 
-  const totalSizeBytes = selectedFiles.reduce((acc, f) => acc + (f.size || 0), 0);
-  const isFormValid = selectedFiles.length > 0 && packageName.trim().length > 0;
+    setIsSubmitting(true);
+    setSubmitError(null);
 
-  const handleGenerateClick = async () => {
-    if (!isFormValid || isCreating) return;
-    setIsCreating(true);
-    setCreateError(null);
     try {
-      const res = await createDiscoveryPackage(packageName.trim(), selectedFiles);
+      const res = await createDiscoveryPackage(packageName.trim(), stagedFiles);
       const pkgData = {
         ...(res?.package || {}),
+        package_id: res?.package?.package_id || res?.session_id,
         package_name: packageName.trim(),
         customer_name: packageName.trim(),
-        business_name: packageName.trim()
+        business_name: packageName.trim(),
+        files: stagedFiles
       };
-      if (onToast) onToast(`Uploaded documents & created package "${packageName.trim()}".`, 'success', 3000);
+
+      if (onToast) onToast(`Discovery package "${packageName.trim()}" ready.`, 'success', 3000);
       if (onGenerate) {
         onGenerate(pkgData);
-      } else if (onContinue) {
-        onContinue(pkgData);
       }
     } catch (err) {
       const message = getFriendlyErrorMessage(err);
-      setCreateError(message);
+      setSubmitError(message);
       if (onToast) onToast(message, 'error', 6000);
-      setIsCreating(false);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const handleReviewClick = async () => {
-    if (!isFormValid || isCreating) return;
-    setIsCreating(true);
-    setCreateError(null);
-    try {
-      const res = await createDiscoveryPackage(packageName.trim(), selectedFiles);
-      const pkgData = {
-        ...(res?.package || {}),
-        package_name: packageName.trim(),
-        customer_name: packageName.trim(),
-        business_name: packageName.trim()
-      };
-      if (onToast) onToast(`Discovery package "${packageName.trim()}" staged for review.`, 'success', 3000);
-      if (onContinue) onContinue(pkgData);
-    } catch (err) {
-      const message = getFriendlyErrorMessage(err);
-      setCreateError(message);
-      if (onToast) onToast(message, 'error', 6000);
-    } finally {
-      setIsCreating(false);
-    }
-  };
+  const filteredWorkdriveItems = workdriveItems.filter((item) => {
+    if (!searchQuery.trim()) return true;
+    return item.name.toLowerCase().includes(searchQuery.trim().toLowerCase());
+  });
+
+  const folders = filteredWorkdriveItems.filter((i) => i.isFolder);
+  const files = filteredWorkdriveItems.filter((i) => !i.isFolder);
+  const totalSizeBytes = stagedFiles.reduce((acc, f) => acc + (f.size || 0), 0);
+  const isFormValid = stagedFiles.length > 0 && packageName.trim().length > 0;
 
   return (
     <SpotlightCard className="discovery-upload-card" spotlightColor="rgba(255, 122, 26, 0.15)">
@@ -289,25 +295,28 @@ export default function DiscoveryUploadCard({ onContinue, onGenerate, disabled =
         {/* Card Header */}
         <div className="discovery-section-heading">
           <div className="discovery-heading-tag">
-            <FolderOpen size={13} />
+            <Cloud size={13} />
             <span>Document Intake</span>
           </div>
           <h2 className="discovery-dropzone-title">Upload Discovery Documents</h2>
           <p className="discovery-dropzone-hint">
-            Upload multiple client documents or an entire project folder containing discovery notes, RFPs, emails, spreadsheets, or MOM records.
+            Upload discovery documents locally from your computer or open Zoho WorkDrive to select files and folders.
           </p>
         </div>
 
-        {/* Hidden File Inputs */}
+        {/* Hidden Local Upload Inputs */}
         <input
           ref={fileInputRef}
           type="file"
           multiple
-          accept=".pdf,.docx,.doc,.xlsx,.xls,.txt"
-          onChange={handleFilesSelect}
+          accept=".pdf,.docx,.doc,.xlsx,.xls,.txt,.csv,.md"
+          onChange={(e) => {
+            if (e.target.files?.length) {
+              handleLocalFiles(e.target.files);
+              e.target.value = '';
+            }
+          }}
           style={{ display: 'none' }}
-          disabled={disabled || isCreating}
-          aria-label="Upload multiple files"
         />
         <input
           ref={folderInputRef}
@@ -315,140 +324,354 @@ export default function DiscoveryUploadCard({ onContinue, onGenerate, disabled =
           webkitdirectory=""
           directory=""
           multiple
-          onChange={handleFolderSelect}
+          onChange={(e) => {
+            if (e.target.files?.length) {
+              let fName = '';
+              const firstRel = e.target.files[0]?.webkitRelativePath;
+              if (firstRel?.includes('/')) fName = firstRel.split('/')[0];
+              handleLocalFiles(e.target.files, fName);
+              e.target.value = '';
+            }
+          }}
           style={{ display: 'none' }}
-          disabled={disabled || isCreating}
-          aria-label="Upload entire folder"
         />
 
-        {/* Source Options Tabs */}
-        <div className="upload-source-tabs" role="tablist" aria-label="Discovery Document Source Options">
+        {/* Source Options: ONLY Local Upload and Open WorkDrive */}
+        <div className="discovery-source-toggle-row" role="tablist" aria-label="Upload Source Options">
           <button
             type="button"
-            className="upload-source-tab active"
+            className={`btn-source-toggle ${uploadMode === 'local' ? 'active' : ''}`}
+            onClick={() => setUploadMode('local')}
             role="tab"
-            aria-selected="true"
+            aria-selected={uploadMode === 'local'}
           >
-            <UploadCloud size={14} />
-            <span>Upload from computer</span>
+            <UploadCloud size={15} />
+            <span>Local Upload</span>
           </button>
+
           <button
             type="button"
-            className="upload-source-tab"
-            onClick={() => setIsWorkDrivePickerOpen(true)}
+            className={`btn-source-toggle ${uploadMode === 'workdrive' ? 'active' : ''}`}
+            onClick={() => {
+              setUploadMode('workdrive');
+              if (!isConnected) {
+                handleOpenWorkDrive();
+              }
+            }}
             role="tab"
-            aria-selected="false"
+            aria-selected={uploadMode === 'workdrive'}
           >
-            <Cloud size={14} className="text-orange-500" />
-            <span>Pick from WorkDrive</span>
+            <Cloud size={15} className="text-orange-500" />
+            <span>Open WorkDrive</span>
+            <ExternalLink size={12} className="opacity-70" />
           </button>
         </div>
 
-        {/* Enhanced Drag and Drop Zone */}
-        <motion.div
-          className={`discovery-dropzone ${isDragging ? 'is-dragging' : ''} ${disabled ? 'is-disabled' : ''}`}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          onClick={(e) => {
-            if (e.target.closest('.btn-dropzone-action')) return;
-            fileInputRef.current?.click();
-          }}
-          whileHover={{ y: -2 }}
-          transition={{ duration: 0.2, ease: 'easeOut' }}
-          role="button"
-          tabIndex={0}
-          aria-label="Drag and drop documents here or browse"
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              fileInputRef.current?.click();
-            }
-          }}
-        >
-          <div className="dropzone-ambient-glow" aria-hidden="true" />
-          
-          <div className="dropzone-icon-bubble">
-            <UploadCloud size={30} className="dropzone-cloud-icon" />
-          </div>
+        {/* OPTION 1: Local Upload */}
+        {uploadMode === 'local' && (
+          <div className="discovery-local-dropzone-box animate-fade-in">
+            <div
+              className={`discovery-dropzone ${isDragging ? 'is-dragging' : ''}`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+              role="button"
+              tabIndex={0}
+              aria-label="Drag and drop documents or click to browse"
+            >
+              <div className="dropzone-icon-bubble">
+                <UploadCloud size={30} className="dropzone-cloud-icon" />
+              </div>
 
-          <div className="dropzone-text-group">
-            <p className="dropzone-primary-text">
-              {isDragging ? 'Drop your files or folder here' : 'Drag & drop discovery files or whole folders here'}
-            </p>
-            <p className="dropzone-secondary-text">
-              Click anywhere to browse, or use the dedicated pickers below
-            </p>
+              <div className="dropzone-text-group">
+                <p className="dropzone-primary-text">
+                  {isDragging ? 'Drop your files or folder here' : 'Drag & drop discovery files or folder here'}
+                </p>
+                <p className="dropzone-secondary-text">
+                  Supports PDF, Word, Excel, and Text documents
+                </p>
+              </div>
 
-            <div className="dropzone-format-pills">
-              <span className="format-pill format-pdf">PDF</span>
-              <span className="format-pill format-doc">DOCX</span>
-              <span className="format-pill format-sheet">XLSX</span>
-              <span className="format-pill format-txt">TXT</span>
-              <span className="format-pill-limit">Up to 25MB / file</span>
+              <div className="dropzone-actions-group" onClick={(e) => e.stopPropagation()}>
+                <button
+                  type="button"
+                  className="btn-dropzone-action"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <FileUp size={15} />
+                  <span>Browse Files</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="btn-dropzone-action"
+                  onClick={() => folderInputRef.current?.click()}
+                >
+                  <FolderUp size={15} />
+                  <span>Upload Folder</span>
+                </button>
+              </div>
             </div>
           </div>
+        )}
 
-          <div className="dropzone-divider-row" onClick={(e) => e.stopPropagation()}>
-            <span className="dropzone-divider-line" />
-            <span className="dropzone-divider-text">OR CHOOSE BELOW</span>
-            <span className="dropzone-divider-line" />
+        {/* OPTION 2: Open WorkDrive */}
+        {uploadMode === 'workdrive' && (
+          <div className="discovery-workdrive-view animate-fade-in">
+            {!isConnected ? (
+              /* If not connected: clean prompt with Open WorkDrive button */
+              <div className="workdrive-auth-hero-box animate-fade-in">
+                <div className="workdrive-auth-bubble">
+                  <Cloud size={36} className="workdrive-auth-cloud-icon" />
+                </div>
+
+                <h3 className="workdrive-auth-title">Connect Zoho WorkDrive</h3>
+                <p className="workdrive-auth-desc">
+                  Click below to authorize your Zoho WorkDrive account and pick files or folders.
+                </p>
+
+                <div className="workdrive-auth-action-row">
+                  <button
+                    type="button"
+                    className="btn-open-workdrive-primary"
+                    onClick={handleOpenWorkDrive}
+                    disabled={isConnecting || disabled}
+                  >
+                    {isConnecting ? (
+                      <>
+                        <Loader2 size={16} className="workdrive-spin" />
+                        <span>Opening Zoho OAuth...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Cloud size={16} />
+                        <span>Open WorkDrive</span>
+                        <ExternalLink size={14} className="opacity-70" />
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* If connected: WorkDrive Explorer */
+              <div className="workdrive-browser-card animate-fade-in">
+                {/* Connected Header Bar */}
+                <div className="workdrive-connected-bar">
+                  <div className="connected-badge-left">
+                    <span className="live-pulse-dot" />
+                    <Cloud size={15} className="text-emerald-500" />
+                    <span className="connected-label">Connected:</span>
+                    <span className="connected-email" title={email || 'Zoho WorkDrive'}>
+                      {email || 'Zoho WorkDrive Account'}
+                    </span>
+                  </div>
+
+                  <div className="connected-actions-right">
+                    <button
+                      type="button"
+                      className="btn-workdrive-mini-action"
+                      onClick={() => loadFolder(currentFolder.id)}
+                      title="Refresh folder"
+                      disabled={isLoadingWorkDrive}
+                    >
+                      <RefreshCw size={13} className={isLoadingWorkDrive ? 'workdrive-spin' : ''} />
+                      <span>Refresh</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      className="btn-workdrive-mini-action text-slate-400 hover:text-slate-600"
+                      onClick={disconnect}
+                      title="Disconnect account"
+                    >
+                      <span>Disconnect</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Toolbar */}
+                <div className="workdrive-toolbar">
+                  <div className="workdrive-breadcrumbs">
+                    {pathStack.map((crumb, idx) => (
+                      <React.Fragment key={crumb.id || 'root'}>
+                        {idx > 0 && <span className="crumb-divider">/</span>}
+                        <button
+                          type="button"
+                          className={`crumb-btn ${idx === pathStack.length - 1 ? 'is-current' : ''}`}
+                          onClick={() => goToBreadcrumb(idx)}
+                          disabled={idx === pathStack.length - 1}
+                        >
+                          {idx === 0 && <Cloud size={12} className="inline mr-1 text-orange-500" />}
+                          <span>{crumb.name}</span>
+                        </button>
+                      </React.Fragment>
+                    ))}
+                  </div>
+
+                  <div className="workdrive-toolbar-actions">
+                    <button
+                      type="button"
+                      className="btn-toolbar-nav"
+                      onClick={goBackFolder}
+                      disabled={pathStack.length <= 1}
+                      title="Go to parent directory"
+                    >
+                      <ChevronLeft size={14} />
+                      <span>Back</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      className="btn-toolbar-nav btn-select-all-folder"
+                      onClick={handleSelectAllInFolder}
+                      disabled={files.length === 0}
+                      title="Stage all supported files in this folder"
+                    >
+                      <CheckCircle2 size={13} className="text-orange-500" />
+                      <span>Select All Files</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Search */}
+                <div className="workdrive-search-box">
+                  <Search size={14} className="text-slate-400" />
+                  <input
+                    type="text"
+                    className="workdrive-search-input"
+                    placeholder="Search documents in this folder..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      className="btn-clear-search"
+                      onClick={() => setSearchQuery('')}
+                      title="Clear search"
+                    >
+                      <XIcon size={13} />
+                    </button>
+                  )}
+                </div>
+
+                {/* Viewport */}
+                <div className="workdrive-items-viewport">
+                  {isLoadingWorkDrive ? (
+                    <div className="workdrive-state-box">
+                      <Loader2 size={24} className="workdrive-spin text-orange-500" />
+                      <span>Loading WorkDrive items...</span>
+                    </div>
+                  ) : workdriveError ? (
+                    <div className="workdrive-state-box is-error">
+                      <Info size={18} className="text-red-500" />
+                      <span>{workdriveError}</span>
+                      <button
+                        type="button"
+                        className="btn-retry-action"
+                        onClick={() => loadFolder(currentFolder.id)}
+                      >
+                        Try Again
+                      </button>
+                    </div>
+                  ) : folders.length === 0 && files.length === 0 ? (
+                    <div className="workdrive-state-box">
+                      <FolderOpen size={24} className="text-slate-300" />
+                      <span>
+                        {searchQuery ? 'No documents matched your filter.' : 'This WorkDrive folder is empty.'}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="workdrive-items-grid">
+                      {/* Folders */}
+                      {folders.map((folder) => (
+                        <div
+                          key={folder.id}
+                          className="workdrive-item-row folder-row"
+                          onClick={() => openFolder(folder)}
+                          role="button"
+                          tabIndex={0}
+                          title={`Open folder "${folder.name}"`}
+                        >
+                          <div className="item-row-left">
+                            <div className="item-icon-box folder-icon-box">
+                              <Folder size={15} />
+                            </div>
+                            <div className="item-details">
+                              <span className="item-name font-medium">{folder.name}</span>
+                              <span className="item-subtext">Folder · Click to open</span>
+                            </div>
+                          </div>
+
+                          <div className="item-row-right">
+                            <span className="folder-open-arrow">→</span>
+                          </div>
+                        </div>
+                      ))}
+
+                      {/* Files */}
+                      {files.map((file) => {
+                        const isSupported = isFileSupported(file.name);
+                        const isStaged = stagedFiles.some((f) => f.workdrive_file_id === file.id);
+                        const fileBadge = getFileIcon(file.extension);
+                        const BadgeIcon = fileBadge.Icon;
+
+                        return (
+                          <div
+                            key={file.id}
+                            className={`workdrive-item-row file-row ${isStaged ? 'is-staged' : ''} ${!isSupported ? 'is-unsupported' : ''}`}
+                            onClick={() => isSupported && handleToggleWorkDriveFile(file)}
+                            role="button"
+                            tabIndex={isSupported ? 0 : -1}
+                            title={!isSupported ? 'Format not supported' : file.name}
+                          >
+                            <div className="item-row-left">
+                              <div className={`item-icon-box ${fileBadge.badgeClass}`}>
+                                <BadgeIcon size={14} />
+                              </div>
+                              <div className="item-details">
+                                <span className="item-name">{file.name}</span>
+                                <span className="item-subtext">
+                                  {file.size > 0 ? formatBytes(file.size) : 'File'}
+                                  {file.modifiedTime ? ` · Modified ${formatDate(file.modifiedTime)}` : ''}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="item-row-right">
+                              <div
+                                className={`item-checkbox ${isStaged ? 'is-checked' : ''} ${!isSupported ? 'is-disabled' : ''}`}
+                              >
+                                {isStaged && <Check size={12} strokeWidth={3} />}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
+        )}
 
-          <div className="dropzone-actions-group" onClick={(e) => e.stopPropagation()}>
-            <motion.button
-              type="button"
-              className="btn-dropzone-action btn-files-picker"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={disabled || isCreating}
-              whileHover={{ scale: 1.02, y: -1 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <FileUp size={16} className="btn-icon-accent" />
-              <span>Browse Files</span>
-            </motion.button>
-
-            <motion.button
-              type="button"
-              className="btn-dropzone-action btn-folder-picker"
-              onClick={() => folderInputRef.current?.click()}
-              disabled={disabled || isCreating}
-              whileHover={{ scale: 1.02, y: -1 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <FolderUp size={16} className="btn-icon-accent" />
-              <span>Upload Folder</span>
-            </motion.button>
-
-            <motion.button
-              type="button"
-              className="btn-dropzone-action btn-workdrive-picker"
-              onClick={() => setIsWorkDrivePickerOpen(true)}
-              disabled={disabled || isCreating}
-              whileHover={{ scale: 1.02, y: -1 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <Cloud size={16} className="btn-icon-accent text-orange-500" />
-              <span>Pick from WorkDrive</span>
-            </motion.button>
-          </div>
-        </motion.div>
-
-        {/* Selected Files Review List with AnimatePresence */}
+        {/* Selected Documents Staged Panel */}
         <AnimatePresence>
-          {selectedFiles.length > 0 && (
+          {stagedFiles.length > 0 && (
             <motion.div
               className="discovery-selected-files"
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
+              transition={{ duration: 0.22, ease: 'easeOut' }}
             >
               <div className="discovery-selected-header">
                 <div className="selected-header-left">
                   <span className="selected-counter-pill">
                     <CheckCircle2 size={13} className="counter-icon" />
-                    <span>{selectedFiles.length} document{selectedFiles.length === 1 ? '' : 's'} staged</span>
+                    <span>{stagedFiles.length} document{stagedFiles.length === 1 ? '' : 's'} staged</span>
                   </span>
                   {totalSizeBytes > 0 && (
                     <span className="selected-total-size">
@@ -460,43 +683,10 @@ export default function DiscoveryUploadCard({ onContinue, onGenerate, disabled =
                 <div className="selected-header-actions">
                   <button
                     type="button"
-                    className="btn-staged-action btn-add-files"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={disabled || isCreating}
-                    title="Add more individual files"
-                  >
-                    <FileUp size={13} />
-                    <span>Add files</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    className="btn-staged-action btn-add-folder"
-                    onClick={() => folderInputRef.current?.click()}
-                    disabled={disabled || isCreating}
-                    title="Add another directory"
-                  >
-                    <FolderUp size={13} />
-                    <span>Add folder</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    className="btn-staged-action btn-add-workdrive"
-                    onClick={() => setIsWorkDrivePickerOpen(true)}
-                    disabled={disabled || isCreating}
-                    title="Pick more files from Zoho WorkDrive"
-                  >
-                    <Cloud size={13} className="text-orange-500" />
-                    <span>Pick WorkDrive</span>
-                  </button>
-
-                  <button
-                    type="button"
                     className="btn-staged-action btn-clear-staged"
-                    onClick={handleClearAll}
-                    disabled={disabled || isCreating}
-                    title="Clear all staged files"
+                    onClick={handleClearAllStaged}
+                    disabled={disabled || isSubmitting}
+                    title="Clear all staged documents"
                   >
                     <Trash2 size={13} />
                     <span>Clear all</span>
@@ -506,19 +696,18 @@ export default function DiscoveryUploadCard({ onContinue, onGenerate, disabled =
 
               <ul className="discovery-selected-list">
                 <AnimatePresence initial={false}>
-                  {selectedFiles.map((file, idx) => {
-                    const badge = getFileBadgeInfo(file.name);
-                    const BadgeIcon = badge.icon;
-                    const { folderPath, fileName } = parseFilePath(file);
+                  {stagedFiles.map((file, idx) => {
+                    const badge = getFileIcon(file.extension || file.name);
+                    const BadgeIcon = badge.Icon;
 
                     return (
                       <motion.li
-                        key={`${file.name}_${file.size}_${idx}`}
+                        key={`${file.workdrive_file_id || file.name}_${idx}`}
                         className="discovery-selected-item"
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: 10 }}
-                        transition={{ duration: 0.18, delay: Math.min(idx * 0.02, 0.2) }}
+                        transition={{ duration: 0.16 }}
                       >
                         <div className="selected-file-main">
                           <span className={`file-badge ${badge.badgeClass}`}>
@@ -527,8 +716,8 @@ export default function DiscoveryUploadCard({ onContinue, onGenerate, disabled =
                           </span>
 
                           <div className="selected-file-meta">
-                            <span className="selected-file-name" title={fileName}>
-                              {fileName}
+                            <span className="selected-file-name" title={file.name}>
+                              {file.name}
                             </span>
                             {file.isWorkdrive && (
                               <span className="selected-file-folder-chip workdrive-chip" title="Picked from Zoho WorkDrive">
@@ -536,10 +725,10 @@ export default function DiscoveryUploadCard({ onContinue, onGenerate, disabled =
                                 <span>WorkDrive</span>
                               </span>
                             )}
-                            {folderPath && (
-                              <span className="selected-file-folder-chip" title={`From: ${folderPath}`}>
+                            {file.folderPath && (
+                              <span className="selected-file-folder-chip" title={`From: ${file.folderPath}`}>
                                 <Folder size={11} className="folder-chip-icon" />
-                                <span>{folderPath}</span>
+                                <span>{file.folderPath}</span>
                               </span>
                             )}
                           </div>
@@ -555,8 +744,8 @@ export default function DiscoveryUploadCard({ onContinue, onGenerate, disabled =
                           <button
                             type="button"
                             className="btn-remove-selected-file"
-                            onClick={() => handleRemoveFile(idx)}
-                            disabled={disabled || isCreating}
+                            onClick={() => handleRemoveStagedItem(idx)}
+                            disabled={disabled || isSubmitting}
                             aria-label={`Remove ${file.name}`}
                             title="Remove file"
                           >
@@ -572,19 +761,19 @@ export default function DiscoveryUploadCard({ onContinue, onGenerate, disabled =
           )}
         </AnimatePresence>
 
-        {/* Customer / Package Name Field */}
+        {/* Client / Business Name Field */}
         <AnimatePresence>
-          {selectedFiles.length > 0 && (
+          {stagedFiles.length > 0 && (
             <motion.div
               className="discovery-field"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.22 }}
+              transition={{ duration: 0.2 }}
             >
               <div className="discovery-field-label-row">
                 <label className="discovery-field-label" htmlFor="discovery-package-name">
-                  Business Name <span className="discovery-req-asterisk">*</span>
+                  Client / Business Name <span className="discovery-req-asterisk">*</span>
                 </label>
               </div>
 
@@ -597,7 +786,7 @@ export default function DiscoveryUploadCard({ onContinue, onGenerate, disabled =
                   placeholder="e.g. Acme Industries Pvt. Ltd."
                   value={packageName}
                   onChange={(e) => setPackageName(e.target.value)}
-                  disabled={disabled || isCreating}
+                  disabled={disabled || isSubmitting}
                   maxLength={120}
                   autoComplete="off"
                 />
@@ -606,8 +795,8 @@ export default function DiscoveryUploadCard({ onContinue, onGenerate, disabled =
                     type="button"
                     className="btn-clear-input"
                     onClick={() => setPackageName('')}
-                    disabled={disabled || isCreating}
-                    aria-label="Clear package name"
+                    disabled={disabled || isSubmitting}
+                    aria-label="Clear client name"
                   >
                     <XIcon size={13} />
                   </button>
@@ -617,42 +806,28 @@ export default function DiscoveryUploadCard({ onContinue, onGenerate, disabled =
           )}
         </AnimatePresence>
 
-        {createError && (
+        {submitError && (
           <div className="discovery-inline-error" role="alert">
             <Info size={16} className="inline-error-icon" />
-            <span>{createError}</span>
+            <span>{submitError}</span>
           </div>
         )}
 
-        {/* Footer Actions */}
+        {/* Single Primary Action: Generate Proposal */}
         <div className="discovery-footer-row">
-          {selectedFiles.length > 0 && onContinue && (
-            <motion.button
-              type="button"
-              className="btn-discovery-secondary"
-              onClick={handleReviewClick}
-              disabled={!isFormValid || disabled || isCreating}
-              whileHover={isFormValid && !isCreating ? { y: -1 } : {}}
-              whileTap={isFormValid && !isCreating ? { scale: 0.97 } : {}}
-              transition={{ duration: 0.15 }}
-            >
-              <span>Review Details First</span>
-            </motion.button>
-          )}
-
           <motion.button
             type="button"
             className="btn-discovery-continue"
-            onClick={handleGenerateClick}
-            disabled={!isFormValid || disabled || isCreating}
-            whileHover={isFormValid && !isCreating ? { y: -1.5, scale: 1.01 } : {}}
-            whileTap={isFormValid && !isCreating ? { scale: 0.97 } : {}}
+            onClick={handleGenerate}
+            disabled={!isFormValid || disabled || isSubmitting}
+            whileHover={isFormValid && !isSubmitting ? { y: -1.5, scale: 1.01 } : {}}
+            whileTap={isFormValid && !isSubmitting ? { scale: 0.97 } : {}}
             transition={{ duration: 0.15 }}
           >
-            {isCreating ? (
+            {isSubmitting ? (
               <>
                 <Loader2 size={15} className="discovery-spin" />
-                <span>Generating Proposal…</span>
+                <span>Preparing Proposal…</span>
               </>
             ) : (
               <>
@@ -663,18 +838,6 @@ export default function DiscoveryUploadCard({ onContinue, onGenerate, disabled =
           </motion.button>
         </div>
       </div>
-
-      {/* Reusable WorkDrive Picker Modal (Workspace 2 Multi-File) */}
-      <WorkDrivePickerModal
-        isOpen={isWorkDrivePickerOpen}
-        onClose={() => setIsWorkDrivePickerOpen(false)}
-        onSelect={handleWorkDriveSelect}
-        multiple={true}
-        allowedExtensions={['.pdf', '.docx', '.doc', '.xlsx', '.xls', '.txt', '.csv', '.md']}
-        title="Pick Discovery Documents"
-        subtitle="Select client discovery notes, proposals, or spreadsheets from Zoho WorkDrive"
-        confirmLabel="Add Selected Files"
-      />
     </SpotlightCard>
   );
 }

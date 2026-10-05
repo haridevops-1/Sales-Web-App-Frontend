@@ -68,6 +68,30 @@
   width: 100%;
 }
 
+.proposal-tag-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: rgba(255, 122, 26, 0.08);
+  border: 1px solid rgba(255, 122, 26, 0.22);
+  color: #C2410C;
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 0.28rem 0.75rem;
+  border-radius: 9999px;
+  margin-bottom: 0.85rem;
+}
+
+.proposal-tag-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #FF7A1A;
+  box-shadow: 0 0 0 2px rgba(255, 122, 26, 0.25);
+}
+
 .proposal-hero-title {
   font-family: var(--font-family-display, 'Poppins', sans-serif);
   font-size: 2.65rem;

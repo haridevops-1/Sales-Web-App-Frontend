@@ -1,8 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import './CreateProposal.css';
 import DiscoveryUploadCard from '@/components/proposal/DiscoveryUploadCard/DiscoveryUploadCard';
-import DiscoveryPackageReview from '@/components/proposal/DiscoveryPackageReview/DiscoveryPackageReview';
-import QuickStats from '@/components/experience/QuickStats/QuickStats';
 import BlurText from '@/reactbits/BlurText';
 import GradientText from '@/reactbits/GradientText';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -336,11 +334,9 @@ export default function CreateProposal({
   onNavigate,
   onViewProposal,
   onToast,
-  onProposalCreated,
-  proposalsCount = 0,
-  experiencesCount = 0
+  onProposalCreated
 }) {
-  const [step, setStep] = useState('discovery'); // 'discovery' | 'review' | 'processing' | 'result'
+  const [step, setStep] = useState('discovery'); // 'discovery' | 'processing' | 'result'
   const [discoveryPackage, setDiscoveryPackage] = useState(null);
   const [generatedProposal, setGeneratedProposal] = useState(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -351,27 +347,6 @@ export default function CreateProposal({
   const timerRef = useRef(null);
   const isGeneratingRef = useRef(false);
   const executedPackagesRef = useRef(new Set());
-
-  // Compute live proposal and showcase counts matching Workspace 1
-  const effectiveProposalsCount = useMemo(() => {
-    if (typeof proposalsCount === 'number' && proposalsCount > 0) return proposalsCount;
-    try {
-      const stored = JSON.parse(localStorage.getItem('spikra_proposals') || '[]');
-      return Array.isArray(stored) ? stored.length : 0;
-    } catch {
-      return proposalsCount || 0;
-    }
-  }, [proposalsCount]);
-
-  const effectiveExperiencesCount = useMemo(() => {
-    if (typeof experiencesCount === 'number' && experiencesCount > 0) return experiencesCount;
-    try {
-      const stored = JSON.parse(localStorage.getItem('spikra_experiences') || '[]');
-      return Array.isArray(stored) ? stored.length : 0;
-    } catch {
-      return experiencesCount || 0;
-    }
-  }, [experiencesCount]);
 
   const stopTimers = () => {
     if (timerRef.current) {
@@ -412,7 +387,7 @@ export default function CreateProposal({
 
   const handlePackageCreated = (pkg) => {
     setDiscoveryPackage(pkg);
-    setStep('review');
+    executeProposalGeneration(pkg);
   };
 
   const handlePackageUpdated = (pkg) => {
@@ -567,7 +542,7 @@ export default function CreateProposal({
       }
       const message = getFriendlyErrorMessage(err);
       if (onToast) onToast(message, "error", 6000);
-      setStep("review");
+      setStep("discovery");
     } finally {
       isGeneratingRef.current = false;
     }
@@ -604,14 +579,19 @@ export default function CreateProposal({
           </button>
         </div>
 
-        {/* Hero Header - centered and animated matching Workspace 1 exactly */}
+        {/* Hero Header - centered and animated matching Workspace design */}
         <section className="proposal-hero-section" aria-labelledby="proposal-hero-heading">
           <div className="proposal-hero-container">
+            <div className="proposal-tag-pill">
+              <span className="proposal-tag-dot" />
+              <span>Workspace 2 · Solution Proposals</span>
+            </div>
+
             <h1 id="proposal-hero-heading" className="proposal-hero-title">
               <BlurText
-                text="Turn Discovery Documents Into a"
+                text="Turn WorkDrive Documents Into a"
                 className="proposal-hero-title-blur"
-                delay={70}
+                delay={60}
                 animateBy="words"
                 direction="top"
               />
@@ -621,18 +601,12 @@ export default function CreateProposal({
             </h1>
 
             <p className="proposal-hero-subtext">
-              Upload customer discovery documents and materials to generate a structured, client-ready solution proposal.
+              Connect your Zoho WorkDrive, select customer discovery documents and folders, and generate a client-ready proposal.
             </p>
           </div>
         </section>
 
-        {/* Quick Stats Cards matching Workspace 1 */}
-        <QuickStats
-          totalCount={effectiveProposalsCount}
-          publishedCount={effectiveExperiencesCount}
-        />
-
-        {/* Body: Discovery -> Review -> Processing -> Result */}
+        {/* Body: Discovery / WorkDrive Intake -> Processing -> Result */}
         <div className="create-proposal-body">
           <AnimatePresence mode="wait">
             {step === 'discovery' ? (
@@ -645,24 +619,7 @@ export default function CreateProposal({
                 transition={{ duration: 0.24, ease: 'easeOut' }}
               >
                 <DiscoveryUploadCard
-                  onContinue={handlePackageCreated}
                   onGenerate={handleDirectGenerate}
-                  onToast={onToast}
-                />
-              </motion.div>
-            ) : step === 'review' ? (
-              <motion.div
-                key="review"
-                className="proposal-card-single"
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.24, ease: 'easeOut' }}
-              >
-                <DiscoveryPackageReview
-                  discoveryPackage={discoveryPackage}
-                  onPackageUpdated={handlePackageUpdated}
-                  onGenerate={handleGenerate}
                   onToast={onToast}
                 />
               </motion.div>

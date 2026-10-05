@@ -6,14 +6,16 @@ import ProcessingState from '../ProcessingState/ProcessingState';
 import ProcessStatus from '../ProcessStatus/ProcessStatus';
 import SpotlightCard from '@/reactbits/SpotlightCard';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Cloud, Upload } from 'lucide-react';
+import { Cloud, Upload, ExternalLink } from 'lucide-react';
 import { validateFile, inferBusinessName, validateLogoFile } from '@/utils/helpers';
 import { uploadTechnicalDocument, processDocument, analyzeDocument, generateCustomerExperience, deployCustomerExperience, getProcessStatus } from '@/api/catalystApi';
 import { resetApiGuard } from '@/api/apiCallGuard';
 import { UPLOAD_STAGES } from '@/utils/constants';
 import WorkDrivePickerModal from '@/components/shared/WorkDrivePicker/WorkDrivePickerModal';
+import { useWorkDrive } from '@/context/WorkDriveContext';
 
 export default function UploadSection({ onStageChange, onUploadSuccess, onExperienceCreated, onError }) {
+  const { isConnected, handleOpenWorkDrive } = useWorkDrive();
   const [selectedFile, setSelectedFile] = useState(null);
   const [businessName, setBusinessName] = useState('');
   const [projectName, setProjectName] = useState('');
@@ -854,26 +856,29 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
                       />
                     ) : (
                       <div>
-                        {/* Visible Source Options: Upload from computer / Pick from WorkDrive */}
-                        <div className="upload-source-tabs" role="tablist" aria-label="Document Source Options">
+                        {/* Only Local upload and Open Workdrive */}
+                        <div className="upload-options-header-row">
+                          <span className="upload-mode-pill">
+                            <Upload size={13} />
+                            <span>Local Upload</span>
+                          </span>
+
                           <button
                             type="button"
-                            className="upload-source-tab active"
-                            role="tab"
-                            aria-selected="true"
-                          >
-                            <Upload size={14} />
-                            <span>Upload from computer</span>
-                          </button>
-                          <button
-                            type="button"
-                            className="upload-source-tab"
-                            onClick={() => setIsWorkDrivePickerOpen(true)}
-                            role="tab"
-                            aria-selected="false"
+                            className="btn-open-workdrive-header-btn"
+                            onClick={() => {
+                              if (!isConnected) {
+                                handleOpenWorkDrive();
+                              } else {
+                                setIsWorkDrivePickerOpen(true);
+                              }
+                            }}
+                            disabled={isWorking}
+                            title="Open Zoho WorkDrive"
                           >
                             <Cloud size={14} className="text-orange-500" />
-                            <span>Pick from WorkDrive</span>
+                            <span>Open WorkDrive</span>
+                            <ExternalLink size={12} className="opacity-70" />
                           </button>
                         </div>
 
@@ -881,18 +886,6 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
                           onFileSelected={handleFileSelected}
                           disabled={isWorking}
                         />
-
-                        <div className="mt-3 flex justify-center">
-                          <button
-                            type="button"
-                            className="inline-flex items-center gap-2 text-xs font-medium text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100 border border-orange-200 px-3.5 py-1.5 rounded-full transition-all cursor-pointer"
-                            onClick={() => setIsWorkDrivePickerOpen(true)}
-                            disabled={isWorking}
-                          >
-                            <Cloud size={13} />
-                            <span>Or pick directly from Zoho WorkDrive</span>
-                          </button>
-                        </div>
                       </div>
                     )}
                   </motion.div>

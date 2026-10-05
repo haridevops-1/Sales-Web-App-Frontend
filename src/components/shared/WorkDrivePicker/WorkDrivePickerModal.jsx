@@ -272,12 +272,13 @@ export default function WorkDrivePickerModal({
               {isConnecting ? (
                 <>
                   <Loader2 size={15} className="workdrive-spin inline mr-2" />
-                  Connecting to Zoho...
+                  Opening WorkDrive OAuth...
                 </>
               ) : (
                 <>
-                  <ExternalLink size={15} className="inline mr-2" />
-                  Connect Zoho WorkDrive
+                  <Cloud size={15} className="inline mr-2" />
+                  <span>Open WorkDrive</span>
+                  <ExternalLink size={13} className="inline ml-1 opacity-75" />
                 </>
               )}
             </button>
