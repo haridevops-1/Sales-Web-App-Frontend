@@ -125,20 +125,26 @@ export function getApiCallCount(key) {
  * @param {Error|any} error - The failure error
  */
 export function markApiAsFailed(key, error) {
-  failedKeys.add(key);
-  try {
-    if (typeof sessionStorage !== "undefined") {
-      sessionStorage.setItem(
-        STORAGE_PREFIX + key,
-        JSON.stringify({
-          timestamp: Date.now(),
-          message: error?.message || "Failed"
-        })
-      );
-    }
-  } catch {}
-
-  console.error("[API Guard] Operation \"" + key + "\" failed and execution is stopped at this point.", error?.message);
+  // Only write / AI-triggering operations are permanently recorded to halt retries
+  // Read operations (GET, list, status) do not permanently tombstone the user's session
+  const isReadOnly = key.startsWith("GET:") || key.includes(":list") || key.includes("status") || key.includes("resource=proposals");
+  if (!isReadOnly) {
+    failedKeys.add(key);
+    try {
+      if (typeof sessionStorage !== "undefined") {
+        sessionStorage.setItem(
+          STORAGE_PREFIX + key,
+          JSON.stringify({
+            timestamp: Date.now(),
+            message: error?.message || "Failed"
+          })
+        );
+      }
+    } catch {}
+    console.error("[API Guard] Operation \"" + key + "\" failed and execution is stopped at this point.", error?.message);
+  } else {
+    console.warn("[API Guard] Read operation \"" + key + "\" failed (retryable):", error?.message);
+  }
 }
 
 /**
@@ -165,8 +171,8 @@ export function incrementApiCallCount(key) {
  * @param {number} [maxAllowed=Infinity] - Maximum allowed executions
  */
 export function assertCanCallApi(key, maxAllowed = Infinity) {
-  // 1. If this exact operation previously failed, stop it right at that point
-  if (hasApiFailed(key)) {
+  // 1. If this finite operation previously failed, stop it right at that point
+  if (Number.isFinite(maxAllowed) && hasApiFailed(key)) {
     const errorMsg = "[API Guard Blocked] Operation \"" + key + "\" previously failed. Subsequent calls are stopped.";
     console.warn(errorMsg);
     throw new Error(errorMsg);
@@ -215,7 +221,7 @@ export async function executeGuardedApiCall(key, callFn, { maxCalls = Infinity }
       if (err?.name === "CancelledError" || err?.name === "AbortError") {
         throw err;
       }
-      // When the API fails for anything, stop at that point and record failure
+      // When the API fails for anything, record failure
       markApiAsFailed(key, err);
       throw err;
     } finally {
@@ -243,7 +249,20 @@ export function tripGlobalCircuitBreaker() {
 /**
  * Reset guard memory (clears locks, counts, and in-flight promises).
  */
-export function resetApiGuard() {
+export function resetApiGuard(targetKey = null) {
+  if (targetKey) {
+    failedKeys.delete(targetKey);
+    callCounts.delete(targetKey);
+    inFlightPromises.delete(targetKey);
+    try {
+      if (typeof sessionStorage !== "undefined") {
+        sessionStorage.removeItem(STORAGE_PREFIX + targetKey);
+        sessionStorage.removeItem(COUNT_PREFIX + targetKey);
+      }
+    } catch {}
+    return;
+  }
+
   failedKeys.clear();
   callCounts.clear();
   inFlightPromises.clear();

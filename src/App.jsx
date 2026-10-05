@@ -112,6 +112,14 @@ export default function App() {
 
   // Function 7 Backend Loader (Workspace 1)
   const loadExperiences = useCallback(async (filters = {}, isSilent = false) => {
+    // First load cached experiences for instant UI rendering
+    try {
+      const cached = JSON.parse(localStorage.getItem('spikra_experiences') || '[]');
+      if (Array.isArray(cached) && cached.length > 0) {
+        setExperiences(cached);
+      }
+    } catch {}
+
     if (!isSilent) {
       setIsLoadingExperiences(true);
     }
@@ -133,8 +141,8 @@ export default function App() {
         }
       }
     } catch (err) {
-      console.error('[App] Failed to load experiences from Function 7:', err);
-      const errorMsg = err.message || 'Unable to load customer experiences.';
+      console.warn('[App] Could not refresh experiences from server (using local cache if available):', err?.message || err);
+      const errorMsg = err?.message || 'Unable to load customer experiences.';
       setExperiencesError(errorMsg);
     } finally {
       setIsLoadingExperiences(false);

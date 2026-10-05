@@ -29,6 +29,7 @@ import { useWorkDrive } from '@/context/WorkDriveContext';
 import { listWorkdriveItems } from '@/api/workdriveApi';
 import { normalizeWorkdriveItems } from '@/components/shared/WorkDrivePicker/workdriveItem';
 import { createDiscoveryPackage, getFriendlyErrorMessage } from '@/api/proposalApi';
+import { resetApiGuard } from '@/api/apiCallGuard';
 import { formatBytes, formatDate } from '@/utils/helpers';
 import { getWorkdriveSessionToken } from '@/utils/workdriveSession';
 
@@ -603,7 +604,10 @@ export default function DiscoveryUploadCard({ onGenerate, disabled = false, onTo
                       <button
                         type="button"
                         className="btn-retry-action"
-                        onClick={() => loadFolder(currentFolder.id)}
+                        onClick={() => {
+                          resetApiGuard();
+                          loadFolder(currentFolder.id);
+                        }}
                       >
                         Try Again
                       </button>
