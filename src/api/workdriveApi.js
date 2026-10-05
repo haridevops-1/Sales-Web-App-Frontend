@@ -144,7 +144,7 @@ async function workdriveRequest(path, { method = 'GET', body, timeoutMs = 30000,
  */
 export async function getWorkdriveStatus(signal) {
   try {
-    const res = await workdriveRequest('/workdrive/status', { method: 'GET', signal });
+    const res = await workdriveRequest('/workdrive/status?action=status', { method: 'GET', signal });
     return {
       success: true,
       connected: Boolean(res?.connected),
@@ -171,12 +171,12 @@ export async function getWorkdriveAuthorizeUrl(signal) {
 }
 
 /**
- * POST /workdrive/disconnect
+ * POST /workdrive/disconnect?action=disconnect
  * Needs bearer session token. Returns { success, connected: false }
  */
 export async function disconnectWorkdrive() {
   try {
-    const res = await workdriveRequest('/workdrive/disconnect', { method: 'POST' });
+    const res = await workdriveRequest('/workdrive/disconnect?action=disconnect', { method: 'POST' });
     clearWorkdriveSessionToken(false);
     return res;
   } catch (err) {
