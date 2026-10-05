@@ -312,6 +312,8 @@ export default function DiscoveryUploadCard({ onGenerate, disabled = false, onTo
         <input
           ref={fileInputRef}
           type="file"
+          id="discovery-local-file-input"
+          name="discovery_local_files"
           multiple
           accept=".pdf,.docx,.doc,.xlsx,.xls,.txt,.csv,.md"
           onChange={(e) => {
@@ -325,6 +327,8 @@ export default function DiscoveryUploadCard({ onGenerate, disabled = false, onTo
         <input
           ref={folderInputRef}
           type="file"
+          id="discovery-local-folder-input"
+          name="discovery_local_folder"
           webkitdirectory=""
           directory=""
           multiple
@@ -573,6 +577,8 @@ export default function DiscoveryUploadCard({ onGenerate, disabled = false, onTo
                   <Search size={14} className="text-slate-400" />
                   <input
                     type="text"
+                    id="discovery-workdrive-search-input"
+                    name="discovery_workdrive_search"
                     className="workdrive-search-input"
                     placeholder="Search documents in this folder..."
                     value={searchQuery}
