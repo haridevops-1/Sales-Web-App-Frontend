@@ -28,11 +28,22 @@ export function normalizeWorkdriveItem(raw) {
   const modifiedRaw = attrs.modified_time || attrs.modified_time_formatted || raw.modified_time || attrs.updated_time || null;
 
   const lastDot = String(name).lastIndexOf('.');
-  const extension = !isFolder && lastDot !== -1 ? String(name).slice(lastDot).toLowerCase() : '';
+  let extension = !isFolder && lastDot !== -1 ? String(name).slice(lastDot).toLowerCase() : '';
+  if (!extension && !isFolder) {
+    if (rawType.includes('sheet')) extension = '.xlsx';
+    else if (rawType.includes('writer') || rawType.includes('document')) extension = '.docx';
+    else if (rawType.includes('show') || rawType.includes('presentation')) extension = '.pptx';
+    else if (attrs.mime_type?.includes('pdf') || raw.mime_type?.includes('pdf')) extension = '.pdf';
+    else if (attrs.mime_type?.includes('sheet') || attrs.mime_type?.includes('excel')) extension = '.xlsx';
+  }
+
+  const displayName = !isFolder && extension && !String(name).toLowerCase().endsWith(extension)
+    ? `${name}${extension}`
+    : String(name);
 
   return {
     id: String(id),
-    name: String(name),
+    name: displayName,
     isFolder,
     size,
     modifiedTime: modifiedRaw,
