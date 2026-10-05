@@ -129,12 +129,12 @@ async function workdriveRequest(path, { method = 'GET', body, timeoutMs = 30000,
     data = {};
   }
 
-  // Handle 401 Unauthorized: token expired or revoked per specification
-  if (response.status === 401) {
-    console.warn('[WorkDrive API] 401 Unauthorized - clearing session token');
+  const errorCode = data?.error?.code || data?.code;
+  // Handle 401 or auth failures: token expired, revoked, or account not connected
+  if (response.status === 401 || errorCode === 'WORKDRIVE_AUTH_FAILED' || errorCode === 'WORKDRIVE_TOKEN_EXPIRED') {
     clearWorkdriveSessionToken(true);
-    const message = data?.message || data?.error?.message || 'WorkDrive session expired. Please reconnect.';
-    throw new WorkDriveApiError(message, { status: 401, data });
+    const message = data?.message || data?.error?.message || 'WorkDrive is not connected or session expired. Please connect.';
+    throw new WorkDriveApiError(message, { status: response.status, data });
   }
 
   if (!response.ok || (data && data.success === false)) {
