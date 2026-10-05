@@ -21,7 +21,8 @@ import {
   FolderUp,
   FileUp,
   Info,
-  AlertCircle
+  AlertCircle,
+  Sparkles
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SpotlightCard from '@/reactbits/SpotlightCard';
@@ -32,6 +33,7 @@ import { createDiscoveryPackage, getFriendlyErrorMessage } from '@/api/proposalA
 import { resetApiGuard } from '@/api/apiCallGuard';
 import { formatBytes, formatDate } from '@/utils/helpers';
 import { getWorkdriveSessionToken } from '@/utils/workdriveSession';
+import WorkDriveExplorerWidget from '../WorkDriveExplorerWidget/WorkDriveExplorerWidget';
 
 const SUPPORTED_EXTENSIONS = ['.pdf', '.docx', '.doc', '.xlsx', '.xls', '.csv', '.txt', '.md'];
 
@@ -81,6 +83,39 @@ export default function DiscoveryUploadCard({ onGenerate, disabled = false, onTo
   const [packageName, setPackageName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
+
+  // WorkDrive Explorer Widget modal state
+  const [isWidgetOpen, setIsWidgetOpen] = useState(false);
+  const prevConnectedRef = useRef(isConnected);
+
+  // Auto-open explorer widget when OAuth connects successfully
+  useEffect(() => {
+    if (!prevConnectedRef.current && isConnected) {
+      setIsWidgetOpen(true);
+      setUploadMode('workdrive');
+    }
+    prevConnectedRef.current = isConnected;
+  }, [isConnected]);
+
+  // Handle files attached from WorkDrive Explorer Widget
+  const handleWidgetSelectFiles = (selectedFiles, businessNameFromWidget) => {
+    if (!selectedFiles || selectedFiles.length === 0) return;
+
+    setStagedFiles((prev) => {
+      const existingIds = new Set(prev.map((f) => f.workdrive_file_id).filter(Boolean));
+      const newItems = selectedFiles.filter((f) => !existingIds.has(f.workdrive_file_id));
+      return [...prev, ...newItems];
+    });
+
+    if (businessNameFromWidget && businessNameFromWidget.trim()) {
+      setPackageName(businessNameFromWidget.trim());
+    } else if (!packageName.trim()) {
+      if (selectedFiles[0]?.name) {
+        const clean = selectedFiles[0].name.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ').trim();
+        if (clean) setPackageName(clean);
+      }
+    }
+  };
 
   // Local upload refs
   const fileInputRef = useRef(null);
@@ -364,6 +399,8 @@ export default function DiscoveryUploadCard({ onGenerate, disabled = false, onTo
               setUploadMode('workdrive');
               if (!isConnected) {
                 handleOpenWorkDrive();
+              } else {
+                setIsWidgetOpen(true);
               }
             }}
             role="tab"
@@ -508,6 +545,16 @@ export default function DiscoveryUploadCard({ onGenerate, disabled = false, onTo
                   <div className="connected-actions-right">
                     <button
                       type="button"
+                      className="btn-workdrive-mini-action btn-open-widget-mini"
+                      onClick={() => setIsWidgetOpen(true)}
+                      title="Open full WorkDrive Explorer Widget"
+                    >
+                      <FolderOpen size={13} className="text-orange-500" />
+                      <span>Open Explorer Widget</span>
+                    </button>
+
+                    <button
+                      type="button"
                       className="btn-workdrive-mini-action"
                       onClick={() => loadFolder(currentFolder.id)}
                       title="Refresh folder"
@@ -526,6 +573,24 @@ export default function DiscoveryUploadCard({ onGenerate, disabled = false, onTo
                       <span>Disconnect</span>
                     </button>
                   </div>
+                </div>
+
+                {/* Banner to launch dedicated Explorer Widget */}
+                <div className="workdrive-widget-banner">
+                  <div className="widget-banner-left">
+                    <Sparkles size={15} className="text-orange-500 shrink-0" />
+                    <span className="widget-banner-text">
+                      Search folders by business name, navigate subfolders, and select discovery files in the Explorer Widget.
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn-launch-explorer"
+                    onClick={() => setIsWidgetOpen(true)}
+                  >
+                    <FolderOpen size={13} />
+                    <span>Launch Explorer Widget</span>
+                  </button>
                 </div>
 
                 {/* Toolbar */}
@@ -881,6 +946,16 @@ export default function DiscoveryUploadCard({ onGenerate, disabled = false, onTo
           </motion.button>
         </div>
       </div>
+
+      {/* Dedicated WorkDrive Explorer Widget Modal */}
+      <WorkDriveExplorerWidget
+        isOpen={isWidgetOpen}
+        onClose={() => setIsWidgetOpen(false)}
+        onSelectFiles={handleWidgetSelectFiles}
+        initialBusinessName={packageName}
+        alreadyStagedIds={stagedFiles.map((f) => f.workdrive_file_id).filter(Boolean)}
+        onToast={onToast}
+      />
     </SpotlightCard>
   );
 }
