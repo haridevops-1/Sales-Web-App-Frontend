@@ -47,6 +47,25 @@ export function WorkDriveProvider({ children }) {
 
   const checkStatus = useCallback(async () => {
     setError(null);
+
+    // Check if redirected with session token in URL query params
+    if (typeof window !== 'undefined') {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlToken = urlParams.get('workdrive_token') || urlParams.get('session_token');
+        const urlEmail = urlParams.get('workdrive_email') || urlParams.get('email');
+        if (urlToken) {
+          setWorkdriveSessionToken(urlToken, urlEmail);
+          urlParams.delete('workdrive_token');
+          urlParams.delete('session_token');
+          urlParams.delete('workdrive_email');
+          urlParams.delete('email');
+          const cleanSearch = urlParams.toString() ? `?${urlParams.toString()}` : '';
+          window.history.replaceState(null, '', `${window.location.pathname}${cleanSearch}${window.location.hash}`);
+        }
+      } catch {}
+    }
+
     const localToken = getWorkdriveSessionToken();
     const localEmail = getWorkdriveSessionEmail();
 

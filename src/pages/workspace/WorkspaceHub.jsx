@@ -111,7 +111,7 @@ export default function WorkspaceHub({
                   className="btn-workspace-cta"
                   onClick={() => onNavigate && onNavigate('proposal', 'proposal-create')}
                 >
-                  <span>Open WorkDrive</span>
+                  <span>Create Proposal</span>
                   <ArrowRight size={16} strokeWidth={2.4} className="btn-cta-arrow" />
                 </button>
               </div>
