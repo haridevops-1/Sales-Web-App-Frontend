@@ -77,7 +77,11 @@ export function isTrustedWorkDriveOrigin(origin) {
 async function workdriveRequest(path, { method = 'GET', body, timeoutMs = 30000, signal: externalSignal } = {}) {
   const url = resolveEndpointUrl(path, null);
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  let isTimedOut = false;
+  const timeoutId = setTimeout(() => {
+    isTimedOut = true;
+    controller.abort();
+  }, timeoutMs);
 
   if (externalSignal) {
     if (externalSignal.aborted) controller.abort();
@@ -108,7 +112,10 @@ async function workdriveRequest(path, { method = 'GET', body, timeoutMs = 30000,
   } catch (fetchErr) {
     clearTimeout(timeoutId);
     if (fetchErr.name === 'AbortError') {
-      throw new WorkDriveApiError('WorkDrive request timed out.', { status: 408 });
+      if (isTimedOut) {
+        throw new WorkDriveApiError('WorkDrive request timed out.', { status: 408 });
+      }
+      throw fetchErr;
     }
     throw new WorkDriveApiError('Unable to connect to WorkDrive service. Please check your connection.', { status: 0 });
   }
