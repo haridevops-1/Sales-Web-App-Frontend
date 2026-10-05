@@ -26,8 +26,9 @@ export default defineConfig(({ mode }) => {
       emptyOutDir: true
     },
     server: {
-      port: 3000,
-      open: true,
+      port: 5173,
+      hmr: false,
+      open: false,
       proxy: {
         '/spikra': {
           target: catalystTarget,
