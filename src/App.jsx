@@ -183,10 +183,24 @@ export default function App() {
   // Fetch experiences and proposals on initial mount
   const hasLoadedRef = useRef(false);
   useEffect(() => {
-    if (hasLoadedRef.current) return;
-    hasLoadedRef.current = true;
-    loadExperiences();
-    loadProposals();
+    if (!hasLoadedRef.current) {
+      hasLoadedRef.current = true;
+      loadExperiences();
+      loadProposals();
+    }
+
+    const handleSessionUpdated = () => {
+      loadProposals();
+    };
+    const handleSessionCleared = () => {
+      setProposals([]);
+    };
+    window.addEventListener('workdrive:session_updated', handleSessionUpdated);
+    window.addEventListener('workdrive:session_cleared', handleSessionCleared);
+    return () => {
+      window.removeEventListener('workdrive:session_updated', handleSessionUpdated);
+      window.removeEventListener('workdrive:session_cleared', handleSessionCleared);
+    };
   }, [loadExperiences, loadProposals]);
 
   // Stable reference (must not change every render) - WorkspaceHub calls this from a

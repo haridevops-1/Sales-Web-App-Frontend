@@ -84,10 +84,14 @@ async function workdriveRequest(path, { method = 'GET', body, timeoutMs = 30000,
     else externalSignal.addEventListener('abort', () => controller.abort(), { once: true });
   }
 
-  const headers = { Accept: 'application/json' };
   const token = getWorkdriveSessionToken();
+  const headers = { Accept: 'application/json' };
+  let effectiveUrl = url;
   if (token) {
-    headers.Authorization = `Bearer ${token}`;
+    headers['X-Workdrive-Token'] = token;
+    headers['X-Session-Token'] = token;
+    const sep = effectiveUrl.includes('?') ? '&' : '?';
+    effectiveUrl = `${effectiveUrl}${sep}session_token=${encodeURIComponent(token)}`;
   }
   if (body !== undefined) {
     headers['Content-Type'] = 'application/json';
@@ -95,7 +99,7 @@ async function workdriveRequest(path, { method = 'GET', body, timeoutMs = 30000,
 
   let response;
   try {
-    response = await fetch(url, {
+    response = await fetch(effectiveUrl, {
       method,
       headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,

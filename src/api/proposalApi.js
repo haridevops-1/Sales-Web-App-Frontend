@@ -85,18 +85,22 @@ async function requestJson(path, { method = 'GET', body, timeoutMs = 45000, sign
 
     const headers = { Accept: 'application/json' };
     const token = getSessionToken();
+    let effectiveUrl = url;
     if (token) {
-      headers.Authorization = `Bearer ${token}`;
+      headers['X-Workdrive-Token'] = token;
+      headers['X-Session-Token'] = token;
+      const sep = effectiveUrl.includes('?') ? '&' : '?';
+      effectiveUrl = `${effectiveUrl}${sep}session_token=${encodeURIComponent(token)}`;
     }
     if (body !== undefined) {
       headers['Content-Type'] = 'application/json';
     }
 
-    console.log('[Workspace 2] ' + method + ' ' + url + ' (single execution guaranteed)', body !== undefined ? body : '');
+    console.log('[Workspace 2] ' + method + ' ' + effectiveUrl + ' (single execution guaranteed)', body !== undefined ? body : '');
 
     let response;
     try {
-      response = await fetch(url, {
+      response = await fetch(effectiveUrl, {
         method,
         headers,
         body: body !== undefined ? JSON.stringify(body) : undefined,
@@ -157,16 +161,20 @@ async function requestFormData(path, formData, { signal: externalSignal, timeout
 
     const headers = { Accept: 'application/json' };
     const token = getSessionToken();
+    let effectiveUrl = url;
     if (token) {
-      headers.Authorization = `Bearer ${token}`;
+      headers['X-Workdrive-Token'] = token;
+      headers['X-Session-Token'] = token;
+      const sep = effectiveUrl.includes('?') ? '&' : '?';
+      effectiveUrl = `${effectiveUrl}${sep}session_token=${encodeURIComponent(token)}`;
     }
     // Browser will automatically set multipart/form-data and boundary
 
-    console.log('[Workspace 2] POST (multipart/form-data) ' + url + ' (single execution guaranteed)');
+    console.log('[Workspace 2] POST (multipart/form-data) ' + effectiveUrl + ' (single execution guaranteed)');
 
     let response;
     try {
-      response = await fetch(url, {
+      response = await fetch(effectiveUrl, {
         method: 'POST',
         headers,
         body: formData,
@@ -427,6 +435,9 @@ export function getDiscoverySession(sessionId, signal) {
 // ---------------------------------------------------------------------------
 
 export function listProposals(packageId, signal) {
+  if (!getSessionToken()) {
+    return Promise.resolve({ success: true, proposals: [] });
+  }
   const qs = packageId ? '&package_id=' + encodeURIComponent(packageId) : '';
   console.log('[Workspace 2] GET /proposal/api?resource=proposals' + qs);
   return requestJson('/proposal/api?resource=proposals' + qs, { signal }).then((res) => {

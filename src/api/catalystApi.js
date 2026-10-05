@@ -192,7 +192,8 @@ export async function uploadTechnicalDocument({
       requestHeaders['Accept'] = 'application/json';
       const token = getWorkdriveSessionToken();
       if (token) {
-        requestHeaders['Authorization'] = `Bearer ${token}`;
+        requestHeaders['X-Workdrive-Token'] = token;
+        requestHeaders['X-Session-Token'] = token;
       }
       requestBody = JSON.stringify({
         workdrive_file_id: workdriveFileId,
