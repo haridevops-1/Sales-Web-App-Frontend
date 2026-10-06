@@ -6,7 +6,7 @@ import ProcessingState from '../ProcessingState/ProcessingState';
 import ProcessStatus from '../ProcessStatus/ProcessStatus';
 import SpotlightCard from '@/reactbits/SpotlightCard';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Cloud, Upload, ExternalLink } from 'lucide-react';
+import { Cloud, Upload, ExternalLink, LogOut } from 'lucide-react';
 import { validateFile, inferBusinessName, validateLogoFile } from '@/utils/helpers';
 import { uploadTechnicalDocument, processDocument, analyzeDocument, generateCustomerExperience, deployCustomerExperience, getProcessStatus } from '@/api/catalystApi';
 import { resetApiGuard } from '@/api/apiCallGuard';
@@ -15,7 +15,7 @@ import WorkDrivePickerModal from '@/components/shared/WorkDrivePicker/WorkDriveP
 import { useWorkDrive } from '@/context/WorkDriveContext';
 
 export default function UploadSection({ onStageChange, onUploadSuccess, onExperienceCreated, onError }) {
-  const { isConnected, error: authError, handleOpenWorkDrive } = useWorkDrive();
+  const { isConnected, error: authError, handleOpenWorkDrive, disconnect } = useWorkDrive();
   const [selectedFile, setSelectedFile] = useState(null);
   const [businessName, setBusinessName] = useState('');
   const [projectName, setProjectName] = useState('');
@@ -870,23 +870,38 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
                             <span>Local Upload</span>
                           </span>
 
-                          <button
-                            type="button"
-                            className="btn-open-workdrive-header-btn"
-                            onClick={() => {
-                              if (!isConnected) {
-                                handleOpenWorkDrive();
-                              } else {
-                                setIsWorkDrivePickerOpen(true);
-                              }
-                            }}
-                            disabled={isWorking}
-                            title="Open Zoho WorkDrive"
-                          >
-                            <Cloud size={14} className="text-orange-500" />
-                            <span>Open WorkDrive</span>
-                            <ExternalLink size={12} className="opacity-70" />
-                          </button>
+                          <div className="upload-header-actions-group">
+                            <button
+                              type="button"
+                              className="btn-open-workdrive-header-btn"
+                              onClick={() => {
+                                if (!isConnected) {
+                                  handleOpenWorkDrive();
+                                } else {
+                                  setIsWorkDrivePickerOpen(true);
+                                }
+                              }}
+                              disabled={isWorking}
+                              title="Open Zoho WorkDrive"
+                            >
+                              <Cloud size={14} className="text-orange-500" />
+                              <span>Open WorkDrive</span>
+                              <ExternalLink size={12} className="opacity-70" />
+                            </button>
+
+                            {isConnected && (
+                              <button
+                                type="button"
+                                className="btn-disconnect-header-btn"
+                                onClick={disconnect}
+                                disabled={isWorking}
+                                title="Disconnect Zoho WorkDrive"
+                              >
+                                <LogOut size={13} />
+                                <span>Disconnect</span>
+                              </button>
+                            )}
+                          </div>
                         </div>
 
                         <UploadDropzone

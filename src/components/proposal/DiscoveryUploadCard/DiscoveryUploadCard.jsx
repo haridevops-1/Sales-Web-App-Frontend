@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import './DiscoveryUploadCard.css';
 import {
   Cloud,
-  Folder,
   FileText,
   FileSpreadsheet,
   File as FileIcon,
@@ -17,9 +16,7 @@ import {
   FolderUp,
   FileUp,
   Info,
-  AlertCircle,
-  Sparkles,
-  Building2
+  LogOut
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SpotlightCard from '@/reactbits/SpotlightCard';
@@ -54,15 +51,12 @@ export default function DiscoveryUploadCard({ onGenerate, disabled = false, onTo
   const {
     isConnected,
     isConnecting,
-    email,
     error: authError,
     handleOpenWorkDrive,
     disconnect,
     clearError
   } = useWorkDrive();
 
-  // Mode: ONLY 'local' or 'workdrive'
-  const [uploadMode, setUploadMode] = useState('local');
   const [isDragging, setIsDragging] = useState(false);
 
   // Staged files for proposal generation
@@ -74,10 +68,10 @@ export default function DiscoveryUploadCard({ onGenerate, disabled = false, onTo
   // WorkDrive Explorer Widget modal state (Full screen frozen backdrop overlay)
   const [isWidgetOpen, setIsWidgetOpen] = useState(false);
   const prevConnectedRef = useRef(isConnected);
-  // When OAuth connects successfully, transition to WorkDrive mode
+  // When OAuth connects successfully, open the Explorer widget directly
   useEffect(() => {
     if (!prevConnectedRef.current && isConnected) {
-      setUploadMode('workdrive');
+      setIsWidgetOpen(true);
       if (onToast) {
         onToast('Zoho WorkDrive connected successfully. Enter business name and select files.', 'success', 3500);
       }
@@ -280,260 +274,143 @@ export default function DiscoveryUploadCard({ onGenerate, disabled = false, onTo
           style={{ display: 'none' }}
         />
 
-        {/* Source Options: ONLY Local Upload and Open WorkDrive */}
-        <div className="discovery-source-toggle-row" role="tablist" aria-label="Upload Source Options">
-          <button
-            type="button"
-            className={`btn-source-toggle ${uploadMode === 'local' ? 'active' : ''}`}
-            onClick={() => setUploadMode('local')}
-            role="tab"
-            aria-selected={uploadMode === 'local'}
-          >
+        {/* Header Row: Local Upload (static) + Open WorkDrive / Disconnect - matches Workspace 1 */}
+        <div className="discovery-options-header-row">
+          <span className="discovery-mode-pill">
             <UploadCloud size={15} />
             <span>Local Upload</span>
-          </button>
+          </span>
 
-          <button
-            type="button"
-            className={`btn-source-toggle ${uploadMode === 'workdrive' ? 'active' : ''}`}
-            onClick={() => {
-              setUploadMode('workdrive');
-              if (!isConnected) {
-                handleOpenWorkDrive();
-              } else {
-                setIsWidgetOpen(true);
-              }
-            }}
-            role="tab"
-            aria-selected={uploadMode === 'workdrive'}
-          >
-            <Cloud size={15} className="text-orange-500" />
-            <span>Open WorkDrive</span>
-            <ExternalLink size={12} className="opacity-70" />
-          </button>
+          <div className="discovery-header-actions-group">
+            <button
+              type="button"
+              className="btn-open-workdrive-discovery-btn"
+              onClick={() => {
+                if (!isConnected) {
+                  handleOpenWorkDrive();
+                } else {
+                  setIsWidgetOpen(true);
+                }
+              }}
+              disabled={disabled || isConnecting}
+              title="Open Zoho WorkDrive"
+            >
+              {isConnecting ? (
+                <>
+                  <Loader2 size={14} className="workdrive-spin" />
+                  <span>Opening Zoho OAuth...</span>
+                </>
+              ) : (
+                <>
+                  <Cloud size={14} className="text-orange-500" />
+                  <span>Open WorkDrive</span>
+                  <ExternalLink size={12} className="opacity-70" />
+                </>
+              )}
+            </button>
+
+            {isConnected && (
+              <button
+                type="button"
+                className="btn-disconnect-discovery-btn"
+                onClick={disconnect}
+                disabled={disabled}
+                title="Disconnect Zoho WorkDrive"
+              >
+                <LogOut size={13} />
+                <span>Disconnect</span>
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* OPTION 1: Local Upload */}
-        {uploadMode === 'local' && (
-          <div className="discovery-local-dropzone-box animate-fade-in">
-            <div
-              className={`discovery-dropzone ${isDragging ? 'is-dragging' : ''}`}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              onClick={() => fileInputRef.current?.click()}
-              role="button"
-              tabIndex={0}
-              aria-label="Drag and drop documents or click to browse"
+        {authError && (
+          <div className="discovery-inline-error animate-fade-in" role="alert">
+            <Info size={16} className="inline-error-icon" />
+            <span>{authError}</span>
+            <button
+              type="button"
+              onClick={() => {
+                clearError?.();
+                handleOpenWorkDrive();
+              }}
+              style={{
+                background: '#DC2626',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '6px',
+                padding: '4px 10px',
+                fontSize: '12px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap'
+              }}
             >
-              <div className="dropzone-icon-bubble">
-                <UploadCloud size={30} className="dropzone-cloud-icon" />
-              </div>
-
-              <div className="dropzone-text-group">
-                <p className="dropzone-primary-text">
-                  {isDragging ? 'Drop your files or folder here' : 'Drag & drop discovery files or folder here'}
-                </p>
-                <p className="dropzone-secondary-text">
-                  Supports PDF, Word, Excel, and Text documents
-                </p>
-              </div>
-
-              <div className="dropzone-actions-group" onClick={(e) => e.stopPropagation()}>
-                <button
-                  type="button"
-                  className="btn-dropzone-action"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <FileUp size={15} />
-                  <span>Browse Files</span>
-                </button>
-
-                <button
-                  type="button"
-                  className="btn-dropzone-action"
-                  onClick={() => folderInputRef.current?.click()}
-                >
-                  <FolderUp size={15} />
-                  <span>Upload Folder</span>
-                </button>
-              </div>
-            </div>
+              Retry
+            </button>
           </div>
         )}
 
-        {/* OPTION 2: Open WorkDrive (No inline widget under section - uses frozen screen widget) */}
-        {uploadMode === 'workdrive' && (
-          <div className="discovery-workdrive-view animate-fade-in">
-            {!isConnected ? (
-              /* If not connected: clean prompt with Open WorkDrive button */
-              <div className="workdrive-auth-hero-box animate-fade-in">
-                <div className="workdrive-auth-bubble">
-                  <Cloud size={36} className="workdrive-auth-cloud-icon" />
-                </div>
+        {/* Local Upload Dropzone: always visible, same as Workspace 1 - supports multiple files and folders */}
+        <div className="discovery-local-dropzone-box">
+          <div
+            className={`discovery-dropzone ${isDragging ? 'is-dragging' : ''}`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+            role="button"
+            tabIndex={0}
+            aria-label="Drag and drop documents or click to browse"
+          >
+            <div className="dropzone-icon-bubble">
+              <UploadCloud size={30} className="dropzone-cloud-icon" />
+            </div>
 
-                <h3 className="workdrive-auth-title">Connect Zoho WorkDrive</h3>
-                <p className="workdrive-auth-desc">
-                  Click below to authorize your Zoho WorkDrive account and pick files or folders.
-                </p>
+            <div className="dropzone-text-group">
+              <p className="dropzone-primary-text">
+                {isDragging ? 'Drop your files or folder here' : 'Drag & drop discovery files or folder here'}
+              </p>
+              <p className="dropzone-secondary-text">
+                Supports PDF, Word, Excel, and Text documents
+              </p>
+            </div>
 
-                {authError && (
-                  <div className="discovery-inline-error mb-4 animate-fade-in" role="alert" style={{ maxWidth: '460px', margin: '0 auto 1.25rem' }}>
-                    <AlertCircle size={16} className="shrink-0 text-red-600" />
-                    <div style={{ flex: 1, textAlign: 'left', wordBreak: 'break-word' }}>
-                      <span className="font-semibold text-red-700">Connection Error: </span>
-                      <span>{authError}</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        clearError?.();
-                        handleOpenWorkDrive();
-                      }}
-                      style={{
-                        background: '#DC2626',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: '6px',
-                        padding: '4px 10px',
-                        fontSize: '12px',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      Retry
-                    </button>
-                  </div>
-                )}
+            <div className="dropzone-actions-group" onClick={(e) => e.stopPropagation()}>
+              <button
+                type="button"
+                className="btn-dropzone-action"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <FileUp size={15} />
+                <span>Browse Files</span>
+              </button>
 
-                <div className="workdrive-auth-action-row">
-                  <button
-                    type="button"
-                    className="btn-open-workdrive-primary"
-                    onClick={handleOpenWorkDrive}
-                    disabled={isConnecting || disabled}
-                  >
-                    {isConnecting ? (
-                      <>
-                        <Loader2 size={16} className="workdrive-spin" />
-                        <span>Opening Zoho OAuth...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Cloud size={16} />
-                        <span>Open WorkDrive</span>
-                        <ExternalLink size={14} className="opacity-70" />
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            ) : (
-              /* If connected: The Next Screen — Enter Business Name & Upload Files */
-              <div className="workdrive-connected-hero-box animate-fade-in">
-                <div className="workdrive-connected-hero-top">
-                  <div className="connected-badge-pill">
-                    <span className="live-pulse-dot" />
-                    <Cloud size={16} className="text-emerald-500" />
-                    <span className="connected-label font-medium">Zoho WorkDrive Connected</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <span className="connected-email-tag" title={email || 'Zoho WorkDrive'}>
-                      {email || 'Zoho WorkDrive Account'}
-                    </span>
-                    <button
-                      type="button"
-                      className="btn-disconnect-link"
-                      onClick={disconnect}
-                      title="Disconnect account"
-                    >
-                      Disconnect
-                    </button>
-                  </div>
-                </div>
+              <button
+                type="button"
+                className="btn-dropzone-action"
+                onClick={() => folderInputRef.current?.click()}
+              >
+                <FolderUp size={15} />
+                <span>Upload Folder</span>
+              </button>
+            </div>
+          </div>
+        </div>
 
-                <div className="workdrive-intake-form-box">
-                  <div className="intake-form-header">
-                    <div className="intake-form-icon-wrap">
-                      <FolderOpen size={22} className="text-orange-500" />
-                    </div>
-                    <div>
-                      <h3 className="intake-form-title">Enter Business Name & Select Files</h3>
-                      <p className="intake-form-subtitle">
-                        Enter the client name to match their WorkDrive folder, then click below to browse and attach discovery files.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="discovery-field">
-                    <div className="discovery-field-label-row">
-                      <label className="discovery-field-label" htmlFor="discovery-package-name">
-                        Business / Client Name <span className="discovery-req-asterisk">*</span>
-                      </label>
-                      <span style={{ fontSize: '0.78rem', color: '#64748B' }}>Auto-matches folder in WorkDrive</span>
-                    </div>
-
-                    <div className="discovery-field-input-wrap">
-                      <Building2 size={17} className="discovery-field-icon text-orange-500" />
-                      <input
-                        id="discovery-package-name"
-                        type="text"
-                        className="discovery-field-input"
-                        placeholder="e.g. Acme Industries, Jay & Co, Sundar..."
-                        value={packageName}
-                        onChange={(e) => setPackageName(e.target.value)}
-                        disabled={disabled || isSubmitting}
-                        maxLength={120}
-                        autoComplete="off"
-                      />
-                      {packageName && (
-                        <button
-                          type="button"
-                          className="btn-clear-input"
-                          onClick={() => setPackageName('')}
-                          disabled={disabled || isSubmitting}
-                          aria-label="Clear client name"
-                        >
-                          <XIcon size={13} />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="workdrive-upload-action-row">
-                    <button
-                      type="button"
-                      className="btn-launch-explorer-primary"
-                      onClick={() => setIsWidgetOpen(true)}
-                    >
-                      <Sparkles size={16} />
-                      <span>
-                        {packageName.trim()
-                          ? `Search "${packageName.trim()}" in WorkDrive & Select Files`
-                          : 'Search WorkDrive & Select Files'}
-                      </span>
-                    </button>
-                  </div>
-                </div>
-
-                {workdriveStagedCount > 0 && (
-                  <div className="workdrive-staged-summary-banner">
-                    <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
-                    <span className="staged-summary-text">
-                      <strong>{workdriveStagedCount}</strong> WorkDrive document{workdriveStagedCount === 1 ? '' : 's'} attached to this proposal.
-                    </span>
-                    <button
-                      type="button"
-                      className="btn-open-more-workdrive"
-                      onClick={() => setIsWidgetOpen(true)}
-                    >
-                      Browse More Files →
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
+        {workdriveStagedCount > 0 && (
+          <div className="workdrive-staged-summary-banner">
+            <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
+            <span className="staged-summary-text">
+              <strong>{workdriveStagedCount}</strong> WorkDrive document{workdriveStagedCount === 1 ? '' : 's'} attached to this proposal.
+            </span>
+            <button
+              type="button"
+              className="btn-open-more-workdrive"
+              onClick={() => setIsWidgetOpen(true)}
+            >
+              Browse More Files →
+            </button>
           </div>
         )}
 
@@ -623,9 +500,9 @@ export default function DiscoveryUploadCard({ onGenerate, disabled = false, onTo
           )}
         </AnimatePresence>
 
-        {/* Client / Business Name Field (for Local Upload) */}
+        {/* Client / Business Name Field */}
         <AnimatePresence>
-          {uploadMode === 'local' && stagedFiles.length > 0 && (
+          {stagedFiles.length > 0 && (
             <motion.div
               className="discovery-field"
               initial={{ opacity: 0, y: 10 }}

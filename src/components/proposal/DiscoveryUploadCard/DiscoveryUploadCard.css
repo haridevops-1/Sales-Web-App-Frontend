@@ -110,6 +110,88 @@
   box-shadow: 0 2px 6px -1px rgba(0, 0, 0, 0.08);
 }
 
+/* Header Row: Local Upload (static pill) + Open WorkDrive / Disconnect - matches Workspace 1 */
+.discovery-options-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.discovery-mode-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.85rem;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.discovery-header-actions-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.btn-open-workdrive-discovery-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #ea580c;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  padding: 0.45rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.btn-open-workdrive-discovery-btn:hover:not(:disabled) {
+  background: #ffedd5;
+  border-color: #fdba74;
+  color: #c2410c;
+  box-shadow: 0 2px 6px -1px rgba(234, 88, 12, 0.2);
+}
+
+.btn-open-workdrive-discovery-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-disconnect-discovery-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  padding: 0.45rem 0.85rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.btn-disconnect-discovery-btn:hover:not(:disabled) {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #dc2626;
+}
+
+.btn-disconnect-discovery-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* Local Upload Dropzone */
 .discovery-local-dropzone-box {
   width: 100%;
