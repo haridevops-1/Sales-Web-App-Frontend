@@ -589,7 +589,6 @@ export default function WorkDriveExplorerWidget({
                               onClick={() => isSupported && handleToggleFile(file)}
                               role="button"
                               tabIndex={isSupported ? 0 : -1}
-                              title={!isSupported ? 'File type not supported' : file.name}
                             >
                               <div className="file-row-left">
                                 <div className={`file-badge-icon ${badge.badgeClass}`}>
@@ -601,6 +600,7 @@ export default function WorkDriveExplorerWidget({
                                     {file.size > 0 ? formatBytes(file.size) : 'Document'}
                                     {file.modifiedTime ? ` · ${formatDate(file.modifiedTime)}` : ''}
                                     {isAlreadyImported && ' · Already Attached'}
+                                    {!isSupported && ' · Unsupported format'}
                                   </span>
                                 </div>
                               </div>
