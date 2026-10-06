@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './DiscoveryUploadCard.css';
 import {
   Cloud,
@@ -6,10 +6,6 @@ import {
   FileText,
   FileSpreadsheet,
   File as FileIcon,
-  ChevronLeft,
-  RefreshCw,
-  Search,
-  Check,
   X as XIcon,
   Loader2,
   ExternalLink,
@@ -27,12 +23,9 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import SpotlightCard from '@/reactbits/SpotlightCard';
 import { useWorkDrive } from '@/context/WorkDriveContext';
-import { listWorkdriveItems } from '@/api/workdriveApi';
-import { normalizeWorkdriveItems } from '@/components/shared/WorkDrivePicker/workdriveItem';
 import { createDiscoveryPackage, getFriendlyErrorMessage } from '@/api/proposalApi';
 import { resetApiGuard } from '@/api/apiCallGuard';
-import { formatBytes, formatDate } from '@/utils/helpers';
-import { getWorkdriveSessionToken } from '@/utils/workdriveSession';
+import { formatBytes } from '@/utils/helpers';
 import WorkDriveExplorerWidget from '../WorkDriveExplorerWidget/WorkDriveExplorerWidget';
 
 const SUPPORTED_EXTENSIONS = ['.pdf', '.docx', '.doc', '.xlsx', '.xls', '.csv', '.txt', '.md'];
@@ -71,20 +64,13 @@ export default function DiscoveryUploadCard({ onGenerate, disabled = false, onTo
   const [uploadMode, setUploadMode] = useState('local');
   const [isDragging, setIsDragging] = useState(false);
 
-  // WorkDrive navigation state
-  const [pathStack, setPathStack] = useState([{ id: null, name: 'My WorkDrive' }]);
-  const [workdriveItems, setWorkdriveItems] = useState([]);
-  const [isLoadingWorkDrive, setIsLoadingWorkDrive] = useState(false);
-  const [workdriveError, setWorkdriveError] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
-
   // Staged files for proposal generation
   const [stagedFiles, setStagedFiles] = useState([]);
   const [packageName, setPackageName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
 
-  // WorkDrive Explorer Widget modal state
+  // WorkDrive Explorer Widget modal state (Full screen frozen backdrop overlay)
   const [isWidgetOpen, setIsWidgetOpen] = useState(false);
   const prevConnectedRef = useRef(isConnected);
 
@@ -121,184 +107,106 @@ export default function DiscoveryUploadCard({ onGenerate, disabled = false, onTo
   const fileInputRef = useRef(null);
   const folderInputRef = useRef(null);
 
-  const currentFolder = pathStack[pathStack.length - 1];
+  // Process selected local files
+  const handleLocalFiles = (fileList, customFolderName = '') => {
+    const rawFiles = Array.from(fileList || []);
+    if (rawFiles.length === 0) return;
 
-  // Fetch WorkDrive items for current folder
-  const loadFolder = useCallback(async (folderId = null, signal) => {
-    const token = getWorkdriveSessionToken();
-    if (!token) return;
+    const validFiles = rawFiles.filter((file) => isFileSupported(file.name));
+    const unsupportedCount = rawFiles.length - validFiles.length;
 
-    setIsLoadingWorkDrive(true);
-    setWorkdriveError(null);
-
-    try {
-      const res = await listWorkdriveItems(folderId, signal);
-      if (res && res.items) {
-        const normalized = normalizeWorkdriveItems(res.items);
-        setWorkdriveItems(normalized);
-      } else {
-        setWorkdriveItems([]);
-      }
-    } catch (err) {
-      if (err.name === 'AbortError') return;
-      console.warn('[DiscoveryUploadCard] Load WorkDrive failed:', err);
-      setWorkdriveError(err.message || 'Unable to load items from Zoho WorkDrive.');
-      setWorkdriveItems([]);
-    } finally {
-      setIsLoadingWorkDrive(false);
+    if (unsupportedCount > 0 && onToast) {
+      onToast(`Ignored ${unsupportedCount} unsupported file(s). Only PDF, Word, Excel, and Text are supported.`, 'warning', 4000);
     }
-  }, []);
 
-  // When WorkDrive becomes connected or folder changes, load items
-  useEffect(() => {
-    if (!isConnected) {
-      setWorkdriveItems([]);
+    if (validFiles.length === 0) {
+      if (onToast && unsupportedCount > 0) {
+        onToast('No supported documents found in selection.', 'error', 4000);
+      }
       return;
     }
-    const controller = new AbortController();
-    loadFolder(currentFolder.id, controller.signal);
-    return () => controller.abort();
-  }, [isConnected, currentFolder.id, loadFolder]);
 
-  // Navigate deeper into a WorkDrive folder
-  const openFolder = (folderItem) => {
-    setSearchQuery('');
-    setPathStack((prev) => [...prev, { id: folderItem.id, name: folderItem.name }]);
-  };
-
-  const goBackFolder = () => {
-    if (pathStack.length > 1) {
-      setSearchQuery('');
-      setPathStack((prev) => prev.slice(0, -1));
-    }
-  };
-
-  const goToBreadcrumb = (index) => {
-    setSearchQuery('');
-    setPathStack((prev) => prev.slice(0, index + 1));
-  };
-
-  // Toggle selection of a WorkDrive file
-  const handleToggleWorkDriveFile = (item) => {
-    const isAlreadyStaged = stagedFiles.some((f) => f.workdrive_file_id === item.id);
-
-    if (isAlreadyStaged) {
-      setStagedFiles((prev) => prev.filter((f) => f.workdrive_file_id !== item.id));
-    } else {
-      const newItem = {
-        name: item.name,
-        size: item.size || 0,
-        isWorkdrive: true,
-        workdrive_file_id: item.id,
-        extension: item.extension || '',
-        folderPath: pathStack.length > 1 ? pathStack.map((p) => p.name).join(' / ') : ''
+    const newItems = validFiles.map((file) => {
+      const lastDot = file.name.lastIndexOf('.');
+      const extension = lastDot !== -1 ? file.name.slice(lastDot).toLowerCase() : '';
+      return {
+        id: `local-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        name: file.name,
+        size: file.size,
+        file: file,
+        isWorkdrive: false,
+        extension,
+        path: file.webkitRelativePath || file.name
       };
-
-      setStagedFiles((prev) => [...prev, newItem]);
-
-      setPackageName((prev) => {
-        if (prev.trim()) return prev;
-        const clean = item.name.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ').trim();
-        return clean || 'Solution Proposal';
-      });
-    }
-  };
-
-  // Stage all supported files in current folder
-  const handleSelectAllInFolder = () => {
-    const supportedFilesInFolder = workdriveItems.filter((i) => !i.isFolder && isFileSupported(i.name));
-    if (supportedFilesInFolder.length === 0) return;
-
-    const newItems = supportedFilesInFolder.map((item) => ({
-      name: item.name,
-      size: item.size || 0,
-      isWorkdrive: true,
-      workdrive_file_id: item.id,
-      extension: item.extension || '',
-      folderPath: pathStack.length > 1 ? pathStack.map((p) => p.name).join(' / ') : ''
-    }));
+    });
 
     setStagedFiles((prev) => {
-      const existingIds = new Set(prev.map((f) => f.workdrive_file_id).filter(Boolean));
-      const filteredNew = newItems.filter((m) => !existingIds.has(m.workdrive_file_id));
-      return [...prev, ...filteredNew];
+      const existingKeys = new Set(prev.map((f) => `${f.name}-${f.size}`));
+      const filtered = newItems.filter((f) => !existingKeys.has(`${f.name}-${f.size}`));
+      return [...prev, ...filtered];
     });
 
-    setPackageName((prev) => {
-      if (prev.trim()) return prev;
-      if (currentFolder.name && currentFolder.name !== 'My WorkDrive') {
-        return currentFolder.name.replace(/[_-]/g, ' ');
+    if (!packageName.trim()) {
+      if (customFolderName && customFolderName.trim()) {
+        setPackageName(customFolderName.trim());
+      } else if (validFiles[0]?.name) {
+        const clean = validFiles[0].name.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ').trim();
+        if (clean) setPackageName(clean);
       }
-      return 'Solution Proposal';
-    });
+    }
 
     if (onToast) {
-      onToast(`Added ${newItems.length} files from "${currentFolder.name}".`, 'success', 3000);
+      onToast(`Added ${validFiles.length} local document(s).`, 'success', 3000);
     }
-  };
-
-  // Local file / folder additions
-  const handleLocalFiles = (filesList, folderName = '') => {
-    const valid = Array.from(filesList).filter((f) => isFileSupported(f.name));
-    if (valid.length === 0) {
-      if (onToast) onToast('Please select supported documents (.pdf, .docx, .xlsx, .txt).', 'warning', 4000);
-      return;
-    }
-
-    setStagedFiles((prev) => {
-      const existingKeys = new Set(prev.map((f) => `${f.name}_${f.size}`));
-      const newLocal = valid.filter((f) => !existingKeys.has(`${f.name}_${f.size}`));
-      return [...prev, ...newLocal];
-    });
-
-    setPackageName((prev) => {
-      if (prev.trim()) return prev;
-      if (folderName) return folderName.replace(/[_-]/g, ' ');
-      if (valid[0]) return valid[0].name.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ');
-      return 'Solution Proposal';
-    });
   };
 
   // Drag and drop handlers
   const handleDragOver = (e) => {
     e.preventDefault();
+    e.stopPropagation();
     if (!isDragging) setIsDragging(true);
   };
 
   const handleDragLeave = (e) => {
     e.preventDefault();
-    if (e.currentTarget.contains(e.relatedTarget)) return;
-    setIsDragging(false);
+    e.stopPropagation();
+    if (isDragging) setIsDragging(false);
   };
 
   const handleDrop = (e) => {
     e.preventDefault();
+    e.stopPropagation();
     setIsDragging(false);
-    if (e.dataTransfer.files?.length) {
+    if (e.dataTransfer?.files?.length) {
       handleLocalFiles(e.dataTransfer.files);
     }
   };
 
-  const handleRemoveStagedItem = (index) => {
-    setStagedFiles((prev) => prev.filter((_, i) => i !== index));
+  // Remove staged file
+  const removeStagedFile = (id) => {
+    setStagedFiles((prev) => prev.filter((f) => f.id !== id));
   };
 
-  const handleClearAllStaged = () => {
+  // Clear all staged files
+  const clearAllStaged = () => {
     setStagedFiles([]);
   };
 
-  // Submit and start proposal generation
+  // Submit and Generate Proposal
   const handleGenerate = async () => {
     if (stagedFiles.length === 0 || !packageName.trim() || isSubmitting) return;
 
     setIsSubmitting(true);
     setSubmitError(null);
+    resetApiGuard();
 
     try {
       const res = await createDiscoveryPackage(packageName.trim(), stagedFiles);
-      const pkgData = {
-        ...(res?.package || {}),
-        package_id: res?.package?.package_id || res?.session_id,
+      const pkg = res?.package || res?.session || res;
+      const packageId = pkg?.package_id || pkg?.session_id || res?.package_id || res?.session_id;
+
+      const payload = {
+        package_id: packageId,
         package_name: packageName.trim(),
         customer_name: packageName.trim(),
         business_name: packageName.trim(),
@@ -306,44 +214,35 @@ export default function DiscoveryUploadCard({ onGenerate, disabled = false, onTo
       };
 
       if (onToast) onToast(`Discovery package "${packageName.trim()}" ready.`, 'success', 3000);
-      if (onGenerate) {
-        onGenerate(pkgData);
-      }
+      if (onGenerate) onGenerate(payload);
     } catch (err) {
-      const message = getFriendlyErrorMessage(err);
-      setSubmitError(message);
-      if (onToast) onToast(message, 'error', 6000);
+      console.error('[DiscoveryUploadCard] Submit error:', err);
+      const friendly = getFriendlyErrorMessage(err, 'Failed to upload discovery files. Please try again.');
+      setSubmitError(friendly);
+      if (onToast) onToast(friendly, 'error', 5000);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const filteredWorkdriveItems = workdriveItems.filter((item) => {
-    if (!searchQuery.trim()) return true;
-    return item.name.toLowerCase().includes(searchQuery.trim().toLowerCase());
-  });
-
-  const folders = filteredWorkdriveItems.filter((i) => i.isFolder);
-  const files = filteredWorkdriveItems.filter((i) => !i.isFolder);
-  const totalSizeBytes = stagedFiles.reduce((acc, f) => acc + (f.size || 0), 0);
   const isFormValid = stagedFiles.length > 0 && packageName.trim().length > 0;
+  const workdriveStagedCount = stagedFiles.filter((f) => f.isWorkdrive).length;
 
   return (
-    <SpotlightCard className="discovery-upload-card" spotlightColor="rgba(255, 122, 26, 0.15)">
-      <div className="discovery-upload-inner">
-        {/* Card Header */}
-        <div className="discovery-section-heading">
-          <div className="discovery-heading-tag">
-            <Cloud size={13} />
-            <span>Document Intake</span>
-          </div>
-          <h2 className="discovery-dropzone-title">Upload Discovery Documents</h2>
-          <p className="discovery-dropzone-hint">
-            Upload discovery documents locally from your computer or open Zoho WorkDrive to select files and folders.
-          </p>
+    <SpotlightCard className="discovery-upload-card" spotlightColor="rgba(255, 122, 26, 0.08)">
+      <div className="discovery-card-header">
+        <div className="discovery-pill-tag">
+          <UploadCloud size={13} className="text-orange-500" />
+          <span>Document Intake</span>
         </div>
+        <h2 className="discovery-headline">Upload Discovery Documents</h2>
+        <p className="discovery-subline">
+          Upload discovery documents locally from your computer or open Zoho WorkDrive to select files and folders.
+        </p>
+      </div>
 
-        {/* Hidden Local Upload Inputs */}
+      <div className="discovery-card-body">
+        {/* Hidden inputs for local file/folder picker */}
         <input
           ref={fileInputRef}
           type="file"
@@ -461,7 +360,7 @@ export default function DiscoveryUploadCard({ onGenerate, disabled = false, onTo
           </div>
         )}
 
-        {/* OPTION 2: Open WorkDrive */}
+        {/* OPTION 2: Open WorkDrive (No inline widget under section - uses frozen screen widget) */}
         {uploadMode === 'workdrive' && (
           <div className="discovery-workdrive-view animate-fade-in">
             {!isConnected ? (
@@ -529,332 +428,141 @@ export default function DiscoveryUploadCard({ onGenerate, disabled = false, onTo
                 </div>
               </div>
             ) : (
-              /* If connected: WorkDrive Explorer */
-              <div className="workdrive-browser-card animate-fade-in">
-                {/* Connected Header Bar */}
-                <div className="workdrive-connected-bar">
-                  <div className="connected-badge-left">
+              /* If connected: Clean connection hero with button to launch Explorer Widget */
+              <div className="workdrive-connected-hero-box animate-fade-in">
+                <div className="workdrive-connected-hero-top">
+                  <div className="connected-badge-pill">
                     <span className="live-pulse-dot" />
-                    <Cloud size={15} className="text-emerald-500" />
-                    <span className="connected-label">Connected:</span>
-                    <span className="connected-email" title={email || 'Zoho WorkDrive'}>
-                      {email || 'Zoho WorkDrive Account'}
-                    </span>
+                    <Cloud size={16} className="text-emerald-500" />
+                    <span className="connected-label font-medium">Zoho WorkDrive Connected</span>
                   </div>
+                  <span className="connected-email-tag" title={email || 'Zoho WorkDrive'}>
+                    {email || 'Zoho WorkDrive Account'}
+                  </span>
+                </div>
 
-                  <div className="connected-actions-right">
+                <div className="workdrive-connected-hero-body">
+                  <div className="connected-hero-icon-bubble">
+                    <FolderOpen size={34} className="text-orange-500" />
+                  </div>
+                  <h3 className="connected-hero-title">Browse WorkDrive Folders & Files</h3>
+                  <p className="connected-hero-desc">
+                    Search customer folders by business name, navigate subfolders, and select discovery documents in the Explorer Widget.
+                  </p>
+
+                  <div className="connected-hero-actions">
                     <button
                       type="button"
-                      className="btn-workdrive-mini-action btn-open-widget-mini"
+                      className="btn-launch-explorer-primary"
                       onClick={() => setIsWidgetOpen(true)}
-                      title="Open full WorkDrive Explorer Widget"
                     >
-                      <FolderOpen size={13} className="text-orange-500" />
-                      <span>Open Explorer Widget</span>
+                      <Sparkles size={16} />
+                      <span>Open WorkDrive Explorer</span>
                     </button>
 
                     <button
                       type="button"
-                      className="btn-workdrive-mini-action"
-                      onClick={() => loadFolder(currentFolder.id)}
-                      title="Refresh folder"
-                      disabled={isLoadingWorkDrive}
-                    >
-                      <RefreshCw size={13} className={isLoadingWorkDrive ? 'workdrive-spin' : ''} />
-                      <span>Refresh</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      className="btn-workdrive-mini-action text-slate-400 hover:text-slate-600"
+                      className="btn-disconnect-link"
                       onClick={disconnect}
                       title="Disconnect account"
                     >
-                      <span>Disconnect</span>
+                      Disconnect
                     </button>
                   </div>
                 </div>
 
-                {/* Banner to launch dedicated Explorer Widget */}
-                <div className="workdrive-widget-banner">
-                  <div className="widget-banner-left">
-                    <Sparkles size={15} className="text-orange-500 shrink-0" />
-                    <span className="widget-banner-text">
-                      Search folders by business name, navigate subfolders, and select discovery files in the Explorer Widget.
+                {workdriveStagedCount > 0 && (
+                  <div className="workdrive-staged-summary-banner">
+                    <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
+                    <span className="staged-summary-text">
+                      <strong>{workdriveStagedCount}</strong> WorkDrive document{workdriveStagedCount === 1 ? '' : 's'} attached to this proposal.
                     </span>
-                  </div>
-                  <button
-                    type="button"
-                    className="btn-launch-explorer"
-                    onClick={() => setIsWidgetOpen(true)}
-                  >
-                    <FolderOpen size={13} />
-                    <span>Launch Explorer Widget</span>
-                  </button>
-                </div>
-
-                {/* Toolbar */}
-                <div className="workdrive-toolbar">
-                  <div className="workdrive-breadcrumbs">
-                    {pathStack.map((crumb, idx) => (
-                      <React.Fragment key={crumb.id || 'root'}>
-                        {idx > 0 && <span className="crumb-divider">/</span>}
-                        <button
-                          type="button"
-                          className={`crumb-btn ${idx === pathStack.length - 1 ? 'is-current' : ''}`}
-                          onClick={() => goToBreadcrumb(idx)}
-                          disabled={idx === pathStack.length - 1}
-                        >
-                          {idx === 0 && <Cloud size={12} className="inline mr-1 text-orange-500" />}
-                          <span>{crumb.name}</span>
-                        </button>
-                      </React.Fragment>
-                    ))}
-                  </div>
-
-                  <div className="workdrive-toolbar-actions">
                     <button
                       type="button"
-                      className="btn-toolbar-nav"
-                      onClick={goBackFolder}
-                      disabled={pathStack.length <= 1}
-                      title="Go to parent directory"
+                      className="btn-open-more-workdrive"
+                      onClick={() => setIsWidgetOpen(true)}
                     >
-                      <ChevronLeft size={14} />
-                      <span>Back</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      className="btn-toolbar-nav btn-select-all-folder"
-                      onClick={handleSelectAllInFolder}
-                      disabled={files.length === 0}
-                      title="Stage all supported files in this folder"
-                    >
-                      <CheckCircle2 size={13} className="text-orange-500" />
-                      <span>Select All Files</span>
+                      Browse More Files →
                     </button>
                   </div>
-                </div>
-
-                {/* Search */}
-                <div className="workdrive-search-box">
-                  <Search size={14} className="text-slate-400" />
-                  <input
-                    type="text"
-                    id="discovery-workdrive-search-input"
-                    name="discovery_workdrive_search"
-                    className="workdrive-search-input"
-                    placeholder="Search documents in this folder..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                  {searchQuery && (
-                    <button
-                      type="button"
-                      className="btn-clear-search"
-                      onClick={() => setSearchQuery('')}
-                      title="Clear search"
-                    >
-                      <XIcon size={13} />
-                    </button>
-                  )}
-                </div>
-
-                {/* Viewport */}
-                <div className="workdrive-items-viewport">
-                  {isLoadingWorkDrive ? (
-                    <div className="workdrive-state-box">
-                      <Loader2 size={24} className="workdrive-spin text-orange-500" />
-                      <span>Loading WorkDrive items...</span>
-                    </div>
-                  ) : workdriveError ? (
-                    <div className="workdrive-state-box is-error">
-                      <Info size={18} className="text-red-500" />
-                      <span>{workdriveError}</span>
-                      <button
-                        type="button"
-                        className="btn-retry-action"
-                        onClick={() => {
-                          resetApiGuard();
-                          loadFolder(currentFolder.id);
-                        }}
-                      >
-                        Try Again
-                      </button>
-                    </div>
-                  ) : folders.length === 0 && files.length === 0 ? (
-                    <div className="workdrive-state-box">
-                      <FolderOpen size={24} className="text-slate-300" />
-                      <span>
-                        {searchQuery ? 'No documents matched your filter.' : 'This WorkDrive folder is empty.'}
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="workdrive-items-grid">
-                      {/* Folders */}
-                      {folders.map((folder) => (
-                        <div
-                          key={folder.id}
-                          className="workdrive-item-row folder-row"
-                          onClick={() => openFolder(folder)}
-                          role="button"
-                          tabIndex={0}
-                          title={`Open folder "${folder.name}"`}
-                        >
-                          <div className="item-row-left">
-                            <div className="item-icon-box folder-icon-box">
-                              <Folder size={15} />
-                            </div>
-                            <div className="item-details">
-                              <span className="item-name font-medium">{folder.name}</span>
-                              <span className="item-subtext">Folder · Click to open</span>
-                            </div>
-                          </div>
-
-                          <div className="item-row-right">
-                            <span className="folder-open-arrow">→</span>
-                          </div>
-                        </div>
-                      ))}
-
-                      {/* Files */}
-                      {files.map((file) => {
-                        const isSupported = isFileSupported(file.name);
-                        const isStaged = stagedFiles.some((f) => f.workdrive_file_id === file.id);
-                        const fileBadge = getFileIcon(file.extension);
-                        const BadgeIcon = fileBadge.Icon;
-
-                        return (
-                          <div
-                            key={file.id}
-                            className={`workdrive-item-row file-row ${isStaged ? 'is-staged' : ''} ${!isSupported ? 'is-unsupported' : ''}`}
-                            onClick={() => isSupported && handleToggleWorkDriveFile(file)}
-                            role="button"
-                            tabIndex={isSupported ? 0 : -1}
-                            title={!isSupported ? 'Format not supported' : file.name}
-                          >
-                            <div className="item-row-left">
-                              <div className={`item-icon-box ${fileBadge.badgeClass}`}>
-                                <BadgeIcon size={14} />
-                              </div>
-                              <div className="item-details">
-                                <span className="item-name">{file.name}</span>
-                                <span className="item-subtext">
-                                  {file.size > 0 ? formatBytes(file.size) : 'File'}
-                                  {file.modifiedTime ? ` · Modified ${formatDate(file.modifiedTime)}` : ''}
-                                </span>
-                              </div>
-                            </div>
-
-                            <div className="item-row-right">
-                              <div
-                                className={`item-checkbox ${isStaged ? 'is-checked' : ''} ${!isSupported ? 'is-disabled' : ''}`}
-                              >
-                                {isStaged && <Check size={12} strokeWidth={3} />}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
+                )}
               </div>
             )}
           </div>
         )}
 
-        {/* Selected Documents Staged Panel */}
+        {/* Staged Discovery Files List (For both Local Upload and WorkDrive Explorer) */}
         <AnimatePresence>
           {stagedFiles.length > 0 && (
             <motion.div
-              className="discovery-selected-files"
-              initial={{ opacity: 0, y: 12 }}
+              className="discovery-staged-card"
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.22, ease: 'easeOut' }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
             >
-              <div className="discovery-selected-header">
-                <div className="selected-header-left">
-                  <span className="selected-counter-pill">
-                    <CheckCircle2 size={13} className="counter-icon" />
-                    <span>{stagedFiles.length} document{stagedFiles.length === 1 ? '' : 's'} staged</span>
+              <div className="staged-card-header">
+                <div className="staged-header-left">
+                  <CheckCircle2 size={16} className="text-emerald-500" />
+                  <span className="staged-title">
+                    Staged Discovery Files ({stagedFiles.length})
                   </span>
-                  {totalSizeBytes > 0 && (
-                    <span className="selected-total-size">
-                      Total: {formatBytes(totalSizeBytes)}
-                    </span>
-                  )}
                 </div>
-
-                <div className="selected-header-actions">
-                  <button
-                    type="button"
-                    className="btn-staged-action btn-clear-staged"
-                    onClick={handleClearAllStaged}
-                    disabled={disabled || isSubmitting}
-                    title="Clear all staged documents"
-                  >
-                    <Trash2 size={13} />
-                    <span>Clear all</span>
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  className="btn-clear-staged"
+                  onClick={clearAllStaged}
+                  title="Remove all files"
+                >
+                  <Trash2 size={13} />
+                  <span>Clear All</span>
+                </button>
               </div>
 
-              <ul className="discovery-selected-list">
-                <AnimatePresence initial={false}>
-                  {stagedFiles.map((file, idx) => {
-                    const badge = getFileIcon(file.extension || file.name);
+              <ul className="staged-files-list">
+                <AnimatePresence>
+                  {stagedFiles.map((item) => {
+                    const badge = getFileIcon(item.extension);
                     const BadgeIcon = badge.Icon;
-
                     return (
                       <motion.li
-                        key={`${file.workdrive_file_id || file.name}_${idx}`}
-                        className="discovery-selected-item"
-                        initial={{ opacity: 0, x: -10 }}
+                        key={item.id}
+                        className="staged-file-item"
+                        initial={{ opacity: 0, x: -8 }}
                         animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: 10 }}
-                        transition={{ duration: 0.16 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ duration: 0.15 }}
                       >
-                        <div className="selected-file-main">
-                          <span className={`file-badge ${badge.badgeClass}`}>
-                            <BadgeIcon size={12} />
-                            <span>{badge.label}</span>
-                          </span>
-
-                          <div className="selected-file-meta">
-                            <span className="selected-file-name" title={file.name}>
-                              {file.name}
+                        <div className="staged-item-left">
+                          <div className={`file-badge-box ${badge.badgeClass}`}>
+                            <BadgeIcon size={14} />
+                          </div>
+                          <div className="staged-item-info">
+                            <span className="staged-filename" title={item.name}>
+                              {item.name}
                             </span>
-                            {file.isWorkdrive && (
-                              <span className="selected-file-folder-chip workdrive-chip" title="Picked from Zoho WorkDrive">
-                                <Cloud size={11} className="folder-chip-icon text-orange-500" />
-                                <span>WorkDrive</span>
-                              </span>
-                            )}
-                            {file.folderPath && (
-                              <span className="selected-file-folder-chip" title={`From: ${file.folderPath}`}>
-                                <Folder size={11} className="folder-chip-icon" />
-                                <span>{file.folderPath}</span>
-                              </span>
-                            )}
+                            <span className="staged-filemeta">
+                              {item.size > 0 ? formatBytes(item.size) : 'Document'}
+                              {item.isWorkdrive ? (
+                                <span className="source-pill workdrive-pill">
+                                  <Cloud size={10} className="inline mr-0.5" />
+                                  WorkDrive
+                                </span>
+                              ) : (
+                                <span className="source-pill local-pill">Local</span>
+                              )}
+                              {item.folderPath && item.folderPath !== 'Root' && (
+                                <span className="folder-crumb-tag">📂 {item.folderPath}</span>
+                              )}
+                            </span>
                           </div>
                         </div>
 
-                        <div className="selected-file-right">
-                          {file.size > 0 && (
-                            <span className="selected-file-size">{formatBytes(file.size)}</span>
-                          )}
-
-                          <span className="selected-file-status status-ready">Ready</span>
-
+                        <div className="staged-item-right">
                           <button
                             type="button"
-                            className="btn-remove-selected-file"
-                            onClick={() => handleRemoveStagedItem(idx)}
-                            disabled={disabled || isSubmitting}
-                            aria-label={`Remove ${file.name}`}
+                            className="btn-remove-staged"
+                            onClick={() => removeStagedFile(item.id)}
                             title="Remove file"
                           >
                             <XIcon size={14} />
@@ -928,26 +636,25 @@ export default function DiscoveryUploadCard({ onGenerate, disabled = false, onTo
             className="btn-discovery-continue"
             onClick={handleGenerate}
             disabled={!isFormValid || disabled || isSubmitting}
-            whileHover={isFormValid && !isSubmitting ? { y: -1.5, scale: 1.01 } : {}}
-            whileTap={isFormValid && !isSubmitting ? { scale: 0.97 } : {}}
-            transition={{ duration: 0.15 }}
+            whileHover={isFormValid && !isSubmitting ? { scale: 1.01 } : {}}
+            whileTap={isFormValid && !isSubmitting ? { scale: 0.99 } : {}}
           >
             {isSubmitting ? (
               <>
-                <Loader2 size={15} className="discovery-spin" />
-                <span>Preparing Proposal…</span>
+                <Loader2 size={16} className="animate-spin" />
+                <span>Preparing Discovery Package...</span>
               </>
             ) : (
               <>
-                <span>Generate Proposal</span>
-                <ArrowRight size={15} strokeWidth={2.4} className="btn-arrow-icon" />
+                <span>Generate Solution Proposal</span>
+                <ArrowRight size={16} strokeWidth={2.4} />
               </>
             )}
           </motion.button>
         </div>
       </div>
 
-      {/* Dedicated WorkDrive Explorer Widget Modal */}
+      {/* Dedicated WorkDrive Explorer Widget Modal (with frozen screen backdrop) */}
       <WorkDriveExplorerWidget
         isOpen={isWidgetOpen}
         onClose={() => setIsWidgetOpen(false)}

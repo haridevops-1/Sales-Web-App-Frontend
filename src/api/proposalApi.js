@@ -87,8 +87,11 @@ async function requestJson(path, { method = 'GET', body, timeoutMs = 45000, sign
     const token = getSessionToken();
     let effectiveUrl = url;
     if (token) {
-      headers['X-Workdrive-Token'] = token;
-      headers['X-Session-Token'] = token;
+      // For GET requests, passing token in query string avoids triggering preflight OPTIONS
+      if (method !== 'GET') {
+        headers['X-Workdrive-Token'] = token;
+        headers['X-Session-Token'] = token;
+      }
       const sep = effectiveUrl.includes('?') ? '&' : '?';
       effectiveUrl = `${effectiveUrl}${sep}session_token=${encodeURIComponent(token)}`;
     }
