@@ -541,86 +541,72 @@ export default function WorkDriveExplorerWidget({
                 </div>
               ) : (
                 <div className="wd-items-container">
-                  {/* Section: Subfolders */}
-                  {folders.length > 0 && (
-                    <div className="wd-folders-section">
-                      <span className="wd-section-label">
-                        {currentFolder.id ? `Subfolders (${folders.length})` : `Business Client Folders (${folders.length})`}
-                      </span>
-                      <div className="wd-folders-grid">
-                        {folders.map((folder) => (
-                          <div
-                            key={folder.id}
-                            className="wd-folder-card"
-                            onClick={() => openFolder(folder)}
-                            role="button"
-                            tabIndex={0}
-                            title={`Open folder: ${folder.name}`}
-                          >
-                            <div className="folder-card-left">
-                              <div className="folder-icon-wrapper">
-                                <Folder size={17} />
-                              </div>
-                              <div className="folder-name-box">
-                                <span className="folder-title font-medium">{folder.name}</span>
-                                <span className="folder-meta">Click to show all files</span>
-                              </div>
-                            </div>
-                            <span className="folder-chevron">→</span>
+                  {/* One continuous vertical list - folders first, then files, same row
+                      style for both. No grid, no section headers, matching the plain
+                      breadcrumb file-browser layout used everywhere else in the app. */}
+                  <div className="wd-items-list">
+                    {folders.map((folder) => (
+                      <div
+                        key={folder.id}
+                        className="wd-file-row wd-folder-row"
+                        onClick={() => openFolder(folder)}
+                        role="button"
+                        tabIndex={0}
+                        title={`Open folder: ${folder.name}`}
+                      >
+                        <div className="file-row-left">
+                          <div className="file-badge-icon folder">
+                            <Folder size={14} />
                           </div>
-                        ))}
+                          <div className="file-text-box">
+                            <span className="file-title">{folder.name}</span>
+                            <span className="file-subtext">Folder</span>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    ))}
 
-                  {/* Section: Documents / Subfiles */}
-                  {files.length > 0 && (
-                    <div className="wd-files-section">
-                      <span className="wd-section-label">Documents & Files ({files.length})</span>
-                      <div className="wd-files-list">
-                        {files.map((file) => {
-                          const isSupported = isFileSupported(file.name, allowedExtensions);
-                          const isSelected = selectedMap.has(file.id);
-                          const isAlreadyImported = alreadyStagedIds.includes(file.id);
-                          const badge = getFileBadge(file.extension);
-                          const BadgeIcon = badge.Icon;
+                    {files.map((file) => {
+                      const isSupported = isFileSupported(file.name, allowedExtensions);
+                      const isSelected = selectedMap.has(file.id);
+                      const isAlreadyImported = alreadyStagedIds.includes(file.id);
+                      const badge = getFileBadge(file.extension);
+                      const BadgeIcon = badge.Icon;
 
-                          return (
-                            <div
-                              key={file.id}
-                              className={`wd-file-row ${isSelected ? 'is-selected' : ''} ${!isSupported ? 'is-unsupported' : ''} ${isAlreadyImported ? 'is-already-staged' : ''}`}
-                              onClick={() => isSupported && handleToggleFile(file)}
-                              role="button"
-                              tabIndex={isSupported ? 0 : -1}
-                            >
-                              <div className="file-row-left">
-                                <div className={`file-badge-icon ${badge.badgeClass}`}>
-                                  <BadgeIcon size={14} />
-                                </div>
-                                <div className="file-text-box">
-                                  <span className="file-title">{file.name}</span>
-                                  <span className="file-subtext">
-                                    {file.size > 0 ? formatBytes(file.size) : 'Document'}
-                                    {file.modifiedTime ? ` · ${formatDate(file.modifiedTime)}` : ''}
-                                    {isAlreadyImported && ' · Already Attached'}
-                                    {!isSupported && ' · Unsupported format'}
-                                  </span>
-                                </div>
-                              </div>
-
-                              <div className="file-row-right">
-                                <div
-                                  className={`wd-checkbox ${isSelected ? 'checked' : ''} ${!isSupported ? 'disabled' : ''}`}
-                                >
-                                  {isSelected && <Check size={12} strokeWidth={3} />}
-                                </div>
-                              </div>
+                      return (
+                        <div
+                          key={file.id}
+                          className={`wd-file-row ${isSelected ? 'is-selected' : ''} ${!isSupported ? 'is-unsupported' : ''} ${isAlreadyImported ? 'is-already-staged' : ''}`}
+                          onClick={() => isSupported && handleToggleFile(file)}
+                          role="button"
+                          tabIndex={isSupported ? 0 : -1}
+                        >
+                          <div className="file-row-left">
+                            <div className={`file-badge-icon ${badge.badgeClass}`}>
+                              <BadgeIcon size={14} />
                             </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
+                            <div className="file-text-box">
+                              <span className="file-title">{file.name}</span>
+                              <span className="file-subtext">
+                                {file.size > 0 ? formatBytes(file.size) : 'Document'}
+                                {file.modifiedTime ? ` · ${formatDate(file.modifiedTime)}` : ''}
+                                {isAlreadyImported && ' · Already Attached'}
+                                {!isSupported && ' · Unsupported format'}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="file-row-right">
+                            <div
+                              className={`wd-checkbox ${isSelected ? 'checked' : ''} ${!isSupported ? 'disabled' : ''}`}
+                            >
+                              {isSelected && <Check size={12} strokeWidth={3} />}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </div>

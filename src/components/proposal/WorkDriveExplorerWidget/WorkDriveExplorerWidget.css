@@ -567,122 +567,26 @@
   gap: 1.25rem;
 }
 
-.wd-section-label {
-  display: block;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: #94a3b8;
-  margin-bottom: 0.55rem;
-}
-
-/* Folders Grid */
-.wd-folders-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 0.65rem;
-}
-
-.wd-folder-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem 0.95rem;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  user-select: none;
-}
-
-.wd-folder-card:hover {
-  border-color: #f97316;
-  background: #fffbf7;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.08);
-}
-
-@media (prefers-color-scheme: dark) {
-  .wd-folder-card {
-    background: #0f172a;
-    border-color: #1e293b;
-  }
-  .wd-folder-card:hover {
-    border-color: #f97316;
-    background: #172033;
-    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.15);
-  }
-}
-
-.folder-card-left {
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-  min-width: 0;
-}
-
-.folder-icon-wrapper {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background: #eff6ff;
-  color: #3b82f6;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-@media (prefers-color-scheme: dark) {
-  .folder-icon-wrapper {
-    background: rgba(59, 130, 246, 0.15);
-  }
-}
-
-.folder-name-box {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.folder-title {
-  font-size: 0.83rem;
-  color: #0f172a;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-@media (prefers-color-scheme: dark) {
-  .folder-title {
-    color: #f8fafc;
-  }
-}
-
-.folder-meta {
-  font-size: 0.68rem;
-  color: #94a3b8;
-}
-
-.folder-chevron {
-  color: #cbd5e1;
-  font-weight: 700;
-  font-size: 0.85rem;
-  transition: transform 0.15s ease, color 0.15s ease;
-}
-
-.wd-folder-card:hover .folder-chevron {
-  color: #f97316;
-  transform: translateX(2px);
-}
-
-/* Files List */
-.wd-files-list {
+/* One continuous vertical list - folders then files, same row style for both */
+.wd-items-list {
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
+}
+
+.wd-folder-row:hover {
+  border-color: #f97316 !important;
+}
+
+.file-badge-icon.folder {
+  background: #eff6ff;
+  color: #3b82f6;
+}
+
+@media (prefers-color-scheme: dark) {
+  .file-badge-icon.folder {
+    background: rgba(59, 130, 246, 0.15);
+  }
 }
 
 .wd-file-row {
