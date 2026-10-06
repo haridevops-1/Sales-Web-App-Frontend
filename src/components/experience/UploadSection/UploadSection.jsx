@@ -6,7 +6,7 @@ import ProcessingState from '../ProcessingState/ProcessingState';
 import ProcessStatus from '../ProcessStatus/ProcessStatus';
 import SpotlightCard from '@/reactbits/SpotlightCard';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Cloud, Upload, ExternalLink } from 'lucide-react';
+import { Cloud, Upload, ExternalLink, AlertTriangle, X as XIcon } from 'lucide-react';
 import { validateFile, inferBusinessName, validateLogoFile } from '@/utils/helpers';
 import { uploadTechnicalDocument, processDocument, analyzeDocument, generateCustomerExperience, deployCustomerExperience, getProcessStatus } from '@/api/catalystApi';
 import { resetApiGuard } from '@/api/apiCallGuard';
@@ -198,7 +198,7 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
       return;
     }
 
-    if (businessLogoFile && !selectedFile.isWorkdrive) {
+    if (businessLogoFile) {
       const logoValidation = validateLogoFile(businessLogoFile);
       if (!logoValidation.valid) {
         setBusinessLogoError(logoValidation.error);
@@ -234,7 +234,8 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
           projectDescription: projectDescription ? projectDescription.trim() : '',
           workdriveFileId: selectedFile.workdriveFileId,
           workdriveFileName: selectedFile.name,
-          workdriveFileSize: selectedFile.size
+          workdriveFileSize: selectedFile.size,
+          businessLogo: businessLogoFile
         });
       } else {
         fn1Result = await uploadTechnicalDocument({
@@ -812,7 +813,7 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
               {/* Inline Error Notice */}
               {inlineError && (
                 <div className="compact-error-box animate-fade-in" role="alert">
-                  <span className="error-icon">⚠️</span>
+                  <AlertTriangle size={14} className="error-icon" />
                   <span className="error-text">{inlineError}</span>
                   <button
                     type="button"
@@ -820,7 +821,7 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
                     onClick={() => setInlineError(null)}
                     aria-label="Dismiss error"
                   >
-                    ✕
+                    <XIcon size={13} />
                   </button>
                 </div>
               )}
@@ -910,7 +911,7 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
           onClose={() => setIsWorkDrivePickerOpen(false)}
           onSelectFiles={handleWorkDriveSelect}
           allowedExtensions={['.pdf', '.docx', '.doc']}
-          attachButtonLabel="Select Document"
+          attachButtonLabel="Pick"
           contextLabel="Technical Document"
           alreadyStagedIds={selectedFile?.workdriveFileId ? [selectedFile.workdriveFileId] : []}
         />

@@ -285,7 +285,13 @@ export default function WorkDriveExplorerWidget({
       return;
     }
 
-    const resolvedBusinessName = businessName.trim() || (matchedFolderInfo?.name) || (currentFolder?.name !== 'WorkDrive Root' ? currentFolder.name : '');
+    // Prefer the folder actually being browsed over the search box's live text - the
+    // box can hold an edited, unsubmitted query while the list below still shows the
+    // last folder that was actually found, and that folder is what the files came from.
+    const resolvedBusinessName =
+      matchedFolderInfo?.name ||
+      (currentFolder?.name !== 'WorkDrive Root' ? currentFolder.name : '') ||
+      activeSearch.trim();
 
     if (onSelectFiles) {
       onSelectFiles(selectedFiles, resolvedBusinessName);
@@ -467,28 +473,6 @@ export default function WorkDriveExplorerWidget({
                 </button>
               </div>
             </div>
-
-            {/* Active Business Folder Notice */}
-            {matchedFolderInfo && (
-              <div style={{
-                background: 'linear-gradient(90deg, #FFF7ED 0%, #FFEDD5 100%)',
-                borderBottom: '1px solid #FED7AA',
-                padding: '0.65rem 1.5rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '1rem',
-                fontSize: '0.84rem'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#9A3412', fontWeight: 600 }}>
-                  <FolderOpen size={16} className="text-orange-600" />
-                  <span>Showing all documents inside business folder: <strong>"{matchedFolderInfo.name}"</strong></span>
-                </div>
-                <span style={{ fontSize: '0.78rem', color: '#C2410C', background: '#FFFFFF', padding: '2px 8px', borderRadius: '10px', border: '1px solid #FDBA74' }}>
-                  {files.length} document{files.length === 1 ? '' : 's'}
-                </span>
-              </div>
-            )}
 
             {/* 4. Explorer Viewport */}
             <div className="wd-widget-viewport">

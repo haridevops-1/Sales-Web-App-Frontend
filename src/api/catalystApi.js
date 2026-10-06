@@ -186,36 +186,33 @@ export async function uploadTechnicalDocument({
     let requestBody;
     const requestHeaders = {};
 
+    // Always multipart/form-data, whether the document comes from a local file or a
+    // WorkDrive pick, so a business logo can travel alongside either one - a JSON body
+    // can't carry a binary file, which is why the logo never reached the backend for a
+    // WorkDrive-sourced document before.
+    const formData = new FormData();
+    formData.append('business_name', cleanBusinessName);
+    formData.append('project_name', cleanProjectName);
+    if (cleanProjectDescription) {
+      formData.append('description', cleanProjectDescription);
+    }
+
     if (workdriveFileId) {
-      // JSON body with Bearer token for Pick from WorkDrive path
-      requestHeaders['Content-Type'] = 'application/json';
+      formData.append('workdrive_file_id', workdriveFileId);
       requestHeaders['Accept'] = 'application/json';
       const token = getWorkdriveSessionToken();
       if (token) {
         requestHeaders['X-Workdrive-Token'] = token;
         requestHeaders['X-Session-Token'] = token;
       }
-      requestBody = JSON.stringify({
-        workdrive_file_id: workdriveFileId,
-        business_name: cleanBusinessName,
-        project_name: cleanProjectName,
-        description: cleanProjectDescription
-      });
     } else {
-      // Existing multipart/form-data for Upload from computer path
-      const formData = new FormData();
-      formData.append('business_name', cleanBusinessName);
-      formData.append('project_name', cleanProjectName);
-      if (cleanProjectDescription) {
-        formData.append('description', cleanProjectDescription);
-      }
       formData.append('document', file);
-
-      if (businessLogo && typeof businessLogo === 'object' && businessLogo.size > 0) {
-        formData.append('business_logo', businessLogo);
-      }
-      requestBody = formData;
     }
+
+    if (businessLogo && typeof businessLogo === 'object' && businessLogo.size > 0) {
+      formData.append('business_logo', businessLogo);
+    }
+    requestBody = formData;
 
     try {
       console.info(`[Catalyst API Function 1] POST ${endpointUrl} (${workdriveFileId ? 'WorkDrive JSON' : 'Multipart File'})`);

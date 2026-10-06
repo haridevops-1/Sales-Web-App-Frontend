@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import './FilePreview.css';
+import { Cloud, AlertTriangle } from 'lucide-react';
 import { formatBytes } from '@/utils/helpers';
 import { SUPPORTED_LOGO_EXTENSIONS } from '@/utils/constants';
 
@@ -104,7 +105,8 @@ export default function FilePreview({
               </h4>
               {file.isWorkdrive && (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-orange-500/15 text-orange-400 border border-orange-500/30">
-                  ☁️ Zoho WorkDrive
+                  <Cloud size={10} />
+                  Zoho WorkDrive
                 </span>
               )}
             </div>
@@ -180,15 +182,8 @@ export default function FilePreview({
             </div>
           </div>
 
-          {/* Business Logo notice for WorkDrive path */}
-          {file.isWorkdrive ? (
-            <div className="form-field-group full-width">
-              <div className="p-3 rounded-lg bg-slate-900/60 border border-slate-800 text-xs text-slate-400 flex items-center gap-2">
-                <span>☁️</span>
-                <span>WorkDrive document selected. Logo branding is managed via default templates. To supply a custom logo image file, use local upload.</span>
-              </div>
-            </div>
-          ) : (
+          {/* Business Logo - works the same regardless of whether the document came
+              from a local upload or a WorkDrive pick */}
           <div className="form-field-group full-width">
             <div className="label-with-hint">
               <label htmlFor="business-logo-input" className="form-field-label">
@@ -308,12 +303,11 @@ export default function FilePreview({
             {/* Logo Validation Error Message */}
             {businessLogoError && (
               <div className="logo-validation-error animate-fade-in" role="alert">
-                <span className="err-bullet">⚠️</span>
+                <AlertTriangle size={13} className="err-bullet" />
                 <span>{businessLogoError}</span>
               </div>
             )}
           </div>
-          )}
 
           {/* Optional Project Description */}
           <div className="form-field-group full-width">
