@@ -48,6 +48,19 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
     }
   }, [authError]);
 
+  // If WorkDrive disconnects while a WorkDrive-picked document is still staged (not yet
+  // uploaded), that reference is tied to the now-closed session and can't be used - drop
+  // it so a reconnect starts from a clean upload screen instead of silently continuing
+  // with a file picked under the previous session.
+  const prevConnectedRef = useRef(isConnected);
+  useEffect(() => {
+    if (prevConnectedRef.current && !isConnected && selectedFile?.isWorkdrive) {
+      handleRemoveFile();
+    }
+    prevConnectedRef.current = isConnected;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isConnected]);
+
   // Lets the user cancel the client-side wait for Function 3 (AI analysis) without touching the
   // backend job - it just stops this tab from polling; analyzeDocument()'s own in-flight guard is
   // what actually prevents duplicate Agent calls.

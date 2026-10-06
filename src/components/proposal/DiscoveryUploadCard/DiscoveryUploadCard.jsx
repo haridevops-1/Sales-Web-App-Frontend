@@ -66,12 +66,25 @@ export default function DiscoveryUploadCard({ onGenerate, disabled = false, onTo
   // WorkDrive Explorer Widget modal state (Full screen frozen backdrop overlay)
   const [isWidgetOpen, setIsWidgetOpen] = useState(false);
   const prevConnectedRef = useRef(isConnected);
-  // When OAuth connects successfully, open the Explorer widget directly
   useEffect(() => {
+    // Reconnected (false -> true): open the Explorer widget directly. A reconnect is a
+    // fresh WorkDrive session, not a continuation of whatever was staged before the
+    // previous disconnect, so that stale state is cleared first.
     if (!prevConnectedRef.current && isConnected) {
+      setStagedFiles((prev) => prev.filter((f) => !f.isWorkdrive));
       setIsWidgetOpen(true);
       if (onToast) {
         onToast('Zoho WorkDrive connected successfully. Enter business name and select files.', 'success', 3500);
+      }
+    }
+    // Disconnected (true -> false): drop anything that was staged from the now-closed
+    // session so the next connection starts from a clean first screen instead of
+    // silently continuing with the previous one's picks.
+    if (prevConnectedRef.current && !isConnected) {
+      setStagedFiles((prev) => prev.filter((f) => !f.isWorkdrive));
+      setIsWidgetOpen(false);
+      if (onToast) {
+        onToast('Zoho WorkDrive disconnected.', 'info', 3000);
       }
     }
     prevConnectedRef.current = isConnected;
@@ -348,7 +361,7 @@ export default function DiscoveryUploadCard({ onGenerate, disabled = false, onTo
             aria-label="Drag and drop documents or click to browse"
           >
             <div className="dropzone-icon-bubble">
-              <UploadCloud size={30} className="dropzone-cloud-icon" />
+              <UploadCloud size={24} className="dropzone-cloud-icon" />
             </div>
 
             <div className="dropzone-text-group">
@@ -459,7 +472,10 @@ export default function DiscoveryUploadCard({ onGenerate, disabled = false, onTo
                                 <span className="source-pill local-pill">Local</span>
                               )}
                               {item.folderPath && item.folderPath !== 'Root' && (
-                                <span className="folder-crumb-tag">📂 {item.folderPath}</span>
+                                <span className="folder-crumb-tag">
+                                  <FolderOpen size={10} />
+                                  {item.folderPath}
+                                </span>
                               )}
                             </span>
                           </div>
