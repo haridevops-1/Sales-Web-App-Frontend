@@ -285,42 +285,6 @@ export default function DiscoveryUploadCard({ onGenerate, disabled = false, onTo
           style={{ display: 'none' }}
         />
 
-        {/* Header Row: Local Upload (static) + Open WorkDrive - matches Workspace 1.
-            Disconnect lives inside the Explorer widget itself, not out here. */}
-        <div className="discovery-options-header-row">
-          <span className="discovery-mode-pill">
-            <UploadCloud size={15} />
-            <span>Local Upload</span>
-          </span>
-
-          <button
-            type="button"
-            className="btn-open-workdrive-discovery-btn"
-            onClick={() => {
-              if (!isConnected) {
-                handleOpenWorkDrive();
-              } else {
-                setIsWidgetOpen(true);
-              }
-            }}
-            disabled={disabled || isConnecting}
-            title="Open Zoho WorkDrive"
-          >
-            {isConnecting ? (
-              <>
-                <Loader2 size={14} className="workdrive-spin" />
-                <span>Opening Zoho OAuth...</span>
-              </>
-            ) : (
-              <>
-                <Cloud size={14} className="text-orange-500" />
-                <span>Open WorkDrive</span>
-                <ExternalLink size={12} className="opacity-70" />
-              </>
-            )}
-          </button>
-        </div>
-
         {authError && (
           <div className="discovery-inline-error animate-fade-in" role="alert">
             <Info size={16} className="inline-error-icon" />
@@ -348,66 +312,110 @@ export default function DiscoveryUploadCard({ onGenerate, disabled = false, onTo
           </div>
         )}
 
-        {/* Local Upload Dropzone: always visible, same as Workspace 1 - supports multiple files and folders */}
-        <div className="discovery-local-dropzone-box">
-          <div
-            className={`discovery-dropzone ${isDragging ? 'is-dragging' : ''}`}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
-            role="button"
-            tabIndex={0}
-            aria-label="Drag and drop documents or click to browse"
-          >
-            <div className="dropzone-icon-bubble">
-              <UploadCloud size={24} className="dropzone-cloud-icon" />
-            </div>
+        {stagedFiles.length === 0 ? (
+          <>
+            {/* Header Row: Local Upload (static) + Open WorkDrive - matches Workspace 1.
+                Disconnect lives inside the Explorer widget itself, not out here. */}
+            <div className="discovery-options-header-row">
+              <span className="discovery-mode-pill">
+                <UploadCloud size={15} />
+                <span>Local Upload</span>
+              </span>
 
-            <div className="dropzone-text-group">
-              <p className="dropzone-primary-text">
-                {isDragging ? 'Drop your files or folder here' : 'Drag & drop discovery files or folder here'}
-              </p>
-              <p className="dropzone-secondary-text">
-                Supports PDF, Word, Excel, and Text documents
-              </p>
-            </div>
-
-            <div className="dropzone-actions-group" onClick={(e) => e.stopPropagation()}>
               <button
                 type="button"
-                className="btn-dropzone-action"
+                className="btn-open-workdrive-discovery-btn"
+                onClick={() => {
+                  if (!isConnected) {
+                    handleOpenWorkDrive();
+                  } else {
+                    setIsWidgetOpen(true);
+                  }
+                }}
+                disabled={disabled || isConnecting}
+                title="Open Zoho WorkDrive"
+              >
+                {isConnecting ? (
+                  <>
+                    <Loader2 size={14} className="workdrive-spin" />
+                    <span>Opening Zoho OAuth...</span>
+                  </>
+                ) : (
+                  <>
+                    <Cloud size={14} className="text-orange-500" />
+                    <span>Open WorkDrive</span>
+                    <ExternalLink size={12} className="opacity-70" />
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Local Upload Dropzone - same compact horizontal layout as Workspace 1 */}
+            <div className="discovery-local-dropzone-box">
+              <div
+                className={`discovery-dropzone ${isDragging ? 'is-dragging' : ''}`}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
+                role="button"
+                tabIndex={0}
+                aria-label="Drag and drop documents or click to browse"
               >
-                <FileUp size={15} />
-                <span>Browse Files</span>
-              </button>
+                <div className="dropzone-icon-bubble">
+                  <UploadCloud size={22} className="dropzone-cloud-icon" />
+                </div>
 
-              <button
-                type="button"
-                className="btn-dropzone-action"
-                onClick={() => folderInputRef.current?.click()}
-              >
-                <FolderUp size={15} />
-                <span>Upload Folder</span>
+                <div className="dropzone-text-group">
+                  <div className="dropzone-line-one">
+                    <span className="dropzone-primary-text">
+                      {isDragging ? 'Drop your files or folder here, or' : 'Drag & drop discovery files or folder here, or'}
+                    </span>
+                    <button
+                      type="button"
+                      className="btn-dropzone-action"
+                      onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+                    >
+                      <FileUp size={13} />
+                      <span>Browse Files</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-dropzone-action"
+                      onClick={(e) => { e.stopPropagation(); folderInputRef.current?.click(); }}
+                    >
+                      <FolderUp size={13} />
+                      <span>Upload Folder</span>
+                    </button>
+                  </div>
+                  <p className="dropzone-secondary-text">
+                    Supports PDF, Word, Excel, and Text documents
+                  </p>
+                </div>
+              </div>
+            </div>
+          </>
+        ) : (
+          /* Frozen state once files are chosen - picking controls are replaced by a
+             locked summary so the screen stops inviting more changes mid-review. */
+          <div className="discovery-frozen-summary-row">
+            <div className="frozen-summary-left">
+              <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
+              <span>
+                <strong>{stagedFiles.length}</strong> file{stagedFiles.length === 1 ? '' : 's'} ready
+                {workdriveStagedCount > 0 && ` (${workdriveStagedCount} from WorkDrive)`}
+              </span>
+            </div>
+            <div className="frozen-summary-actions">
+              <button type="button" className="btn-frozen-add" onClick={() => fileInputRef.current?.click()}>
+                <FileUp size={13} />
+                <span>Add Local Files</span>
+              </button>
+              <button type="button" className="btn-frozen-add" onClick={() => setIsWidgetOpen(true)}>
+                <Cloud size={13} />
+                <span>Add from WorkDrive</span>
               </button>
             </div>
-          </div>
-        </div>
-
-        {workdriveStagedCount > 0 && (
-          <div className="workdrive-staged-summary-banner">
-            <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
-            <span className="staged-summary-text">
-              <strong>{workdriveStagedCount}</strong> WorkDrive document{workdriveStagedCount === 1 ? '' : 's'} attached to this proposal.
-            </span>
-            <button
-              type="button"
-              className="btn-open-more-workdrive"
-              onClick={() => setIsWidgetOpen(true)}
-            >
-              Browse More Files →
-            </button>
           </div>
         )}
 
