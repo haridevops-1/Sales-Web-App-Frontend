@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import {
   WORKDRIVE_AUTH_URL,
+  buildWorkdriveAuthUrl,
   getWorkdriveStatus,
   disconnectWorkdrive,
   isTrustedWorkDriveOrigin
@@ -126,8 +127,9 @@ export function WorkDriveProvider({ children }) {
     const left = window.screen.width / 2 - width / 2;
     const top = window.screen.height / 2 - height / 2;
 
+    const authUrl = buildWorkdriveAuthUrl();
     const popup = window.open(
-      WORKDRIVE_AUTH_URL,
+      authUrl,
       'ZohoWorkDriveAuth',
       `width=${width},height=${height},top=${top},left=${left},status=no,resizable=yes`
     );

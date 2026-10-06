@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import './WorkDriveExplorerWidget.css';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -301,28 +302,38 @@ export default function WorkDriveExplorerWidget({
     });
   };
 
-  // Select all supported files in current view
+  // Select / deselect all supported files in current view
   const handleSelectAllInFolder = () => {
     const supportedFiles = items.filter((i) => !i.isFolder && isFileSupported(i.name));
     if (supportedFiles.length === 0) return;
 
+    const allCurrentlySelected = supportedFiles.every((f) => selectedMap.has(f.id));
+
     setSelectedMap((prev) => {
       const next = new Map(prev);
-      supportedFiles.forEach((file) => {
-        next.set(file.id, {
-          name: file.name,
-          size: file.size || 0,
-          isWorkdrive: true,
-          workdrive_file_id: file.id,
-          extension: file.extension || '',
-          folderPath: pathStack.length > 1 ? pathStack.map((p) => p.name).join(' / ') : 'Root'
+      if (allCurrentlySelected) {
+        supportedFiles.forEach((f) => next.delete(f.id));
+      } else {
+        supportedFiles.forEach((file) => {
+          next.set(file.id, {
+            name: file.name,
+            size: file.size || 0,
+            isWorkdrive: true,
+            workdrive_file_id: file.id,
+            extension: file.extension || '',
+            folderPath: pathStack.length > 1 ? pathStack.map((p) => p.name).join(' / ') : 'Root'
+          });
         });
-      });
+      }
       return next;
     });
 
     if (onToast) {
-      onToast(`Selected all ${supportedFiles.length} document(s) in this folder.`, 'info', 2500);
+      if (allCurrentlySelected) {
+        onToast(`Deselected ${supportedFiles.length} document(s).`, 'info', 2000);
+      } else {
+        onToast(`Selected all ${supportedFiles.length} document(s) in this folder.`, 'info', 2500);
+      }
     }
   };
 
@@ -352,7 +363,9 @@ export default function WorkDriveExplorerWidget({
   const files = items.filter((i) => !i.isFolder);
   const totalSelectedCount = selectedMap.size;
 
-  return (
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <div className="workdrive-widget-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="wd-widget-title">
@@ -734,6 +747,7 @@ export default function WorkDriveExplorerWidget({
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

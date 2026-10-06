@@ -174,10 +174,25 @@ export const WORKDRIVE_AUTH_URL =
   'https://spikra-ai-proposal-698386704.development.catalystserverless.com/workdrive/authorize?action=authorize&dc=in';
 
 /**
+ * Builds the Zoho WorkDrive OAuth authorization URL with origin tracking.
+ */
+export function buildWorkdriveAuthUrl(originOverride = null) {
+  const base = getCatalystBaseUrl() || DEFAULT_CATALYST_BASE_URL;
+  const origin = originOverride || (typeof window !== 'undefined' ? window.location.origin : '');
+  const url = new URL(`${base}/workdrive/authorize`);
+  url.searchParams.set('action', 'authorize');
+  url.searchParams.set('dc', 'in');
+  if (origin) {
+    url.searchParams.set('origin', origin);
+  }
+  return url.toString();
+}
+
+/**
  * GET /workdrive/authorize?action=authorize&dc=in
  */
 export async function getWorkdriveAuthorizeUrl(signal) {
-  return { success: true, authorize_url: WORKDRIVE_AUTH_URL };
+  return { success: true, authorize_url: buildWorkdriveAuthUrl() };
 }
 
 /**

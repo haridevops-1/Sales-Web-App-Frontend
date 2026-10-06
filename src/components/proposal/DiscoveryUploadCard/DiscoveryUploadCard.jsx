@@ -18,7 +18,8 @@ import {
   FileUp,
   Info,
   AlertCircle,
-  Sparkles
+  Sparkles,
+  Building2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SpotlightCard from '@/reactbits/SpotlightCard';
@@ -73,15 +74,16 @@ export default function DiscoveryUploadCard({ onGenerate, disabled = false, onTo
   // WorkDrive Explorer Widget modal state (Full screen frozen backdrop overlay)
   const [isWidgetOpen, setIsWidgetOpen] = useState(false);
   const prevConnectedRef = useRef(isConnected);
-
-  // Auto-open explorer widget when OAuth connects successfully
+  // When OAuth connects successfully, transition to WorkDrive mode
   useEffect(() => {
     if (!prevConnectedRef.current && isConnected) {
-      setIsWidgetOpen(true);
       setUploadMode('workdrive');
+      if (onToast) {
+        onToast('Zoho WorkDrive connected successfully. Enter business name and select files.', 'success', 3500);
+      }
     }
     prevConnectedRef.current = isConnected;
-  }, [isConnected]);
+  }, [isConnected, onToast]);
 
   // Handle files attached from WorkDrive Explorer Widget
   const handleWidgetSelectFiles = (selectedFiles, businessNameFromWidget) => {
@@ -428,7 +430,7 @@ export default function DiscoveryUploadCard({ onGenerate, disabled = false, onTo
                 </div>
               </div>
             ) : (
-              /* If connected: Clean connection hero with button to launch Explorer Widget */
+              /* If connected: The Next Screen — Enter Business Name & Upload Files */
               <div className="workdrive-connected-hero-box animate-fade-in">
                 <div className="workdrive-connected-hero-top">
                   <div className="connected-badge-pill">
@@ -436,30 +438,10 @@ export default function DiscoveryUploadCard({ onGenerate, disabled = false, onTo
                     <Cloud size={16} className="text-emerald-500" />
                     <span className="connected-label font-medium">Zoho WorkDrive Connected</span>
                   </div>
-                  <span className="connected-email-tag" title={email || 'Zoho WorkDrive'}>
-                    {email || 'Zoho WorkDrive Account'}
-                  </span>
-                </div>
-
-                <div className="workdrive-connected-hero-body">
-                  <div className="connected-hero-icon-bubble">
-                    <FolderOpen size={34} className="text-orange-500" />
-                  </div>
-                  <h3 className="connected-hero-title">Browse WorkDrive Folders & Files</h3>
-                  <p className="connected-hero-desc">
-                    Search customer folders by business name, navigate subfolders, and select discovery documents in the Explorer Widget.
-                  </p>
-
-                  <div className="connected-hero-actions">
-                    <button
-                      type="button"
-                      className="btn-launch-explorer-primary"
-                      onClick={() => setIsWidgetOpen(true)}
-                    >
-                      <Sparkles size={16} />
-                      <span>Open WorkDrive Explorer</span>
-                    </button>
-
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <span className="connected-email-tag" title={email || 'Zoho WorkDrive'}>
+                      {email || 'Zoho WorkDrive Account'}
+                    </span>
                     <button
                       type="button"
                       className="btn-disconnect-link"
@@ -467,6 +449,70 @@ export default function DiscoveryUploadCard({ onGenerate, disabled = false, onTo
                       title="Disconnect account"
                     >
                       Disconnect
+                    </button>
+                  </div>
+                </div>
+
+                <div className="workdrive-intake-form-box">
+                  <div className="intake-form-header">
+                    <div className="intake-form-icon-wrap">
+                      <FolderOpen size={22} className="text-orange-500" />
+                    </div>
+                    <div>
+                      <h3 className="intake-form-title">Enter Business Name & Select Files</h3>
+                      <p className="intake-form-subtitle">
+                        Enter the client name to match their WorkDrive folder, then click below to browse and attach discovery files.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="discovery-field">
+                    <div className="discovery-field-label-row">
+                      <label className="discovery-field-label" htmlFor="discovery-package-name">
+                        Business / Client Name <span className="discovery-req-asterisk">*</span>
+                      </label>
+                      <span style={{ fontSize: '0.78rem', color: '#64748B' }}>Auto-matches folder in WorkDrive</span>
+                    </div>
+
+                    <div className="discovery-field-input-wrap">
+                      <Building2 size={17} className="discovery-field-icon text-orange-500" />
+                      <input
+                        id="discovery-package-name"
+                        type="text"
+                        className="discovery-field-input"
+                        placeholder="e.g. Acme Industries, Jay & Co, Sundar..."
+                        value={packageName}
+                        onChange={(e) => setPackageName(e.target.value)}
+                        disabled={disabled || isSubmitting}
+                        maxLength={120}
+                        autoComplete="off"
+                      />
+                      {packageName && (
+                        <button
+                          type="button"
+                          className="btn-clear-input"
+                          onClick={() => setPackageName('')}
+                          disabled={disabled || isSubmitting}
+                          aria-label="Clear client name"
+                        >
+                          <XIcon size={13} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="workdrive-upload-action-row">
+                    <button
+                      type="button"
+                      className="btn-launch-explorer-primary"
+                      onClick={() => setIsWidgetOpen(true)}
+                    >
+                      <Sparkles size={16} />
+                      <span>
+                        {packageName.trim()
+                          ? `Search "${packageName.trim()}" in WorkDrive & Select Files`
+                          : 'Search WorkDrive & Select Files'}
+                      </span>
                     </button>
                   </div>
                 </div>
@@ -577,9 +623,9 @@ export default function DiscoveryUploadCard({ onGenerate, disabled = false, onTo
           )}
         </AnimatePresence>
 
-        {/* Client / Business Name Field */}
+        {/* Client / Business Name Field (for Local Upload) */}
         <AnimatePresence>
-          {stagedFiles.length > 0 && (
+          {uploadMode === 'local' && stagedFiles.length > 0 && (
             <motion.div
               className="discovery-field"
               initial={{ opacity: 0, y: 10 }}
