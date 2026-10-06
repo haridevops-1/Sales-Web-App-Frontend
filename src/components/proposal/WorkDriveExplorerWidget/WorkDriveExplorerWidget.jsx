@@ -71,7 +71,6 @@ export default function WorkDriveExplorerWidget({
 
   // Business folder detection state
   const [matchedFolderInfo, setMatchedFolderInfo] = useState(null);
-  const [allMatchedFolders, setAllMatchedFolders] = useState([]);
 
   // Widget-selected files map: fileId -> fileObject
   const [selectedMap, setSelectedMap] = useState(new Map());
@@ -104,7 +103,7 @@ export default function WorkDriveExplorerWidget({
     setIsLoading(true);
     setError(null);
 
-    const cleanQuery = String(query || '').trim().toLowerCase();
+    const cleanQuery = String(query || '').trim();
 
     try {
       // Step 1: If folderId is explicitly provided (user navigated into a subfolder), load that folder
@@ -115,61 +114,40 @@ export default function WorkDriveExplorerWidget({
         return;
       }
 
-      // Step 2: At root level, always fetch root items (folders & files)
-      const rootRes = await listWorkdriveItems(null, signal);
-      const rootItems = normalizeWorkdriveItems(rootRes?.items || []);
-      const rootFolders = rootItems.filter((i) => i.isFolder);
-
-      // Step 3: If a business name is provided, find matching business folders or files -
-      // filtered client-side from the SAME root listing already fetched above. Never a
-      // second network call for the same data just to try a different filter.
+      // Step 2: A business name was entered - let the backend find the matching folder.
+      // It checks root-level folder names first, then one level into each root folder
+      // (the common real layout: a Team Folder holding one subfolder per client), and
+      // returns that folder's contents directly. One request either way, no fallback call.
       if (cleanQuery) {
-        const nameMatches = (item) => {
-          const name = String(item.name || '').toLowerCase();
-          return name.includes(cleanQuery) || cleanQuery.includes(name);
-        };
-
-        const matched = rootFolders.filter(nameMatches);
-
-        if (matched.length > 0) {
-          // Found matching business folder(s)!
-          const bestFolder = matched[0];
+        const searchRes = await listWorkdriveItems(null, signal, cleanQuery);
+        if (searchRes?.matched && searchRes.folderId) {
+          const folderItems = normalizeWorkdriveItems(searchRes.items || []);
+          const bestFolder = { id: searchRes.folderId, name: searchRes.folderName || query };
           setMatchedFolderInfo(bestFolder);
-          setAllMatchedFolders(matched);
-
-          // Automatically load ALL FILES inside that business folder!
-          const folderRes = await listWorkdriveItems(bestFolder.id, signal);
-          const folderItems = normalizeWorkdriveItems(folderRes?.items || []);
-
           setPathStack([
             { id: null, name: 'WorkDrive Root' },
-            { id: bestFolder.id, name: bestFolder.name }
+            ...(Array.isArray(searchRes.breadcrumb) && searchRes.breadcrumb.length
+              ? searchRes.breadcrumb.map((b) => ({ id: b.id, name: b.name }))
+              : [{ id: bestFolder.id, name: bestFolder.name }])
           ]);
           setItems(folderItems);
           return;
         }
 
-        // No folder matched by name - check for files at root matching the query instead
-        const matchedFiles = rootItems.filter((i) => !i.isFolder && nameMatches(i));
-        if (matchedFiles.length > 0) {
-          setMatchedFolderInfo(null);
-          setAllMatchedFolders([]);
-          setPathStack([{ id: null, name: `Search: "${query}"` }]);
-          setItems(matchedFiles);
-          return;
-        }
-
-        // No folder or file matched the query - show root folders with notice
+        // No folder matched anywhere the search looked - show root so the user can browse
+        // manually instead of being left on a blank screen.
+        const rootRes = await listWorkdriveItems(null, signal);
+        const rootItems = normalizeWorkdriveItems(rootRes?.items || []);
         setMatchedFolderInfo(null);
-        setAllMatchedFolders([]);
         setPathStack([{ id: null, name: 'WorkDrive Root' }]);
         setItems(rootItems);
         return;
       }
 
-      // Step 4: No business name query given - show root folders
+      // Step 3: No business name query given - show root folders
+      const rootRes = await listWorkdriveItems(null, signal);
+      const rootItems = normalizeWorkdriveItems(rootRes?.items || []);
       setMatchedFolderInfo(null);
-      setAllMatchedFolders([]);
       setPathStack([{ id: null, name: 'WorkDrive Root' }]);
       setItems(rootItems);
     } catch (err) {
@@ -216,29 +194,9 @@ export default function WorkDriveExplorerWidget({
     setBusinessName('');
     setActiveSearch('');
     setMatchedFolderInfo(null);
-    setAllMatchedFolders([]);
     setPathStack([{ id: null, name: 'WorkDrive Root' }]);
   };
 
-  // Switch to another matched folder when multiple match
-  const handleSwitchMatchedFolder = async (folder) => {
-    setMatchedFolderInfo(folder);
-    setPathStack([
-      { id: null, name: 'WorkDrive Root' },
-      { id: folder.id, name: folder.name }
-    ]);
-    setIsLoading(true);
-    setError(null);
-    try {
-      const res = await listWorkdriveItems(folder.id);
-      const folderItems = normalizeWorkdriveItems(res?.items || []);
-      setItems(folderItems);
-    } catch (err) {
-      setError(err.message || 'Failed to load folder files.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   // Folder navigation: open any folder
   const openFolder = async (folder) => {
@@ -461,37 +419,6 @@ export default function WorkDriveExplorerWidget({
                 </div>
               )}
             </div>
-
-            {/* Multiple matched folders switcher (if multiple match query) */}
-            {allMatchedFolders.length > 1 && (
-              <div className="wd-matched-folders-bar" style={{ padding: '0.5rem 1.5rem', background: '#F8FAFC', borderBottom: '1px solid #EDF2F7', display: 'flex', alignItems: 'center', gap: '0.5rem', overflowX: 'auto' }}>
-                <span style={{ fontSize: '0.78rem', color: '#64748B', fontWeight: 600, whiteSpace: 'nowrap' }}>Matching folders:</span>
-                {allMatchedFolders.map((f) => (
-                  <button
-                    key={f.id}
-                    type="button"
-                    onClick={() => handleSwitchMatchedFolder(f)}
-                    style={{
-                      background: matchedFolderInfo?.id === f.id ? '#FFF7ED' : '#FFFFFF',
-                      border: matchedFolderInfo?.id === f.id ? '1px solid #F97316' : '1px solid #E2E8F0',
-                      color: matchedFolderInfo?.id === f.id ? '#C2410C' : '#334155',
-                      padding: '3px 10px',
-                      borderRadius: '14px',
-                      fontSize: '0.78rem',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      whiteSpace: 'nowrap'
-                    }}
-                  >
-                    <Folder size={12} className={matchedFolderInfo?.id === f.id ? 'text-orange-500' : 'text-slate-400'} />
-                    <span>{f.name}</span>
-                  </button>
-                ))}
-              </div>
-            )}
 
             {/* 3. Navigation Toolbar & Breadcrumbs */}
             <div className="wd-widget-toolbar">

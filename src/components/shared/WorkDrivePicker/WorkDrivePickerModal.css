@@ -6,8 +6,9 @@
   align-items: center;
   justify-content: center;
   padding: 1.25rem;
-  background: rgba(10, 15, 29, 0.78);
+  background: rgba(15, 23, 42, 0.55);
   backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   animation: wd-fade-in 0.2s ease-out;
 }
 
@@ -22,10 +23,10 @@
   max-width: 760px;
   height: 85vh;
   max-height: 640px;
-  background: #0d1322;
-  border: 1px solid rgba(255, 122, 26, 0.25);
-  border-radius: 16px;
-  box-shadow: 0 24px 50px -12px rgba(0, 0, 0, 0.75), 0 0 35px rgba(255, 122, 26, 0.08);
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 18px;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -43,9 +44,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid rgba(51, 65, 85, 0.4);
-  background: rgba(15, 23, 42, 0.65);
+  padding: 1.15rem 1.5rem;
+  border-bottom: 1px solid #f1f5f9;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.95));
 }
 
 .wd-picker-title-group {
@@ -55,29 +56,30 @@
 }
 
 .wd-picker-logo-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background: linear-gradient(135deg, rgba(255, 122, 26, 0.2), rgba(255, 154, 77, 0.1));
-  border: 1px solid rgba(255, 122, 26, 0.3);
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: rgba(249, 115, 22, 0.1);
+  border: 1px solid rgba(249, 115, 22, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #ff7a1a;
+  color: #f97316;
   flex-shrink: 0;
 }
 
 .wd-picker-title {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #f8fafc;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0f172a;
   margin: 0;
+  letter-spacing: -0.015em;
 }
 
 .wd-picker-subtitle {
-  font-size: 0.75rem;
-  color: #94a3b8;
-  margin: 0;
+  font-size: 0.78rem;
+  color: #64748b;
+  margin: 0.15rem 0 0 0;
 }
 
 .btn-picker-close {
@@ -94,8 +96,8 @@
 }
 
 .btn-picker-close:hover {
-  background: rgba(51, 65, 85, 0.4);
-  color: #f1f5f9;
+  background: #f1f5f9;
+  color: #0f172a;
 }
 
 /* Navigation / Breadcrumb Toolbar */
@@ -103,9 +105,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.65rem 1.25rem;
-  background: rgba(15, 23, 42, 0.45);
-  border-bottom: 1px solid rgba(51, 65, 85, 0.35);
+  padding: 0.65rem 1.5rem;
+  background: #f8fafc;
+  border-bottom: 1px solid #edf2f7;
   gap: 10px;
 }
 
@@ -120,7 +122,7 @@
 .wd-crumb-btn {
   background: transparent;
   border: none;
-  color: #94a3b8;
+  color: #64748b;
   cursor: pointer;
   padding: 3px 6px;
   border-radius: 4px;
@@ -129,18 +131,18 @@
 }
 
 .wd-crumb-btn:hover:not(:disabled) {
-  background: rgba(51, 65, 85, 0.4);
-  color: #f8fafc;
+  background: #e2e8f0;
+  color: #0f172a;
 }
 
 .wd-crumb-btn.is-current {
-  color: #ff9a4d;
+  color: #ea580c;
   font-weight: 600;
   cursor: default;
 }
 
 .wd-crumb-sep {
-  color: #475569;
+  color: #cbd5e1;
   font-size: 0.75rem;
 }
 
@@ -157,17 +159,17 @@
   padding: 4px 9px;
   font-size: 0.75rem;
   font-weight: 500;
-  color: #cbd5e1;
-  background: rgba(30, 41, 59, 0.6);
-  border: 1px solid rgba(51, 65, 85, 0.5);
+  color: #334155;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .btn-toolbar-nav:hover:not(:disabled) {
-  background: rgba(51, 65, 85, 0.7);
-  color: #ffffff;
+  background: #f1f5f9;
+  border-color: #cbd5e1;
 }
 
 .btn-toolbar-nav:disabled {
@@ -177,9 +179,9 @@
 
 /* Filter Input */
 .wd-picker-search {
-  padding: 0.5rem 1.25rem;
-  background: rgba(15, 23, 42, 0.25);
-  border-bottom: 1px solid rgba(51, 65, 85, 0.25);
+  padding: 0.5rem 1.5rem;
+  background: #ffffff;
+  border-bottom: 1px solid #edf2f7;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -187,30 +189,32 @@
 
 .wd-search-input {
   flex: 1;
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid rgba(51, 65, 85, 0.6);
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
   border-radius: 8px;
   padding: 6px 12px;
   font-size: 0.8125rem;
-  color: #f1f5f9;
+  color: #0f172a;
   outline: none;
   transition: border-color 0.15s ease;
 }
 
 .wd-search-input:focus {
-  border-color: #ff7a1a;
-  box-shadow: 0 0 0 2px rgba(255, 122, 26, 0.2);
+  border-color: #f97316;
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.15);
+  background: #ffffff;
 }
 
 .wd-search-input::placeholder {
-  color: #64748b;
+  color: #94a3b8;
 }
 
 /* Browser Body / Items List */
 .wd-picker-body {
   flex: 1;
   overflow-y: auto;
-  padding: 0.75rem 1.25rem;
+  padding: 0.85rem 1.5rem;
+  background: #ffffff;
 }
 
 .wd-picker-state {
@@ -221,29 +225,29 @@
   height: 100%;
   min-height: 220px;
   gap: 12px;
-  color: #94a3b8;
+  color: #64748b;
   font-size: 0.875rem;
   text-align: center;
 }
 
 .wd-picker-state.is-error {
-  color: #f87171;
+  color: #dc2626;
 }
 
 .btn-picker-retry {
   padding: 6px 16px;
   font-size: 0.8125rem;
   font-weight: 500;
-  color: #f8fafc;
-  background: rgba(255, 122, 26, 0.2);
-  border: 1px solid rgba(255, 122, 26, 0.4);
+  color: #ffffff;
+  background: #f97316;
+  border: none;
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .btn-picker-retry:hover {
-  background: rgba(255, 122, 26, 0.35);
+  background: #ea580c;
 }
 
 /* Items List */
@@ -260,34 +264,34 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 12px;
-  background: rgba(15, 23, 42, 0.4);
-  border: 1px solid transparent;
-  border-radius: 8px;
+  padding: 9px 12px;
+  background: #ffffff;
+  border: 1px solid #f1f5f9;
+  border-radius: 10px;
   cursor: pointer;
   transition: all 0.15s ease;
   user-select: none;
 }
 
 .wd-item-row:hover:not(.is-disabled) {
-  background: rgba(30, 41, 59, 0.65);
-  border-color: rgba(51, 65, 85, 0.6);
+  background: #f8fafc;
+  border-color: #e2e8f0;
 }
 
 .wd-item-row.is-selected {
-  background: rgba(255, 122, 26, 0.12);
-  border-color: rgba(255, 122, 26, 0.4);
+  background: #fff7ed;
+  border-color: #fdba74;
 }
 
 .wd-item-row.is-disabled {
-  opacity: 0.4;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
 .wd-item-icon-box {
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -295,28 +299,28 @@
 }
 
 .wd-item-icon-box.folder {
-  background: rgba(234, 179, 8, 0.12);
-  color: #eab308;
+  background: rgba(249, 115, 22, 0.1);
+  color: #f97316;
 }
 
 .wd-item-icon-box.pdf {
-  background: rgba(239, 68, 68, 0.12);
+  background: rgba(239, 68, 68, 0.1);
   color: #ef4444;
 }
 
 .wd-item-icon-box.doc {
-  background: rgba(59, 130, 246, 0.12);
+  background: rgba(59, 130, 246, 0.1);
   color: #3b82f6;
 }
 
 .wd-item-icon-box.sheet {
-  background: rgba(16, 185, 129, 0.12);
+  background: rgba(16, 185, 129, 0.1);
   color: #10b981;
 }
 
 .wd-item-icon-box.text {
-  background: rgba(148, 163, 184, 0.12);
-  color: #94a3b8;
+  background: rgba(100, 116, 139, 0.1);
+  color: #64748b;
 }
 
 .wd-item-main {
@@ -329,7 +333,7 @@
 .wd-item-name {
   font-size: 0.84rem;
   font-weight: 500;
-  color: #f1f5f9;
+  color: #0f172a;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -337,7 +341,7 @@
 
 .wd-item-meta {
   font-size: 0.72rem;
-  color: #64748b;
+  color: #94a3b8;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -353,7 +357,7 @@
 .btn-item-info {
   background: transparent;
   border: none;
-  color: #64748b;
+  color: #94a3b8;
   padding: 4px;
   border-radius: 4px;
   cursor: pointer;
@@ -364,19 +368,19 @@
 }
 
 .btn-item-info:hover {
-  color: #f1f5f9;
-  background: rgba(51, 65, 85, 0.4);
+  color: #0f172a;
+  background: #f1f5f9;
 }
 
 /* Metadata preview bar */
 .wd-metadata-preview {
-  margin: 0.5rem 1.25rem;
+  margin: 0.5rem 1.5rem;
   padding: 8px 12px;
-  background: rgba(30, 41, 59, 0.6);
-  border: 1px solid rgba(51, 65, 85, 0.5);
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
   border-radius: 8px;
   font-size: 0.75rem;
-  color: #cbd5e1;
+  color: #475569;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -387,18 +391,18 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.85rem 1.25rem;
-  border-top: 1px solid rgba(51, 65, 85, 0.4);
-  background: rgba(15, 23, 42, 0.75);
+  padding: 0.9rem 1.5rem;
+  border-top: 1px solid #edf2f7;
+  background: #f8fafc;
 }
 
 .wd-footer-count {
   font-size: 0.8125rem;
-  color: #94a3b8;
+  color: #64748b;
 }
 
 .wd-footer-count strong {
-  color: #f8fafc;
+  color: #0f172a;
 }
 
 .wd-footer-actions {
@@ -411,17 +415,17 @@
   padding: 7px 14px;
   font-size: 0.8125rem;
   font-weight: 500;
-  color: #94a3b8;
-  background: transparent;
-  border: 1px solid rgba(51, 65, 85, 0.5);
+  color: #475569;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .btn-picker-cancel:hover {
-  background: rgba(51, 65, 85, 0.35);
-  color: #f1f5f9;
+  background: #f1f5f9;
+  color: #0f172a;
 }
 
 .btn-picker-confirm {
@@ -429,18 +433,18 @@
   font-size: 0.8125rem;
   font-weight: 600;
   color: #ffffff;
-  background: linear-gradient(135deg, #ff7a1a, #ff9a4d);
+  background: linear-gradient(135deg, #f97316, #fb923c);
   border: none;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.15s ease;
-  box-shadow: 0 2px 10px rgba(255, 122, 26, 0.3);
+  box-shadow: 0 2px 10px rgba(249, 115, 22, 0.25);
 }
 
 .btn-picker-confirm:hover:not(:disabled) {
-  opacity: 0.92;
+  opacity: 0.94;
   transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(255, 122, 26, 0.4);
+  box-shadow: 0 4px 14px rgba(249, 115, 22, 0.35);
 }
 
 .btn-picker-confirm:disabled {
@@ -465,24 +469,25 @@
   width: 56px;
   height: 56px;
   border-radius: 16px;
-  background: rgba(255, 122, 26, 0.15);
-  border: 1px solid rgba(255, 122, 26, 0.3);
+  background: rgba(249, 115, 22, 0.1);
+  border: 1px solid rgba(249, 115, 22, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #ff7a1a;
+  color: #f97316;
 }
 
 .wd-prompt-title {
   font-size: 1.125rem;
-  font-weight: 600;
-  color: #f8fafc;
+  font-weight: 700;
+  color: #0f172a;
   margin: 0;
+  letter-spacing: -0.015em;
 }
 
 .wd-prompt-desc {
   font-size: 0.84rem;
-  color: #94a3b8;
+  color: #64748b;
   max-width: 400px;
   line-height: 1.5;
   margin: 0;

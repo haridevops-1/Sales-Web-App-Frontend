@@ -214,16 +214,28 @@ export async function disconnectWorkdrive() {
 /**
  * GET /workdrive/list?action=list&folder_id=<id>
  * Needs bearer session token. Omit folder_id for root items.
- * Returns { success, folder_id, items }
+ * Pass businessQuery (with no folderId) to have the backend search for a matching
+ * business/client folder - root names first, then one level into each root folder -
+ * and return that folder's contents directly. This rides the already-working /list
+ * route rather than the dedicated /workdrive/search route, which never registers live.
+ * Returns { success, folder_id, items, matched?, folderName?, breadcrumb? }
  */
-export async function listWorkdriveItems(folderId = null, signal) {
-  const query = folderId
-    ? `?action=list&folder_id=${encodeURIComponent(folderId)}`
-    : '?action=list';
+export async function listWorkdriveItems(folderId = null, signal, businessQuery = null) {
+  let query;
+  if (folderId) {
+    query = `?action=list&folder_id=${encodeURIComponent(folderId)}`;
+  } else if (businessQuery) {
+    query = `?action=list&query=${encodeURIComponent(businessQuery)}`;
+  } else {
+    query = '?action=list';
+  }
   const res = await workdriveRequest(`/workdrive/list${query}`, { method: 'GET', signal });
   return {
     success: true,
     folderId: res?.folder_id || folderId || null,
+    matched: typeof res?.matched === 'boolean' ? res.matched : undefined,
+    folderName: res?.folder_name || null,
+    breadcrumb: Array.isArray(res?.breadcrumb) ? res.breadcrumb : null,
     items: Array.isArray(res?.items) ? res.items : (Array.isArray(res?.data) ? res.data : [])
   };
 }
