@@ -15,8 +15,7 @@ import {
   Trash2,
   FolderUp,
   FileUp,
-  Info,
-  LogOut
+  Info
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SpotlightCard from '@/reactbits/SpotlightCard';
@@ -53,7 +52,6 @@ export default function DiscoveryUploadCard({ onGenerate, disabled = false, onTo
     isConnecting,
     error: authError,
     handleOpenWorkDrive,
-    disconnect,
     clearError
   } = useWorkDrive();
 
@@ -274,54 +272,40 @@ export default function DiscoveryUploadCard({ onGenerate, disabled = false, onTo
           style={{ display: 'none' }}
         />
 
-        {/* Header Row: Local Upload (static) + Open WorkDrive / Disconnect - matches Workspace 1 */}
+        {/* Header Row: Local Upload (static) + Open WorkDrive - matches Workspace 1.
+            Disconnect lives inside the Explorer widget itself, not out here. */}
         <div className="discovery-options-header-row">
           <span className="discovery-mode-pill">
             <UploadCloud size={15} />
             <span>Local Upload</span>
           </span>
 
-          <div className="discovery-header-actions-group">
-            <button
-              type="button"
-              className="btn-open-workdrive-discovery-btn"
-              onClick={() => {
-                if (!isConnected) {
-                  handleOpenWorkDrive();
-                } else {
-                  setIsWidgetOpen(true);
-                }
-              }}
-              disabled={disabled || isConnecting}
-              title="Open Zoho WorkDrive"
-            >
-              {isConnecting ? (
-                <>
-                  <Loader2 size={14} className="workdrive-spin" />
-                  <span>Opening Zoho OAuth...</span>
-                </>
-              ) : (
-                <>
-                  <Cloud size={14} className="text-orange-500" />
-                  <span>Open WorkDrive</span>
-                  <ExternalLink size={12} className="opacity-70" />
-                </>
-              )}
-            </button>
-
-            {isConnected && (
-              <button
-                type="button"
-                className="btn-disconnect-discovery-btn"
-                onClick={disconnect}
-                disabled={disabled}
-                title="Disconnect Zoho WorkDrive"
-              >
-                <LogOut size={13} />
-                <span>Disconnect</span>
-              </button>
+          <button
+            type="button"
+            className="btn-open-workdrive-discovery-btn"
+            onClick={() => {
+              if (!isConnected) {
+                handleOpenWorkDrive();
+              } else {
+                setIsWidgetOpen(true);
+              }
+            }}
+            disabled={disabled || isConnecting}
+            title="Open Zoho WorkDrive"
+          >
+            {isConnecting ? (
+              <>
+                <Loader2 size={14} className="workdrive-spin" />
+                <span>Opening Zoho OAuth...</span>
+              </>
+            ) : (
+              <>
+                <Cloud size={14} className="text-orange-500" />
+                <span>Open WorkDrive</span>
+                <ExternalLink size={12} className="opacity-70" />
+              </>
             )}
-          </div>
+          </button>
         </div>
 
         {authError && (

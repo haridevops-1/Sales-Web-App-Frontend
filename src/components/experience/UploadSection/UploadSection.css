@@ -150,35 +150,3 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
-
-.upload-header-actions-group {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.6rem;
-}
-
-.btn-disconnect-header-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  color: #64748b;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  padding: 0.45rem 0.85rem;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.18s ease;
-}
-
-.btn-disconnect-header-btn:hover:not(:disabled) {
-  background: #fef2f2;
-  border-color: #fecaca;
-  color: #dc2626;
-}
-
-.btn-disconnect-header-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}

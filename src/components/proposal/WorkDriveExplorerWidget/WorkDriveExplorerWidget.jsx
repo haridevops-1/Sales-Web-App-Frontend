@@ -30,9 +30,9 @@ import { formatBytes, formatDate } from '@/utils/helpers';
 
 const SUPPORTED_EXTENSIONS = ['.pdf', '.docx', '.doc', '.xlsx', '.xls', '.csv', '.txt', '.md'];
 
-function isFileSupported(filename) {
+function isFileSupported(filename, allowedExtensions = SUPPORTED_EXTENSIONS) {
   const name = String(filename || '').toLowerCase();
-  return SUPPORTED_EXTENSIONS.some((ext) => name.endsWith(ext));
+  return allowedExtensions.some((ext) => name.endsWith(ext));
 }
 
 function getFileBadge(extension) {
@@ -55,7 +55,10 @@ export default function WorkDriveExplorerWidget({
   onSelectFiles,
   initialBusinessName = '',
   alreadyStagedIds = [],
-  onToast
+  onToast,
+  allowedExtensions = SUPPORTED_EXTENSIONS,
+  attachButtonLabel = 'Attach to Proposal',
+  contextLabel = 'Proposal'
 }) {
   const { isConnected, email, handleOpenWorkDrive, disconnect } = useWorkDrive();
 
@@ -241,7 +244,7 @@ export default function WorkDriveExplorerWidget({
 
   // Select / deselect all supported files in current view
   const handleSelectAllInFolder = () => {
-    const supportedFiles = items.filter((i) => !i.isFolder && isFileSupported(i.name));
+    const supportedFiles = items.filter((i) => !i.isFolder && isFileSupported(i.name, allowedExtensions));
     if (supportedFiles.length === 0) return;
 
     const allCurrentlySelected = supportedFiles.every((f) => selectedMap.has(f.id));
@@ -289,7 +292,7 @@ export default function WorkDriveExplorerWidget({
     }
 
     if (onToast) {
-      onToast(`Attached ${selectedFiles.length} WorkDrive document(s) for ${resolvedBusinessName || 'Proposal'}.`, 'success', 3500);
+      onToast(`Attached ${selectedFiles.length} WorkDrive document(s) for ${resolvedBusinessName || contextLabel}.`, 'success', 3500);
     }
 
     setSelectedMap(new Map());
@@ -460,7 +463,7 @@ export default function WorkDriveExplorerWidget({
                   title="Select all supported files in this folder"
                 >
                   <CheckCircle2 size={13} className="text-orange-500" />
-                  <span>Select All Files ({files.filter(f => isFileSupported(f.name)).length})</span>
+                  <span>Select All Files ({files.filter(f => isFileSupported(f.name, allowedExtensions)).length})</span>
                 </button>
               </div>
             </div>
@@ -576,7 +579,7 @@ export default function WorkDriveExplorerWidget({
                       <span className="wd-section-label">Documents & Files ({files.length})</span>
                       <div className="wd-files-list">
                         {files.map((file) => {
-                          const isSupported = isFileSupported(file.name);
+                          const isSupported = isFileSupported(file.name, allowedExtensions);
                           const isSelected = selectedMap.has(file.id);
                           const isAlreadyImported = alreadyStagedIds.includes(file.id);
                           const badge = getFileBadge(file.extension);
@@ -645,7 +648,7 @@ export default function WorkDriveExplorerWidget({
                   onClick={handleAttachToProposal}
                   disabled={totalSelectedCount === 0}
                 >
-                  <span>Attach to Proposal</span>
+                  <span>{attachButtonLabel}</span>
                   <span className="btn-count-bubble">{totalSelectedCount}</span>
                 </button>
               </div>

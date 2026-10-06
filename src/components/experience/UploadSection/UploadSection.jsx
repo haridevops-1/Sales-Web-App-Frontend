@@ -6,16 +6,16 @@ import ProcessingState from '../ProcessingState/ProcessingState';
 import ProcessStatus from '../ProcessStatus/ProcessStatus';
 import SpotlightCard from '@/reactbits/SpotlightCard';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Cloud, Upload, ExternalLink, LogOut } from 'lucide-react';
+import { Cloud, Upload, ExternalLink } from 'lucide-react';
 import { validateFile, inferBusinessName, validateLogoFile } from '@/utils/helpers';
 import { uploadTechnicalDocument, processDocument, analyzeDocument, generateCustomerExperience, deployCustomerExperience, getProcessStatus } from '@/api/catalystApi';
 import { resetApiGuard } from '@/api/apiCallGuard';
 import { UPLOAD_STAGES } from '@/utils/constants';
-import WorkDrivePickerModal from '@/components/shared/WorkDrivePicker/WorkDrivePickerModal';
+import WorkDriveExplorerWidget from '@/components/proposal/WorkDriveExplorerWidget/WorkDriveExplorerWidget';
 import { useWorkDrive } from '@/context/WorkDriveContext';
 
 export default function UploadSection({ onStageChange, onUploadSuccess, onExperienceCreated, onError }) {
-  const { isConnected, error: authError, handleOpenWorkDrive, disconnect } = useWorkDrive();
+  const { isConnected, error: authError, handleOpenWorkDrive } = useWorkDrive();
   const [selectedFile, setSelectedFile] = useState(null);
   const [businessName, setBusinessName] = useState('');
   const [projectName, setProjectName] = useState('');
@@ -89,16 +89,16 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
     }
   };
 
-  const handleWorkDriveSelect = (selectedItems) => {
+  const handleWorkDriveSelect = (selectedItems, resolvedBusinessName) => {
     if (!selectedItems || selectedItems.length === 0) return;
     const item = selectedItems[0];
     setSelectedFile({
       name: item.name,
       size: item.size || 0,
       isWorkdrive: true,
-      workdriveFileId: item.id
+      workdriveFileId: item.workdrive_file_id
     });
-    const inferred = inferBusinessName(item.name);
+    const inferred = (resolvedBusinessName && resolvedBusinessName.trim()) || inferBusinessName(item.name);
     if (inferred && !businessName) {
       setBusinessName(inferred);
     }
@@ -870,38 +870,23 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
                             <span>Local Upload</span>
                           </span>
 
-                          <div className="upload-header-actions-group">
-                            <button
-                              type="button"
-                              className="btn-open-workdrive-header-btn"
-                              onClick={() => {
-                                if (!isConnected) {
-                                  handleOpenWorkDrive();
-                                } else {
-                                  setIsWorkDrivePickerOpen(true);
-                                }
-                              }}
-                              disabled={isWorking}
-                              title="Open Zoho WorkDrive"
-                            >
-                              <Cloud size={14} className="text-orange-500" />
-                              <span>Open WorkDrive</span>
-                              <ExternalLink size={12} className="opacity-70" />
-                            </button>
-
-                            {isConnected && (
-                              <button
-                                type="button"
-                                className="btn-disconnect-header-btn"
-                                onClick={disconnect}
-                                disabled={isWorking}
-                                title="Disconnect Zoho WorkDrive"
-                              >
-                                <LogOut size={13} />
-                                <span>Disconnect</span>
-                              </button>
-                            )}
-                          </div>
+                          <button
+                            type="button"
+                            className="btn-open-workdrive-header-btn"
+                            onClick={() => {
+                              if (!isConnected) {
+                                handleOpenWorkDrive();
+                              } else {
+                                setIsWorkDrivePickerOpen(true);
+                              }
+                            }}
+                            disabled={isWorking}
+                            title="Open Zoho WorkDrive"
+                          >
+                            <Cloud size={14} className="text-orange-500" />
+                            <span>Open WorkDrive</span>
+                            <ExternalLink size={12} className="opacity-70" />
+                          </button>
                         </div>
 
                         <UploadDropzone
@@ -917,16 +902,17 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
           </div>
         )}
 
-        {/* Reusable WorkDrive Picker Modal (Workspace 1 Single File) */}
-        <WorkDrivePickerModal
+        {/* Same WorkDrive Explorer used by Workspace 2 - business-name search, breadcrumb
+            navigation, and its own Disconnect button inside the modal header. Single-file
+            semantics are enforced by handleWorkDriveSelect, which only uses the first pick. */}
+        <WorkDriveExplorerWidget
           isOpen={isWorkDrivePickerOpen}
           onClose={() => setIsWorkDrivePickerOpen(false)}
-          onSelect={handleWorkDriveSelect}
-          multiple={false}
+          onSelectFiles={handleWorkDriveSelect}
           allowedExtensions={['.pdf', '.docx', '.doc']}
-          title="Select Technical Document"
-          subtitle="Choose a PDF or Word document from your Zoho WorkDrive"
-          confirmLabel="Select Document"
+          attachButtonLabel="Select Document"
+          contextLabel="Technical Document"
+          alreadyStagedIds={selectedFile?.workdriveFileId ? [selectedFile.workdriveFileId] : []}
         />
       </div>
     </section>
