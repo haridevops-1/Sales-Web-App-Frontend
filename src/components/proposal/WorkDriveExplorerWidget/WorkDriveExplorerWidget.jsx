@@ -24,7 +24,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { useWorkDrive } from '@/context/WorkDriveContext';
-import { listWorkdriveItems, searchWorkdrive } from '@/api/workdriveApi';
+import { listWorkdriveItems } from '@/api/workdriveApi';
 import { normalizeWorkdriveItems } from '@/components/shared/WorkDrivePicker/workdriveItem';
 import { formatBytes, formatDate } from '@/utils/helpers';
 
@@ -120,13 +120,16 @@ export default function WorkDriveExplorerWidget({
       const rootItems = normalizeWorkdriveItems(rootRes?.items || []);
       const rootFolders = rootItems.filter((i) => i.isFolder);
 
-      // Step 3: If a business name is provided, find matching business folders
+      // Step 3: If a business name is provided, find matching business folders or files -
+      // filtered client-side from the SAME root listing already fetched above. Never a
+      // second network call for the same data just to try a different filter.
       if (cleanQuery) {
-        // Match folders whose name contains the business name, or vice versa
-        const matched = rootFolders.filter((f) => {
-          const fName = String(f.name || '').toLowerCase();
-          return fName.includes(cleanQuery) || cleanQuery.includes(fName);
-        });
+        const nameMatches = (item) => {
+          const name = String(item.name || '').toLowerCase();
+          return name.includes(cleanQuery) || cleanQuery.includes(name);
+        };
+
+        const matched = rootFolders.filter(nameMatches);
 
         if (matched.length > 0) {
           // Found matching business folder(s)!
@@ -146,38 +149,14 @@ export default function WorkDriveExplorerWidget({
           return;
         }
 
-        // If no direct folder matched by substring, also check WorkDrive search API
-        try {
-          const searchRes = await searchWorkdrive(cleanQuery, null, signal);
-          const searchItems = normalizeWorkdriveItems(searchRes?.items || []);
-          const searchFolders = searchItems.filter((i) => i.isFolder);
-
-          if (searchFolders.length > 0) {
-            const bestFolder = searchFolders[0];
-            setMatchedFolderInfo(bestFolder);
-            setAllMatchedFolders(searchFolders);
-
-            const folderRes = await listWorkdriveItems(bestFolder.id, signal);
-            const folderItems = normalizeWorkdriveItems(folderRes?.items || []);
-
-            setPathStack([
-              { id: null, name: 'WorkDrive Root' },
-              { id: bestFolder.id, name: bestFolder.name }
-            ]);
-            setItems(folderItems);
-            return;
-          }
-
-          // If search returned files directly matching the business name
-          if (searchItems.length > 0) {
-            setMatchedFolderInfo(null);
-            setAllMatchedFolders([]);
-            setPathStack([{ id: null, name: `Search: "${query}"` }]);
-            setItems(searchItems);
-            return;
-          }
-        } catch (searchErr) {
-          console.warn('[WorkDrive Widget] Search API fallback:', searchErr.message);
+        // No folder matched by name - check for files at root matching the query instead
+        const matchedFiles = rootItems.filter((i) => !i.isFolder && nameMatches(i));
+        if (matchedFiles.length > 0) {
+          setMatchedFolderInfo(null);
+          setAllMatchedFolders([]);
+          setPathStack([{ id: null, name: `Search: "${query}"` }]);
+          setItems(matchedFiles);
+          return;
         }
 
         // No folder or file matched the query - show root folders with notice

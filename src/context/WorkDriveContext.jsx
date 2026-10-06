@@ -171,8 +171,7 @@ export function WorkDriveProvider({ children }) {
       if (data.success && sessionToken) {
         console.log('[WorkDriveContext] Connected successfully as:', userEmail);
 
-        // Save sessionToken for subsequent API calls
-        localStorage.setItem('workdrive_session_token', sessionToken);
+        // Save sessionToken (sessionStorage only - see utils/workdriveSession.js)
         setWorkdriveSessionToken(sessionToken, userEmail);
 
         if (userEmail) setEmail(userEmail);
