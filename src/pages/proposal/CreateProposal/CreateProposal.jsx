@@ -495,6 +495,14 @@ export default function CreateProposal({
         });
       }, 5000);
 
+      // The discovery package's file rows were just written in the previous request;
+      // the query layer that lists them by package_id can briefly lag behind a write
+      // that fresh (seen live: the processor querying immediately after a WorkDrive-
+      // sourced package reported zero files for a package that demonstrably had two).
+      // This is one fixed pause before the one intended call below, not a retry of a
+      // failed call - nothing has failed yet at this point.
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
       console.log('[Workspace 2] POST /proposal/processor/process?session_id=' + packageId + ' (synchronous single call)');
       const processRes = await processDiscoveryPackage(packageId);
       console.log('[Workspace 2] Processor completed:', processRes);
