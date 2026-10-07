@@ -238,10 +238,6 @@ export default function DiscoveryUploadCard({ onGenerate, disabled = false, onTo
   return (
     <SpotlightCard className="discovery-upload-card" spotlightColor="rgba(255, 122, 26, 0.08)">
       <div className="discovery-card-header">
-        <div className="discovery-pill-tag">
-          <UploadCloud size={13} className="text-orange-500" />
-          <span>Document Intake</span>
-        </div>
         <h2 className="discovery-headline">Upload Discovery Documents</h2>
         <p className="discovery-subline">
           Upload discovery documents locally from your computer or open Zoho WorkDrive to select files and folders.
