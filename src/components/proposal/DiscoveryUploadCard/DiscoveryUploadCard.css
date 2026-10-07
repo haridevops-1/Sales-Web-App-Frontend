@@ -11,6 +11,17 @@
   position: relative;
   overflow: hidden;
   transition: box-shadow 0.25s ease, border-color 0.25s ease;
+  /* Matches Workspace 1's upload-container-card: padding lives on the card itself, not a
+     separate inner wrapper - .discovery-upload-inner below isn't used in the markup, which
+     left the header sitting flush against the card edge with no padding to contain its
+     default heading margin, clipped by overflow:hidden. */
+  padding: 1.5rem 1.75rem;
+}
+
+@media (max-width: 640px) {
+  .discovery-upload-card {
+    padding: 1.25rem 1rem;
+  }
 }
 
 .discovery-upload-card::before {
@@ -29,6 +40,25 @@
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+}
+
+/* Card header actually used in the markup - matches Workspace 1's upload-header-row /
+   upload-main-title / upload-sub-desc sizing and spacing. */
+.discovery-card-header {
+  margin-bottom: 1.25rem;
+}
+
+.discovery-headline {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 0.2rem;
+}
+
+.discovery-subline {
+  font-size: 0.8125rem;
+  color: #64748b;
+  margin: 0;
 }
 
 /* Section Header */
