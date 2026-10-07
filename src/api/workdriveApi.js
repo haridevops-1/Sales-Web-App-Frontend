@@ -104,6 +104,8 @@ async function workdriveRequest(path, { method = 'GET', body, timeoutMs = 30000,
     headers['Content-Type'] = 'application/json';
   }
 
+  console.info('[WorkDrive] ' + method + ' ' + effectiveUrl);
+
   let response;
   try {
     response = await fetch(effectiveUrl, {
@@ -116,10 +118,12 @@ async function workdriveRequest(path, { method = 'GET', body, timeoutMs = 30000,
     clearTimeout(timeoutId);
     if (fetchErr.name === 'AbortError') {
       if (isTimedOut) {
+        console.error('[WorkDrive] Request timed out on ' + path);
         throw new WorkDriveApiError('WorkDrive request timed out.', { status: 408 });
       }
       throw fetchErr;
     }
+    console.error('[WorkDrive] Network error on ' + method + ' ' + path + ':', fetchErr);
     throw new WorkDriveApiError('Unable to connect to WorkDrive service. Please check your connection.', { status: 0 });
   }
   clearTimeout(timeoutId);
@@ -135,6 +139,7 @@ async function workdriveRequest(path, { method = 'GET', body, timeoutMs = 30000,
   const errorCode = data?.error?.code || data?.code;
   // Handle 401 or auth failures: token expired, revoked, or account not connected
   if (response.status === 401 || errorCode === 'WORKDRIVE_AUTH_FAILED' || errorCode === 'WORKDRIVE_TOKEN_EXPIRED') {
+    console.warn('[WorkDrive] Session expired or not connected on ' + path, data);
     clearWorkdriveSessionToken(true);
     const message = data?.message || data?.error?.message || 'WorkDrive is not connected or session expired. Please connect.';
     throw new WorkDriveApiError(message, { status: response.status, data });
@@ -142,9 +147,11 @@ async function workdriveRequest(path, { method = 'GET', body, timeoutMs = 30000,
 
   if (!response.ok || (data && data.success === false)) {
     const message = data?.message || data?.error?.message || `WorkDrive request failed with status ${response.status}.`;
+    console.error('[WorkDrive] ' + response.status + ' error on ' + path + ':', data);
     throw new WorkDriveApiError(message, { status: response.status, data });
   }
 
+  console.log('[WorkDrive] ' + response.status + ' OK ' + path, data);
   return data;
 }
 

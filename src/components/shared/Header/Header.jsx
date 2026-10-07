@@ -17,7 +17,7 @@ export default function Header({
   proposalsCount = 0,
   currentUser = {
     name: "Hariharan R",
-    designation: "Product Consultant"
+    designation: "PreSales/Business Consultant"
   }
 }) {
   return (

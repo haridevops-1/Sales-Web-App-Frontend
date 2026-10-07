@@ -25,7 +25,7 @@ export default function Sidebar({
   onOpenSettings,
   currentUser = {
     name: 'Hariharan R',
-    designation: 'Product Consultant'
+    designation: 'PreSales/Business Consultant'
   }
 }) {
   const handleNav = (module, subPage) => {

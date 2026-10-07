@@ -438,9 +438,12 @@ export function getDiscoverySession(sessionId, signal) {
 // ---------------------------------------------------------------------------
 
 export function listProposals(packageId, signal) {
-  if (!getSessionToken()) {
-    return Promise.resolve({ success: true, proposals: [] });
-  }
+  // Listing proposals never required a WorkDrive session on the backend (proposal-api's
+  // list_proposals operation takes no user_id and returns every W2_PROPOSALS row) - this
+  // used to short-circuit to a fake empty success response whenever no session token was
+  // in sessionStorage (e.g. a fresh tab, or after the token's cleared on tab close), which
+  // then caused the caller to treat "no session yet" as "zero proposals" and wipe the
+  // locally cached list. Always call the real endpoint instead.
   const qs = packageId ? '&package_id=' + encodeURIComponent(packageId) : '';
   console.log('[Workspace 2] GET /proposal/api?resource=proposals' + qs);
   return requestJson('/proposal/api?resource=proposals' + qs, { signal }).then((res) => {

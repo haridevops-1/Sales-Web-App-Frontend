@@ -103,7 +103,7 @@ export default function App() {
   // Authenticated user state
   const [currentUser] = useState({
     name: 'Hariharan R',
-    designation: 'Product Consultant'
+    designation: 'PreSales/Business Consultant'
   });
 
   const showToast = (message, type = 'success', duration = 6000) => {

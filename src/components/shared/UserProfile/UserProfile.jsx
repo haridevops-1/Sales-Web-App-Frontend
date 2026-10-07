@@ -5,7 +5,7 @@ import { ChevronDown } from 'lucide-react';
 export default function UserProfile({
   currentUser = {
     name: 'Hariharan R',
-    designation: 'Product Consultant'
+    designation: 'PreSales/Business Consultant'
   },
   showDesignation = true,
   theme = 'dark',
