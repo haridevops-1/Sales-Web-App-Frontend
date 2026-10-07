@@ -64,7 +64,10 @@ export default function ProposalPage({
           customer_name: bizName,
           business_name: bizName,
           package_name: bizName,
-          generated_url: p.generated_url || p.proposal_url || local?.generated_url || ''
+          generated_url: p.generated_url || p.proposal_url || local?.generated_url || '',
+          technical_url: p.technical_url || local?.technical_url || '',
+          commercial_url: p.commercial_url || local?.commercial_url || '',
+          tos_url: p.tos_url || local?.tos_url || ''
         };
       });
 

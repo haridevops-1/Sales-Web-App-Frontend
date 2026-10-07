@@ -147,7 +147,7 @@ function ProposalResultCard({
   onCreateAnother,
   onBackToProposals
 }) {
-  const [copiedUrl, setCopiedUrl] = useState(false);
+  const [copiedDocId, setCopiedDocId] = useState(null);
 
   const customerName = proposal?.customer_name || 'Client';
   const proposalId = proposal?.proposal_id || '—';
@@ -156,12 +156,21 @@ function ProposalResultCard({
 
   const targetUrl = (proposal?.proposal_url || proposal?.generated_url || proposal?.slate_url || '').trim();
 
-  const handleCopyUrl = async () => {
-    if (!targetUrl) return;
+  // The backend generates 3 distinct documents from the same discovery input - each with
+  // its own exact URL returned by proposal-processor. Never fall back to targetUrl for a
+  // missing one: an absent URL means that document genuinely wasn't produced.
+  const documentLinks = [
+    { id: 'technical', label: 'Technical Document', url: (proposal?.technical_url || '').trim() },
+    { id: 'commercial', label: 'Commercial Proposal', url: (proposal?.commercial_url || '').trim() },
+    { id: 'tos', label: 'TOS Document', url: (proposal?.tos_url || '').trim() }
+  ].filter((doc) => doc.url);
+
+  const handleCopyUrl = async (docId, url) => {
+    if (!url) return;
     try {
-      await navigator.clipboard.writeText(targetUrl);
-      setCopiedUrl(true);
-      setTimeout(() => setCopiedUrl(false), 2500);
+      await navigator.clipboard.writeText(url);
+      setCopiedDocId(docId);
+      setTimeout(() => setCopiedDocId(null), 2500);
     } catch (e) {
       console.warn('Clipboard write failed', e);
     }
@@ -243,12 +252,13 @@ function ProposalResultCard({
         </div>
       </div>
 
-      {/* Live URL Box */}
-      {targetUrl && (
+      {/* Live Document Links - technical, commercial and TOS are 3 distinct generated
+          documents, each with its own URL from the backend */}
+      {documentLinks.length > 0 && (
         <div className="proposal-result-url-box modern-url-box">
           <div className="url-box-header">
             <div className="url-box-heading">
-              <span className="url-box-title">CLIENT PROPOSAL LINK</span>
+              <span className="url-box-title">CLIENT PROPOSAL DOCUMENTS</span>
               <span className="url-live-pill">
                 <span className="url-live-dot" />
                 Live
@@ -256,39 +266,41 @@ function ProposalResultCard({
             </div>
           </div>
 
-          <div className="url-box-display-row">
-            <span className="url-protocol-tag">HTTPS</span>
-            <a
-              href={targetUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="url-display-link"
-              title={targetUrl}
-            >
-              {targetUrl}
-            </a>
-            <div className="url-display-actions">
-              <button
-                type="button"
-                className={`btn-url-action ${copiedUrl ? 'is-copied' : ''}`}
-                onClick={handleCopyUrl}
-                title="Copy shareable URL"
+          {documentLinks.map((doc) => (
+            <div className="url-box-display-row" key={doc.id}>
+              <span className="url-protocol-tag">{doc.label}</span>
+              <a
+                href={doc.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="url-display-link"
+                title={doc.url}
               >
-                {copiedUrl ? <Check size={14} /> : <Copy size={14} />}
-                <span>{copiedUrl ? 'Copied!' : 'Copy Link'}</span>
-              </button>
+                {doc.url}
+              </a>
+              <div className="url-display-actions">
+                <button
+                  type="button"
+                  className={`btn-url-action ${copiedDocId === doc.id ? 'is-copied' : ''}`}
+                  onClick={() => handleCopyUrl(doc.id, doc.url)}
+                  title={`Copy ${doc.label} URL`}
+                >
+                  {copiedDocId === doc.id ? <Check size={14} /> : <Copy size={14} />}
+                  <span>{copiedDocId === doc.id ? 'Copied!' : 'Copy Link'}</span>
+                </button>
 
-              <button
-                type="button"
-                className="btn-url-action btn-url-test"
-                onClick={() => window.open(targetUrl, '_blank', 'noopener,noreferrer')}
-                title="Open in new tab"
-              >
-                <ExternalLink size={14} />
-                <span>Open</span>
-              </button>
+                <button
+                  type="button"
+                  className="btn-url-action btn-url-test"
+                  onClick={() => window.open(doc.url, '_blank', 'noopener,noreferrer')}
+                  title="Open in new tab"
+                >
+                  <ExternalLink size={14} />
+                  <span>Open</span>
+                </button>
+              </div>
             </div>
-          </div>
+          ))}
         </div>
       )}
 
@@ -304,7 +316,7 @@ function ProposalResultCard({
             transition={{ type: 'spring', stiffness: 400, damping: 25 }}
           >
             <ArrowUpRight size={18} strokeWidth={2.4} />
-            <span>Open Proposal</span>
+            <span>Open Commercial Proposal</span>
           </motion.button>
         )}
 
@@ -413,6 +425,11 @@ export default function CreateProposal({
       proposal_title: rawProposal?.proposal_title || `${cleanBiz} — Solution Proposal`,
       generated_url: formattedUrl,
       proposal_url: formattedUrl,
+      // 3 distinct documents generated from the same discovery input, each with its own
+      // exact backend-returned URL - never derived or guessed on the frontend.
+      technical_url: formatProposalUrl((rawProposal?.technical_url || '').trim()),
+      commercial_url: formatProposalUrl((rawProposal?.commercial_url || '').trim()) || formattedUrl,
+      tos_url: formatProposalUrl((rawProposal?.tos_url || '').trim()),
       status: (rawProposal?.status || rawProposal?.proposal_status || 'PUBLISHED').toUpperCase(),
       created_at: rawProposal?.created_at || new Date().toISOString()
     };

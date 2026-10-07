@@ -36,6 +36,13 @@ export default function ProposalCard({
   const rawUrl = (proposal.generated_url || proposal.proposal_url || proposal.slate_url || '').trim();
   const targetUrl = formatProposalUrl(rawUrl, proposalId) || rawUrl;
 
+  // 3 distinct generated documents, each with its own exact backend-returned URL.
+  const documentLinks = [
+    { id: 'technical', label: 'Technical', url: (proposal.technical_url || '').trim() },
+    { id: 'commercial', label: 'Commercial', url: (proposal.commercial_url || '').trim() || targetUrl },
+    { id: 'tos', label: 'TOS', url: (proposal.tos_url || '').trim() }
+  ].filter((doc) => doc.url);
+
   const isPublished = rawStatus === 'COMPLETED' || rawStatus === 'PUBLISHED' || rawStatus === 'APPROVED' || Boolean(targetUrl);
   const statusLabel = isPublished ? 'Published' : 'Draft';
   const statusClass = isPublished ? 'published' : 'draft';
@@ -131,6 +138,27 @@ export default function ProposalCard({
             </div>
           )}
         </div>
+
+        {/* 3 distinct generated documents - each opens its own URL directly */}
+        {documentLinks.length > 0 && (
+          <div className="exp-glass-doc-links">
+            {documentLinks.map((doc) => (
+              <button
+                key={doc.id}
+                type="button"
+                className="exp-btn-doc-link"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.open(doc.url, '_blank', 'noopener,noreferrer');
+                }}
+                title={`Open ${doc.label} document in a new tab`}
+              >
+                <ExternalLink size={12} />
+                <span>{doc.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Action Buttons using ShinyButton and Copy Button */}
         <div className="exp-glass-actions">

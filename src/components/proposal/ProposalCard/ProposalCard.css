@@ -247,6 +247,36 @@
   color: #1d4ed8;
 }
 
+/* 3 distinct document links: Technical / Commercial / TOS */
+.exp-glass-doc-links {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.exp-btn-doc-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  color: #334155;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.3rem 0.65rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.exp-btn-doc-link:hover {
+  background: #FFF7ED;
+  border-color: #FED7AA;
+  color: #EA580C;
+}
+
 /* Action Buttons */
 .exp-glass-actions {
   display: flex;
