@@ -12,7 +12,9 @@ import {
   Plus,
   Globe,
   Link2,
-  FileCheck2
+  FileCheck2,
+  ArrowLeft,
+  Sparkles
 } from 'lucide-react';
 
 const formatCleanText = (text) => {
@@ -211,11 +213,32 @@ export default function ProcessStatus({
             initial="hidden"
             animate="visible"
           >
+            {/* Back link - returns to the upload/create screen */}
+            {onUploadAnother && (
+              <motion.button
+                type="button"
+                className="btn-back-link"
+                onClick={onUploadAnother}
+                variants={itemVariants}
+                whileHover={{ x: -2 }}
+              >
+                <ArrowLeft size={15} className="btn-back-arrow" />
+                <span>Back to Create Proposal</span>
+              </motion.button>
+            )}
+
             {/* Header: Clean, modern status and headline (No security guard logo) */}
             <motion.div className="clean-result-header" variants={itemVariants}>
               <div className="clean-header-text">
                 <h3 className="clean-title">
-                  Customer Proposal <span className="title-orange-accent">Ready</span>
+                  <motion.span
+                    className="title-sparkle"
+                    animate={{ rotate: [0, 12, -8, 0], scale: [1, 1.15, 1] }}
+                    transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+                  >
+                    <Sparkles size={22} />
+                  </motion.span>
+                  Your Proposal Is <span className="title-orange-accent">Live</span>
                 </h3>
                 <p className="clean-subtitle">
                   The interactive proposal experience has been generated and is ready to share with your client.
@@ -225,10 +248,14 @@ export default function ProcessStatus({
 
             {/* Basic Document & Business Info: Two Distinct Executive Cards */}
             <motion.div className="clean-info-grid" variants={itemVariants}>
-              <div className="clean-info-card">
+              <motion.div
+                className="clean-info-card"
+                whileHover={{ y: -4, scale: 1.015 }}
+                transition={{ type: 'spring', stiffness: 320, damping: 22 }}
+              >
                 <div className="clean-info-card-header">
                   <Building2 size={15} className="clean-info-icon-navy" />
-                  <span className="clean-info-label">Client Account</span>
+                  <span className="clean-info-label">Business Client</span>
                 </div>
                 <div className="clean-info-biz-row">
                   {businessLogoPreview ? (
@@ -246,12 +273,16 @@ export default function ProcessStatus({
                     {displayBusinessName}
                   </strong>
                 </div>
-              </div>
+              </motion.div>
 
-              <div className="clean-info-card">
+              <motion.div
+                className="clean-info-card"
+                whileHover={{ y: -4, scale: 1.015 }}
+                transition={{ type: 'spring', stiffness: 320, damping: 22 }}
+              >
                 <div className="clean-info-card-header">
                   <FileCheck2 size={15} className="clean-info-icon-orange" />
-                  <span className="clean-info-label">Proposal Scope</span>
+                  <span className="clean-info-label">Project Name</span>
                 </div>
                 <div className="clean-info-biz-row">
                   <div className="clean-info-scope-tile">
@@ -261,7 +292,7 @@ export default function ProcessStatus({
                     {displayProjectName}
                   </strong>
                 </div>
-              </div>
+              </motion.div>
             </motion.div>
 
             {/* Interactive Clickable Link Console */}

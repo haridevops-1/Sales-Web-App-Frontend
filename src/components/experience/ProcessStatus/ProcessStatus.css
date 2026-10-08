@@ -70,6 +70,43 @@
   gap: 28px;
 }
 
+/* Back link - returns to the create/upload screen */
+.btn-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #2563eb;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  padding: 0;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 180ms ease;
+  align-self: flex-start;
+}
+
+.btn-back-link:hover {
+  color: #1d4ed8;
+}
+
+.btn-back-arrow {
+  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-back-link:hover .btn-back-arrow {
+  transform: translateX(-3px);
+}
+
+/* Sparkle icon next to the headline */
+.title-sparkle {
+  display: inline-flex;
+  color: #FF7A1A;
+  margin-right: 8px;
+  vertical-align: -3px;
+}
+
 /* Header: Clean, modern left-aligned stack with NO security guard icon */
 .clean-result-header {
   display: flex;
@@ -307,26 +344,25 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #16233a;
-  text-decoration: none;
-  font-size: 0.85rem;
+  color: #0052ff;
+  text-decoration: underline;
+  text-decoration-color: rgba(0, 82, 255, 0.35);
+  text-underline-offset: 2px;
+  font-size: 0.775rem;
   font-weight: 500;
   font-family: var(--font-family-mono);
   letter-spacing: -0.01em;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  transition: color 0.15s ease;
+  transition: color 0.15s ease, text-decoration-color 0.15s ease;
   padding: 4px 0;
   cursor: pointer;
 }
 
 .clean-proposal-link-anchor:hover {
-  color: #0052ff;
-}
-
-.clean-proposal-link-anchor:hover .clean-link-text {
-  text-decoration: underline;
+  color: #1d4ed8;
+  text-decoration-color: #1d4ed8;
 }
 
 .clean-link-text {
@@ -366,10 +402,11 @@
 }
 
 .btn-clean-copy:hover {
-  background: #0b192c;
-  border-color: #0b192c;
-  color: #ffffff;
-  box-shadow: 0 4px 12px rgba(11, 25, 44, 0.2);
+  background: #FFF3EC;
+  border-color: #FF7A1A;
+  color: #FF7A1A;
+  box-shadow: 0 4px 12px rgba(255, 122, 26, 0.18);
+  transform: translateY(-1px);
 }
 
 .btn-clean-copy.copied {
