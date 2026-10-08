@@ -205,6 +205,19 @@
   gap: 8px;
 }
 
+.clean-info-scope-tile {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: #FFF3EC;
+  color: #FF7A1A;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1.5px solid #FFE0CC;
+}
+
 .clean-info-value {
   font-family: var(--font-family-display);
   font-size: 1.05rem;
