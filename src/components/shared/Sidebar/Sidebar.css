@@ -131,21 +131,16 @@
   gap: 0.45rem;
 }
 
+/* Static display card - no border/outline, no click affordance; the only motion is an
+   ambient glow on the avatar ring so it still feels alive without inviting a click. */
 .sidebar-consultant-card {
   display: flex;
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem;
   border-radius: 12px;
-  background: rgba(30, 41, 59, 0.5);
-  border: 1px solid rgba(51, 65, 85, 0.5);
-  cursor: pointer;
-  transition: background-color 0.2s ease, border-color 0.2s ease;
-}
-
-.sidebar-consultant-card:hover {
-  background: rgba(30, 41, 59, 0.75);
-  border-color: rgba(71, 85, 105, 0.7);
+  background: rgba(30, 41, 59, 0.42);
+  cursor: default;
 }
 
 .consultant-avatar-ring {
@@ -156,6 +151,12 @@
   padding: 2px;
   background: conic-gradient(from 200deg, var(--spikra-orange), #0052FF, var(--spikra-orange));
   flex-shrink: 0;
+  animation: consultant-ring-glow 3.2s ease-in-out infinite;
+}
+
+@keyframes consultant-ring-glow {
+  0%, 100% { filter: drop-shadow(0 0 0 rgba(255, 122, 26, 0)); }
+  50% { filter: drop-shadow(0 0 5px rgba(255, 122, 26, 0.55)); }
 }
 
 .consultant-avatar-circle {
@@ -311,6 +312,7 @@
 }
 
 .sub-nav-link {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 0.55rem;
@@ -324,9 +326,22 @@
   font-weight: 500;
   cursor: pointer;
   text-align: left;
-  transition: background-color 0.18s ease, color 0.18s ease;
+  transition: color 0.18s ease;
   letter-spacing: -0.005em;
 }
+
+/* Animated active-state pill (framer-motion layoutId) - slides between sub-nav items
+   instead of an instant background swap when the selection changes. */
+.sub-nav-pill {
+  position: absolute;
+  inset: 0;
+  border-radius: 6px;
+  background: rgba(255, 122, 26, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(255, 122, 26, 0.2);
+  z-index: 0;
+}
+
+.sub-nav-link > * { position: relative; z-index: 1; }
 
 .sub-nav-icon {
   color: rgba(255, 255, 255, 0.55);
@@ -343,16 +358,14 @@
   color: var(--spikra-orange);
 }
 
-.sub-nav-link:hover {
+.sub-nav-link:not(.is-active):hover {
   background: rgba(255, 255, 255, 0.08);
   color: #FFFFFF;
 }
 
 .sub-nav-link.is-active {
-  background: rgba(255, 122, 26, 0.14);
   color: #FFA34D;
   font-weight: 600;
-  box-shadow: inset 0 0 0 1px rgba(255, 122, 26, 0.2);
 }
 
 /* Utility Links (Settings & Profile) */

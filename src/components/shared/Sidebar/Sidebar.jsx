@@ -92,14 +92,15 @@ export default function Sidebar({
 
           {/* Navigation Scroll Area with Proper Distribution */}
           <div className="sidebar-nav-scroll" aria-label="Sidebar Navigation">
-            {/* Section 0: SALES CONSULTANT */}
-            <div className="sidebar-section salesperson-section">
-              <span className="sidebar-section-title">CONSULTANT</span>
+            {/* Section 0: Signed-in user - static display, not a settings shortcut */}
+            <motion.div
+              className="sidebar-section salesperson-section"
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: 'easeOut' }}
+            >
               <div
                 className="sidebar-consultant-card"
-                onClick={handleSettingsClick}
-                role="button"
-                tabIndex={0}
                 title={`${currentUser.name} • ${currentUser.designation}`}
               >
                 <div className="consultant-avatar-ring">
@@ -113,7 +114,7 @@ export default function Sidebar({
                   <span className="consultant-role-badge">{currentUser.designation}</span>
                 </div>
               </div>
-            </div>
+            </motion.div>
 
             {/* Section 1: WORKSPACE */}
             <div className="sidebar-section">
@@ -131,13 +132,18 @@ export default function Sidebar({
                     <span className="nav-item-label">Interactive Showcases</span>
                   </button>
 
-                  {/* Submenu: guided by a continuous vertical line via .sidebar-sub-menu::before */}
+                  {/* Submenu: guided by a continuous vertical line via .sidebar-sub-menu::before;
+                      the active highlight is a single layoutId pill that slides between items
+                      instead of an instant background swap. */}
                   <div className="sidebar-sub-menu">
                     <button
                       type="button"
                       className={`sub-nav-link ${activeModule === 'experience' && activeSubPage === 'generator' ? 'is-active' : ''}`}
                       onClick={() => handleNav('experience', 'generator')}
                     >
+                      {activeModule === 'experience' && activeSubPage === 'generator' && (
+                        <motion.span layoutId="sidebar-subnav-pill-experience" className="sub-nav-pill" transition={{ type: 'spring', stiffness: 500, damping: 38 }} />
+                      )}
                       <Plus size={13} className="sub-nav-icon" />
                       <span>Create Showcase</span>
                     </button>
@@ -146,6 +152,9 @@ export default function Sidebar({
                       className={`sub-nav-link ${activeModule === 'experience' && activeSubPage === 'history' ? 'is-active' : ''}`}
                       onClick={() => handleNav('experience', 'history')}
                     >
+                      {activeModule === 'experience' && activeSubPage === 'history' && (
+                        <motion.span layoutId="sidebar-subnav-pill-experience" className="sub-nav-pill" transition={{ type: 'spring', stiffness: 500, damping: 38 }} />
+                      )}
                       <LayoutGrid size={13} className="sub-nav-icon" />
                       <span>All Showcases</span>
                     </button>
@@ -170,6 +179,9 @@ export default function Sidebar({
                       className={`sub-nav-link ${activeModule === 'proposal' && activeSubPage === 'proposal-create' ? 'is-active' : ''}`}
                       onClick={() => handleNav('proposal', 'proposal-create')}
                     >
+                      {activeModule === 'proposal' && activeSubPage === 'proposal-create' && (
+                        <motion.span layoutId="sidebar-subnav-pill-proposal" className="sub-nav-pill" transition={{ type: 'spring', stiffness: 500, damping: 38 }} />
+                      )}
                       <Plus size={13} className="sub-nav-icon" />
                       <span>Create Proposal</span>
                     </button>
@@ -178,6 +190,9 @@ export default function Sidebar({
                       className={`sub-nav-link ${activeModule === 'proposal' && activeSubPage === 'proposal-list' ? 'is-active' : ''}`}
                       onClick={() => handleNav('proposal', 'proposal-list')}
                     >
+                      {activeModule === 'proposal' && activeSubPage === 'proposal-list' && (
+                        <motion.span layoutId="sidebar-subnav-pill-proposal" className="sub-nav-pill" transition={{ type: 'spring', stiffness: 500, damping: 38 }} />
+                      )}
                       <LayoutGrid size={13} className="sub-nav-icon" />
                       <span>All Proposals</span>
                     </button>

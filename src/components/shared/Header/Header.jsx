@@ -140,12 +140,11 @@ export default function Header({
           </nav>
         )}
 
-        {/* Right Section: User Profile Badge */}
+        {/* Right Section: User Profile Badge - static display only, not a settings shortcut */}
         <div className="header-right">
           <UserProfile
             currentUser={currentUser}
             theme="dark"
-            onClick={onOpenSettings}
           />
         </div>
       </div>
