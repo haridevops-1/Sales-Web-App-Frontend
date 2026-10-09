@@ -884,7 +884,7 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
                             <span>Local Upload</span>
                           </span>
 
-                          <button
+                          <motion.button
                             type="button"
                             className="btn-open-workdrive-header-btn"
                             onClick={() => {
@@ -896,11 +896,14 @@ export default function UploadSection({ onStageChange, onUploadSuccess, onExperi
                             }}
                             disabled={isWorking}
                             title="Open Zoho WorkDrive"
+                            whileHover={!isWorking ? { y: -2, scale: 1.015 } : undefined}
+                            whileTap={!isWorking ? { y: 0, scale: 0.97 } : undefined}
+                            transition={{ type: 'spring', stiffness: 400, damping: 22 }}
                           >
                             <Cloud size={14} className="text-orange-500" />
                             <span>Open WorkDrive</span>
                             <ExternalLink size={12} className="opacity-70" />
-                          </button>
+                          </motion.button>
                         </div>
 
                         <UploadDropzone

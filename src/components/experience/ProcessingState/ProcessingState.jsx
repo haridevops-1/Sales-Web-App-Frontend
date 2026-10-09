@@ -2,6 +2,7 @@ import React from 'react';
 import './ProcessingState.css';
 import ThinkingState from '@/components/ui/thinking';
 import { UPLOAD_STAGES } from '@/utils/constants';
+import { X } from 'lucide-react';
 
 const STAGE_INDEX_MAP = {
   [UPLOAD_STAGES.UPLOADING]: 0,
@@ -92,7 +93,7 @@ export default function ProcessingState({
             title="Cancel and return to the form"
             aria-label="Cancel analysis"
           >
-            ✕
+            <X size={14} />
           </button>
         )}
       </div>

@@ -96,13 +96,14 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease, transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .btn-cancel-processing:hover {
   background: #fef2f2;
   border-color: #fecaca;
   color: #dc2626;
+  transform: rotate(90deg) scale(1.08);
 }
 
 .processing-analyzing-notice {
