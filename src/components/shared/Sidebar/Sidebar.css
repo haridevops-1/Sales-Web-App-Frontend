@@ -218,6 +218,7 @@
 
 /* Main Nav Item & Hover Animations */
 .sidebar-nav-item {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -234,6 +235,7 @@
   text-align: left;
   transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.18s ease, color 0.18s ease;
   letter-spacing: -0.01em;
+  overflow: hidden;
 }
 
 .sidebar-nav-item:hover:not(.is-disabled) {
@@ -242,8 +244,24 @@
   transform: translateX(4px);
 }
 
-.sidebar-nav-item.is-active-parent {
-  color: #FFFFFF;
+.sidebar-nav-item > * { position: relative; z-index: 1; }
+
+/* Animated active-module indicator (framer-motion layoutId) - a single pill with a
+   leading accent bar that slides between modules instead of relying on color alone. */
+.nav-item-active-pill {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: rgba(255, 122, 26, 0.1);
+  border-left: 2px solid var(--spikra-orange);
+}
+
+.sidebar-nav-item.is-active-parent .nav-item-icon {
+  color: var(--spikra-orange);
+}
+
+.sidebar-nav-item.is-active-parent .nav-item-icon.orange {
+  color: var(--spikra-orange);
 }
 
 .sidebar-nav-item.is-disabled {
